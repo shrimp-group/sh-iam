@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.wkclz.iam</groupId>
+        <artifactId>sh-iam</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>iam-sso</artifactId>
+    <name>iam-sso</name>
+    <description>登录/个人中心模块</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.wkclz.iam</groupId>
+            <artifactId>iam-common</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wkclz.iam</groupId>
+            <artifactId>iam-sdk</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>sh-mybatis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>sh-redis</artifactId>
+        </dependency>
+
+    </dependencies>
+</project>

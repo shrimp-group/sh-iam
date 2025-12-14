@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.wkclz.framework</groupId>
+        <artifactId>sh-parent</artifactId>
+        <version>5.0.0-SNAPSHOT</version>
+    </parent>
+
+    <groupId>com.wkclz.iam</groupId>
+    <artifactId>sh-iam</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>sh-iam</name>
+
+    <modules>
+        <module>iam-common</module>
+        <module>iam-sso</module>
+        <module>iam-sso-starter</module>
+        <module>iam-admin</module>
+        <module>iam-admin-starter</module>
+        <module>iam-sdk</module>
+    </modules>
+
+    <properties>
+        <revision>5.0.0-SNAPSHOT</revision>
+
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+</project>
