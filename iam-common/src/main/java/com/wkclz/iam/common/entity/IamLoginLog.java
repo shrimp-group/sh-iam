@@ -1,12 +1,15 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.base.BaseEntity;
 import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 
 @Data
 public class IamLoginLog extends BaseEntity {
-    
+
+    @Desc("认证标识")
+    private String authIdentifier;
+
     @Desc("用户编码")
     private String userCode;
     

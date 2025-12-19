@@ -1,0 +1,165 @@
+package com.wkclz.iam.sso.service;
+
+import com.alibaba.fastjson2.JSON;
+import com.wkclz.iam.common.dto.IamUserAuthDto;
+import com.wkclz.iam.common.entity.IamLoginLog;
+import com.wkclz.iam.sdk.config.IamSdkConfig;
+import com.wkclz.iam.sdk.enums.LoginStatus;
+import com.wkclz.iam.sdk.model.LoginRequest;
+import com.wkclz.iam.sdk.model.LoginResponse;
+import com.wkclz.iam.sdk.model.UserJwt;
+import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.util.JwtUtil;
+import com.wkclz.iam.sso.config.IamSsoConfig;
+import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
+import com.wkclz.iam.sso.mapper.SsoLoginMapper;
+import com.wkclz.web.helper.IpHelper;
+import com.wkclz.web.helper.RequestHelper;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
+@Service
+public class IamLoginService {
+
+    @Autowired
+    private IamSsoConfig iamSsoConfig;
+    @Autowired
+    private IamSdkConfig iamSdkConfig;
+    @Autowired
+    private SsoLoginMapper ssoLoginMapper;
+    @Autowired
+    private SsoLoginLogMapper ssoLoginLogMapper;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 1. 用户不存在
+     * 2. 登录方式已禁用
+     * 3. 用户已锁定
+     * 4. 用户已禁用
+     * 5. 密码错误
+     * 6. 密码已过期
+     * 7. 登录成功
+     */
+
+    public LoginResponse loginByUsernameAndPassword(LoginRequest loginRequest) {
+        LoginResponse response = new LoginResponse();
+
+        String username = loginRequest.getUsername();
+        String password = loginRequest.getPassword();
+
+        IamUserAuthDto auth = ssoLoginMapper.getUserAuth4PasswordByUsername(username);
+
+        // 1. 用户不存在
+        if (auth ==  null) {
+            response.setLoginStatus(LoginStatus.USER_NOT_FOUND.getCode());
+            response.setLoginMessage("用户不存在, 或密码错误!");
+            loginLog(loginRequest, auth, LoginStatus.USER_NOT_FOUND, "PASSWORD");
+            return response;
+        }
+
+        // 2. 登录方式已禁用
+        if (auth.getAuthStatus().equals(0)) {
+            response.setLoginStatus(LoginStatus.EXPIRED_ACCOUNT.getCode());
+            response.setLoginMessage(LoginStatus.EXPIRED_ACCOUNT.getMessage());
+            loginLog(loginRequest, auth, LoginStatus.EXPIRED_ACCOUNT, "PASSWORD");
+            return response;
+        }
+
+        // 3. 用户已锁定
+        if (auth.getUserStatus().equals(3)) {
+            response.setLoginStatus(LoginStatus.ACCOUNT_LOCKED.getCode());
+            response.setLoginMessage(LoginStatus.ACCOUNT_LOCKED.getMessage());
+            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_LOCKED, "PASSWORD");
+            return response;
+        }
+
+        // 4. 用户已禁用
+        if (auth.getUserStatus().equals(2)) {
+            response.setLoginStatus(LoginStatus.ACCOUNT_DISABLED.getCode());
+            response.setLoginMessage(LoginStatus.ACCOUNT_DISABLED.getMessage());
+            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_DISABLED, "PASSWORD");
+            return response;
+        }
+
+        // 5. 密码错误
+        if (!auth.getPassword().equals(password)) {
+            response.setLoginStatus(LoginStatus.INVALID_CREDENTIALS.getCode());
+            response.setLoginMessage(LoginStatus.INVALID_CREDENTIALS.getMessage());
+            loginLog(loginRequest, auth, LoginStatus.INVALID_CREDENTIALS, "PASSWORD");
+            return response;
+        }
+
+        // 6. 密码已过期
+        Integer passwordExpireDays = iamSsoConfig.getPasswordExpireDays();
+
+        ZonedDateTime zonedDateTime = auth.getLastChangedTime().atZone(ZoneId.systemDefault());
+        long timestamp = zonedDateTime.toInstant().toEpochMilli();
+        long passwordExpireAt = timestamp + passwordExpireDays + 24 * 60 * 60 * 1000L;
+        if (passwordExpireAt < System.currentTimeMillis()) {
+            response.setLoginStatus(LoginStatus.EXPIRED_PASSWORD.getCode());
+            response.setLoginMessage(LoginStatus.EXPIRED_PASSWORD.getMessage());
+            loginLog(loginRequest, auth, LoginStatus.EXPIRED_PASSWORD, "PASSWORD");
+            return response;
+        }
+
+        // 7. 登录成功
+
+        // JWT, 生成 token 返回给前端
+        UserJwt jwt = new UserJwt();
+        jwt.setUserCode(auth.getUserCode());
+        jwt.setUsername(auth.getUsername());
+        jwt.setNickname(auth.getNickname());
+        jwt.setAvatar(auth.getAvatar());
+        String jwtToken = JwtUtil.generateToken(jwt, iamSdkConfig.getJwtSecretKey());
+
+        // 用户信息，缓存到 Redis
+        UserSession us = new UserSession();
+        us.setUserCode(auth.getUserCode());
+        us.setUsername(auth.getAuthIdentifier());
+        us.setNickname(auth.getNickname());
+
+        String tokenRedisKey = JwtUtil.getTokenRedisKey(jwtToken, jwt.getUsername());
+        stringRedisTemplate.opsForValue().set(tokenRedisKey, JSON.toJSONString(us));
+
+        response.setLoginStatus(LoginStatus.SUCCESS.getCode());
+        response.setLoginMessage(LoginStatus.SUCCESS.getMessage());
+        response.setToken(jwtToken);
+        loginLog(loginRequest, auth, LoginStatus.SUCCESS, "PASSWORD");
+        return response;
+    }
+
+
+
+    private void loginLog(LoginRequest loginRequest, IamUserAuthDto auth, LoginStatus loginStatus, String loginType) {
+        IamLoginLog log = new IamLoginLog();
+        log.setAuthIdentifier(loginRequest.getUsername());
+        log.setLoginType(loginType);
+        log.setLoginStatus(loginStatus.getCode());
+        log.setMessage(loginStatus.getMessage());
+        log.setCreateBy(loginRequest.getUsername());
+        log.setUpdateBy(loginRequest.getUsername());
+
+        if (auth != null) {
+            log.setUserCode(auth.getUserCode());
+            log.setUsername(auth.getAuthIdentifier());
+            log.setCreateBy(log.getUsername());
+            log.setUpdateBy(log.getUsername());
+        }
+
+        HttpServletRequest request = RequestHelper.getRequest();
+        if (request != null) {
+            String originIp = IpHelper.getOriginIp(request);
+            log.setIpAddress(originIp);
+            log.setUserAgent(request.getHeader("User-Agent"));
+        }
+        ssoLoginLogMapper.insertLoginLog(log);
+    }
+
+
+}

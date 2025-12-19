@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.sso.mapper.SsoLoginMapper">
+
+    <select id="getUserAuth4PasswordByUsername" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamUserAuthDto">
+        SELECT
+            ua.id,
+            ua.user_code,
+            ua.auth_identifier,
+            ua.auth_status,
+            u.username,
+            u.nickname,
+            u.phone,
+            u.avatar,
+            u.user_status,
+            uap.password,
+            uap.salt,
+            uap.last_changed_time
+        FROM
+            iam_user_auth ua
+            INNER JOIN iam_user u ON u.user_code = ua.user_code
+            INNER JOIN iam_user_auth_password uap ON uap.user_code = ua.user_code
+        WHERE
+            ua.deleted = 0
+            AND u.deleted = 0
+            AND uap.deleted = 0
+            AND ua.auth_type = 'PASSWORD'
+            AND ua.auth_identifier = #{username}
+            AND u.user_status = 1
+    </select>
+
+</mapper>
+

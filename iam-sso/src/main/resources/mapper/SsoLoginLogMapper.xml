@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.sso.mapper.SsoLoginLogMapper">
+
+    <insert id="insertLoginLog" parameterType="com.wkclz.iam.common.entity.IamLoginLog">
+        INSERT INTO iam_login_log (
+          <trim suffixOverrides=",">
+            <if test="authIdentifier != null">auth_identifier,</if>
+            <if test="userCode != null">user_code,</if>
+            <if test="username != null">username,</if>
+            <if test="loginType != null">login_type,</if>
+            <if test="loginStatus != null">login_status,</if>
+            <if test="message != null">message,</if>
+            <if test="ipAddress != null">ip_address,</if>
+            <if test="userAgent != null">user_agent,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="updateBy != null">update_by,</if>
+          </trim>
+        ) VALUES (
+          <trim suffixOverrides=",">
+            <if test="authIdentifier != null">#{authIdentifier},</if>
+            <if test="userCode != null">#{userCode},</if>
+            <if test="username != null">#{username},</if>
+            <if test="loginType != null">#{loginType},</if>
+            <if test="loginStatus != null">#{loginStatus},</if>
+            <if test="message != null">#{message},</if>
+            <if test="ipAddress != null">#{ipAddress},</if>
+            <if test="userAgent != null">#{userAgent},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+          </trim>
+        )
+    </insert>
+
+</mapper>
+

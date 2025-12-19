@@ -36,6 +36,10 @@
             <groupId>com.wkclz.framework</groupId>
             <artifactId>sh-redis</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>sh-web</artifactId>
+        </dependency>
 
     </dependencies>
 </project>

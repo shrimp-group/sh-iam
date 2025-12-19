@@ -14,5 +14,10 @@ public class IamSdkConfig {
     @Value("${iam.sdk.enabled:true}")
     private Boolean enabled;
 
+    /**
+     * JWT 密钥, 实际使用时，请覆盖配置，不要使用默认配置
+     */
+    @Value("${iam.sdk.jwt.secret-key:qwertyuioplkjhgfdsazxcvbnmqwertyuioplkjhgfdsazxcvbnm}")
+    private String jwtSecretKey;
 
 }
