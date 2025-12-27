@@ -13,5 +13,6 @@ public class UserSession implements Serializable {
     private String userCode;
     private String username;
     private String nickname;
+    private String authType;
 
 }

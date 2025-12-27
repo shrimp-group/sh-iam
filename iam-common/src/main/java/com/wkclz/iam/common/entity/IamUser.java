@@ -29,13 +29,4 @@ public class IamUser extends BaseEntity {
     
     @Desc("状态：1-启用，2-禁用，3-锁定")
     private Integer userStatus;
-    
-    @Desc("最后登录时间")
-    private Date lastLoginTime;
-    
-    @Desc("最后登录IP")
-    private String lastLoginIp;
-    
-    @Desc("登录次数")
-    private Integer loginCount;
 }

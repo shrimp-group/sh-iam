@@ -3,6 +3,7 @@ package com.wkclz.iam.sso.service;
 import com.alibaba.fastjson2.JSON;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamLoginLog;
+import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.enums.LoginStatus;
 import com.wkclz.iam.sdk.model.LoginRequest;
@@ -47,7 +48,7 @@ public class IamLoginService {
      * 7. 登录成功
      */
 
-    public LoginResponse loginByUsernameAndPassword(LoginRequest loginRequest) {
+    public LoginResponse loginByUsernameAndPassword(HttpServletRequest request, LoginRequest loginRequest) {
         LoginResponse response = new LoginResponse();
 
         String username = loginRequest.getUsername();
@@ -123,6 +124,7 @@ public class IamLoginService {
         us.setUserCode(auth.getUserCode());
         us.setUsername(auth.getAuthIdentifier());
         us.setNickname(auth.getNickname());
+        us.setAuthType(auth.getAuthType());
 
         String tokenRedisKey = JwtUtil.getTokenRedisKey(jwtToken, jwt.getUsername());
         stringRedisTemplate.opsForValue().set(tokenRedisKey, JSON.toJSONString(us));
@@ -131,6 +133,13 @@ public class IamLoginService {
         response.setLoginMessage(LoginStatus.SUCCESS.getMessage());
         response.setToken(jwtToken);
         loginLog(loginRequest, auth, LoginStatus.SUCCESS, "PASSWORD");
+
+        // 登录成功，需要更新的信息
+        IamUserAuth userAuth = new IamUserAuth();
+        userAuth.setId(auth.getId());
+        userAuth.setLastLoginIp(IpHelper.getOriginIp(request));
+        ssoLoginMapper.updateUserLoginInfo(userAuth);
+
         return response;
     }
 

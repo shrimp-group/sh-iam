@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: iam-admin
+    name: iam-admin-starter
   profiles:
     active: local
   datasource:
@@ -23,3 +23,29 @@ pagehelper:
   reasonable: true
   supportMethodsArguments: true
   params: count=countSql
+
+
+#### 系统建康状态 #####
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  server:
+    # 启用独立端口
+    port: 50000
+    base-path: /
+    ssl:
+      enabled: false
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    health:
+      showDetails: always
+      probes:
+        enabled: true
+    shutdown:
+      enabled: true
+    restart:
+      enabled: true

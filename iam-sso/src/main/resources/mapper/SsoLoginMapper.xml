@@ -8,6 +8,7 @@
             ua.user_code,
             ua.auth_identifier,
             ua.auth_status,
+            ua.auth_type,
             u.username,
             u.nickname,
             u.phone,
@@ -28,6 +29,18 @@
             AND ua.auth_identifier = #{username}
             AND u.user_status = 1
     </select>
+
+
+    <update id="updateUserLoginInfo" parameterType="com.wkclz.iam.common.entity.IamUserAuth">
+        UPDATE iam_user_auth
+        SET
+            last_login_time = NOW(),
+            last_login_ip = #{lastLoginIp},
+            login_count = login_count + 1,
+            version = version + 1
+        WHERE
+            id = #{id}
+    </update>
 
 </mapper>
 

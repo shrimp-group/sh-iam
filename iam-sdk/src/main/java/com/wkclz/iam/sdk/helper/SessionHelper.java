@@ -39,6 +39,14 @@ public class SessionHelper {
     }
 
 
+    public static UserJwt getUserJwt(HttpServletRequest request) {
+        Object userJwt = request.getAttribute("userJwt");
+        return userJwt == null ? null : (UserJwt) userJwt;
+    }
+    public static UserSession getUserSession(HttpServletRequest request) {
+        Object userSession = request.getAttribute("userSession");
+        return userSession == null ? null : (UserSession) userSession;
+    }
 
 
 }
