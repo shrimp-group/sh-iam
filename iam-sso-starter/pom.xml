@@ -29,6 +29,19 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- 跳过 install, 只做启动模块 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <configuration><skip>true</skip></configuration>
+            </plugin>
+            <!-- 跳过 deploy, 只做启动模块 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration><skip>true</skip></configuration>
+            </plugin>
         </plugins>
     </build>
 

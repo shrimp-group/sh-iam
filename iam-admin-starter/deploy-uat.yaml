@@ -1,0 +1,128 @@
+# 以下 yaml 只是示例，请根据具体需求自行编写 yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iam-admin-starter
+  # namespace: prod
+  labels:
+    app: iam-admin-starter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iam-admin-starter
+  # 发布策略-平滑发布
+  strategy:
+    type: Recreate
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxSurge: 25%
+    #   maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: iam-admin-starter
+    spec:
+      imagePullSecrets:
+        # 需要自行创建 阿里云 Secrets 为 aliyun
+        - name: aliyun
+      volumes:
+        # 挂载本地磁盘写日志
+        - name: iam-admin-starter-logs
+          hostPath:
+            path: /data/iam-admin-starter-prod/logs
+            type: DirectoryOrCreate
+        # 挂载 ConfigMap
+        - name: iam-admin-starter
+          configMap:
+            name: iam-admin-starter
+      containers:
+        - name: iam-admin-starter
+          # 镜像， flow 会替换此变量
+          image: ${IMAGE}
+          env:
+            - name: JVM_OPTIONS
+              value: '-Xms512m -Xmx512m -XX:+UseZGC -XX:+ZGenerational -XX:ZAllocationSpikeTolerance=3 -XX:+UseCompactObjectHeaders -Dspring.config.additional-location=/apps/config/application-uat.properties -Dspring.profiles.active=uat'
+          ports:
+            - containerPort: 8080
+          # 就绪探针
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 50000
+              scheme: HTTP
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 5
+          # 存活探针
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 50000
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          # 日志目录
+          volumeMounts:
+            - mountPath: /apps/logs
+              name: iam-admin-starter-logs
+            # 挂载 ConfigMap
+            - mountPath: /apps/config
+              name: iam-admin-starter
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iam-admin-starter-svc
+  # namespace: prod
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http-8080
+  selector:
+    app: iam-admin-starter
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: iam-admin-starter-ingress
+  # namespace: prod
+  annotations:
+    # 重写路径，取正则表达式的第二个变量
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    # 支持跨域
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
+    # 响应所有origin
+    nginx.ingress.kubernetes.io/cors-allow-origin: '*'
+    # 响应所有请求方法
+    nginx.ingress.kubernetes.io/cors-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+    # 可跨域的请求头
+    nginx.ingress.kubernetes.io/cors-allow-headers: Content-Type,token,path,tenant-code,app-code
+    # 需要自行创建 letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.uat.husters.cn
+      http:
+        paths:
+          - path: /(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: iam-admin-starter-svc
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - api.uat.husters.cn
+      # 需要提前导入证书，对应上名称
+      secretName: api.uat.husters.cn
