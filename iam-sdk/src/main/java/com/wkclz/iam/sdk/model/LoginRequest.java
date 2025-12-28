@@ -13,9 +13,13 @@ public class LoginRequest implements Serializable {
     private String username;
 
     /**
-     * 密码 【密码，短信验证古巴，邮件验证码 等值】
+     * 密码 【密码，短信验证码，邮件验证码 等值】
      */
     private String password;
+
+
+    private String captchaCode;
+    private String captchaId;
 
 
 }

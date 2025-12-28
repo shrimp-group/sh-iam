@@ -32,5 +32,18 @@
         )
     </insert>
 
+
+    <select id="getLoginFaildCountIn1Hour" parameterType="com.wkclz.iam.common.entity.IamLoginLog" resultType="java.lang.Integer">
+        SELECT
+            count(*) count
+        FROM
+            iam_login_log
+        WHERE
+            login_type = #{loginType}
+            AND auth_identifier = #{authIdentifier}
+            AND login_status != 0
+            AND create_time > DATE_SUB( NOW(), INTERVAL 1 HOUR )
+    </select>
+
 </mapper>
 

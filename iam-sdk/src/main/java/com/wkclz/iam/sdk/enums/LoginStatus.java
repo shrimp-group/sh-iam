@@ -54,11 +54,21 @@ public enum LoginStatus {
      * 登录尝试次数过多
      */
     TOO_MANY_ATTEMPTS(51, "登录尝试次数过多"),
-    
+
     /**
      * 验证码错误
      */
     INVALID_CAPTCHA(54, "验证码错误"),
+
+    /**
+     * 需要验证码
+     */
+    NEED_CAPTCHA(60, "需要验证码"),
+
+    /**
+     * 验证码错误
+     */
+    CAPTCHA_TIMEOUT(61, "验证码越野"),
     
     /**
      * 内部错误
