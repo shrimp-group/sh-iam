@@ -17,7 +17,7 @@ public class IamLoginLog extends BaseEntity {
     private String username;
     
     @Desc("登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等")
-    private String loginType;
+    private String authType;
     
     @Desc("登录状态：SUCCESS(成功)、FAILED(失败)")
     private Integer loginStatus;

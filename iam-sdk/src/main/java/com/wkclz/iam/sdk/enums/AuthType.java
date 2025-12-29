@@ -1,6 +1,6 @@
 package com.wkclz.iam.sdk.enums;
 
-public enum LoginType {
+public enum AuthType {
 
     PASSWORD("密码登录")
     ;
@@ -8,7 +8,7 @@ public enum LoginType {
 
     private final String desc;
 
-    LoginType(String desc) {
+    AuthType(String desc) {
         this.desc = desc;
     }
 

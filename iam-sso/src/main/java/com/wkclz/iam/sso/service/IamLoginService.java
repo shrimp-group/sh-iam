@@ -4,10 +4,12 @@ import com.alibaba.fastjson2.JSON;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
+import com.wkclz.iam.common.helper.PasswordHelper;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
+import com.wkclz.iam.sdk.enums.AuthType;
 import com.wkclz.iam.sdk.enums.LoginStatus;
-import com.wkclz.iam.sdk.enums.LoginType;
 import com.wkclz.iam.sdk.helper.CaptchaHelper;
+import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sdk.model.LoginRequest;
 import com.wkclz.iam.sdk.model.LoginResponse;
 import com.wkclz.iam.sdk.model.UserJwt;
@@ -22,7 +24,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -65,32 +66,32 @@ public class IamLoginService {
         // 0. 需要验证码
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
-        param.setLoginType(LoginType.PASSWORD.name());
+        param.setAuthType(AuthType.PASSWORD.name());
         Integer loginFaildCountIn1Hour = ssoLoginLogMapper.getLoginFaildCountIn1Hour(param);
         if (loginFaildCountIn1Hour > 0 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             response.setLoginStatus(LoginStatus.NEED_CAPTCHA.getCode());
             response.setLoginMessage(LoginStatus.NEED_CAPTCHA.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.NEED_CAPTCHA, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
             return response;
         }
 
         // 验证码校验
         if (StringUtils.isNotBlank(captchaId)) {
             String redisKey = CaptchaHelper.getCaptchaRedisKey(captchaId);
-            String redisCaptchaCode = redisTemplate.opsForValue().get(redisKey);
+            String redisCaptchaCode = redisTemplate.opsForValue().getAndDelete(redisKey);
 
             // 验证码不存在或已过期
             if (StringUtils.isBlank(redisCaptchaCode)) {
                 response.setLoginStatus(LoginStatus.CAPTCHA_TIMEOUT.getCode());
                 response.setLoginMessage(LoginStatus.CAPTCHA_TIMEOUT.getMessage());
-                loginLog(loginRequest, auth, LoginStatus.CAPTCHA_TIMEOUT, LoginType.PASSWORD);
+                loginLog(loginRequest, auth, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
                 return response;
             }
             // 验证码错误
             if (!captchaCode.equals(redisCaptchaCode)) {
                 response.setLoginStatus(LoginStatus.INVALID_CAPTCHA.getCode());
                 response.setLoginMessage(LoginStatus.INVALID_CAPTCHA.getMessage());
-                loginLog(loginRequest, auth, LoginStatus.INVALID_CAPTCHA, LoginType.PASSWORD);
+                loginLog(loginRequest, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
                 return response;
             }
         }
@@ -100,7 +101,7 @@ public class IamLoginService {
         if (auth ==  null) {
             response.setLoginStatus(LoginStatus.USER_NOT_FOUND.getCode());
             response.setLoginMessage("用户不存在, 或密码错误!");
-            loginLog(loginRequest, auth, LoginStatus.USER_NOT_FOUND, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
             return response;
         }
 
@@ -108,7 +109,7 @@ public class IamLoginService {
         if (auth.getAuthStatus().equals(0)) {
             response.setLoginStatus(LoginStatus.EXPIRED_ACCOUNT.getCode());
             response.setLoginMessage(LoginStatus.EXPIRED_ACCOUNT.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.EXPIRED_ACCOUNT, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
             return response;
         }
 
@@ -116,7 +117,7 @@ public class IamLoginService {
         if (auth.getUserStatus().equals(3)) {
             response.setLoginStatus(LoginStatus.ACCOUNT_LOCKED.getCode());
             response.setLoginMessage(LoginStatus.ACCOUNT_LOCKED.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_LOCKED, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
             return response;
         }
 
@@ -124,15 +125,15 @@ public class IamLoginService {
         if (auth.getUserStatus().equals(2)) {
             response.setLoginStatus(LoginStatus.ACCOUNT_DISABLED.getCode());
             response.setLoginMessage(LoginStatus.ACCOUNT_DISABLED.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_DISABLED, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
             return response;
         }
 
         // 5. 密码错误
-        if (!auth.getPassword().equals(password)) {
+        if (!PasswordHelper.validatePassword(password, auth.getSalt(), auth.getPassword())) {
             response.setLoginStatus(LoginStatus.INVALID_CREDENTIALS.getCode());
             response.setLoginMessage(LoginStatus.INVALID_CREDENTIALS.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.INVALID_CREDENTIALS, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
             return response;
         }
 
@@ -145,7 +146,7 @@ public class IamLoginService {
         if (passwordExpireAt < System.currentTimeMillis()) {
             response.setLoginStatus(LoginStatus.EXPIRED_PASSWORD.getCode());
             response.setLoginMessage(LoginStatus.EXPIRED_PASSWORD.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.EXPIRED_PASSWORD, LoginType.PASSWORD);
+            loginLog(loginRequest, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
             return response;
         }
 
@@ -172,7 +173,7 @@ public class IamLoginService {
         response.setLoginStatus(LoginStatus.SUCCESS.getCode());
         response.setLoginMessage(LoginStatus.SUCCESS.getMessage());
         response.setToken(jwtToken);
-        loginLog(loginRequest, auth, LoginStatus.SUCCESS, LoginType.PASSWORD);
+        loginLog(loginRequest, auth, LoginStatus.SUCCESS, AuthType.PASSWORD);
 
         // 登录成功，需要更新的信息
         IamUserAuth userAuth = new IamUserAuth();
@@ -184,11 +185,28 @@ public class IamLoginService {
     }
 
 
+    public void logout(HttpServletRequest request) {
+        String token = SessionHelper.getToken(request);
+        if (StringUtils.isBlank(token)) {
+            return;
+        }
+        UserSession userSession = SessionHelper.getUserSession(request);
+        if (userSession == null) {
+            return;
+        }
 
-    private void loginLog(LoginRequest loginRequest, IamUserAuthDto auth, LoginStatus loginStatus, LoginType loginType) {
+        String tokenRedisKey = JwtUtil.getTokenRedisKey(token, userSession.getUsername());
+        redisTemplate.opsForValue().getAndDelete(tokenRedisKey);
+    }
+
+
+
+
+
+    private void loginLog(LoginRequest loginRequest, IamUserAuthDto auth, LoginStatus loginStatus, AuthType loginType) {
         IamLoginLog log = new IamLoginLog();
         log.setAuthIdentifier(loginRequest.getUsername());
-        log.setLoginType(loginType.name());
+        log.setAuthType(loginType.name());
         log.setLoginStatus(loginStatus.getCode());
         log.setMessage(loginStatus.getMessage());
         log.setCreateBy(loginRequest.getUsername());

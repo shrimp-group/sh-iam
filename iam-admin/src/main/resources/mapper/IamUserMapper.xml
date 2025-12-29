@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.admin.mapper.IamUserMapper">
+
+    <select id="getUserList" parameterType="com.wkclz.iam.common.entity.IamUser" resultType="com.wkclz.iam.common.entity.IamUser">
+        SELECT
+            id,
+            user_code,
+            username,
+            nickname,
+            email,
+            phone,
+            avatar,
+            user_status,
+            create_time,
+            create_by,
+            update_time,
+            update_by,
+            remark,
+            version
+        FROM
+            iam_user
+        WHERE
+            deleted = 0
+            <if test="userCode != null">AND user_code = #{userCode}</if>
+            <if test="username != null">AND username LIKE CONCAT('%', #{username}, '%')</if>
+            <if test="nickname != null">AND nickname LIKE CONCAT('%', #{nickname}, '%')</if>
+            <if test="email != null">AND email LIKE CONCAT('%', #{email}, '%')</if>
+            <if test="phone != null">AND phone LIKE CONCAT('%', #{phone}, '%')</if>
+            <if test="userStatus != null">AND user_status = #{userStatus}</if>
+        ORDER BY
+            id DESC
+    </select>
+
+</mapper>

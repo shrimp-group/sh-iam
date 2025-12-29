@@ -8,7 +8,7 @@
             <if test="authIdentifier != null">auth_identifier,</if>
             <if test="userCode != null">user_code,</if>
             <if test="username != null">username,</if>
-            <if test="loginType != null">login_type,</if>
+            <if test="authType != null">auth_type,</if>
             <if test="loginStatus != null">login_status,</if>
             <if test="message != null">message,</if>
             <if test="ipAddress != null">ip_address,</if>
@@ -21,7 +21,7 @@
             <if test="authIdentifier != null">#{authIdentifier},</if>
             <if test="userCode != null">#{userCode},</if>
             <if test="username != null">#{username},</if>
-            <if test="loginType != null">#{loginType},</if>
+            <if test="authType != null">#{authType},</if>
             <if test="loginStatus != null">#{loginStatus},</if>
             <if test="message != null">#{message},</if>
             <if test="ipAddress != null">#{ipAddress},</if>
@@ -39,7 +39,7 @@
         FROM
             iam_login_log
         WHERE
-            login_type = #{loginType}
+            auth_type = #{authType}
             AND auth_identifier = #{authIdentifier}
             AND login_status != 0
             AND create_time > DATE_SUB( NOW(), INTERVAL 1 HOUR )

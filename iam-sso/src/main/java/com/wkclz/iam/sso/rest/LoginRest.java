@@ -8,6 +8,7 @@ import com.wkclz.iam.sso.service.IamLoginService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,5 +28,12 @@ public class LoginRest {
         LoginResponse response = iamLoginService.loginByUsernameAndPassword(request, loginRequest);
         return R.ok(response);
     }
+
+    @GetMapping(Route.PUBLIC_SSO_LOGOUT)
+    public R publicSsoLogout(HttpServletRequest request) {
+        iamLoginService.logout(request);
+        return R.ok();
+    }
+
 
 }

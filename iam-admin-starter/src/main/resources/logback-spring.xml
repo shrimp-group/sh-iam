@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 引入默认的日志配置
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    -->
+    <springProperty scope="context" name="spring.application.name" source="spring.application.name" defaultValue="default"/>
+    <property name="patternBack" value="%d{yyyy-MM-dd HH:mm:ss.SSS}|${spring.application.name}|%X{tenant-code}|%X{username}|%-4level|%thread|%-36logger{36}|%-3L |%msg%n"/>
+    <property name="pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS}|%X{username}|%-4level|%thread|%-36logger{36}|%-3L |%msg%n"/>
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <!--
+        <encoder><pattern>${pattern}</pattern></encoder>
+        -->
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <!-- 自定义layout -->
+            <layout class="com.wkclz.core.log.MaskingPatternLayout">
+                <!--json 密码格式 -->
+                <maskPattern>\"password\"\s*:\s*\"(.*?)\"</maskPattern>
+                <!--
+                手机号格式
+                <maskPattern>((1\d{2})\d{8})</maskPattern>
+                邮箱格式
+                <maskPattern>(\w+@\w+\.\w+)</maskPattern>
+                -->
+                <Pattern>${pattern}</Pattern>
+            </layout>
+        </encoder>
+    </appender>
+
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>./logs/${spring.application.name}.log</File>
+        <!--
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        -->
+        <!-- 不脱敏
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${pattern}</pattern>
+        </encoder>
+        -->
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <!-- 自定义layout -->
+            <layout class="com.wkclz.core.log.MaskingPatternLayout">
+                <!--json 密码格式 -->
+                <maskPattern>\"password\"\s*:\s*\"(.*?)\"</maskPattern>
+                <!--
+                手机号格式
+                <maskPattern>((1\d{2})\d{8})</maskPattern>
+                邮箱格式
+                <maskPattern>(\w+@\w+\.\w+)</maskPattern>
+                -->
+                <Pattern>${pattern}</Pattern>
+            </layout>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <FileNamePattern>./logs/${spring.application.name}.%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+            <MaxFileSize>1024MB</MaxFileSize>
+            <MaxHistory>30</MaxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <springProfile name="local,dev,sit,uat,prod">
+        <root level="info">
+            <appender-ref ref="console"/>
+            <appender-ref ref="file"/>
+        </root>
+    </springProfile>
+
+</configuration>

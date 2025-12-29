@@ -14,6 +14,9 @@ public interface Route {
     @Desc("sso 单点登录")
     String PUBLIC_SSO_LOGIN = "/iam-sso/public/sso/login";
 
+    @Desc("sso 单点登出")
+    String PUBLIC_SSO_LOGOUT = "/iam-sso/public/sso/logout";
+
     @Desc("sso 用户信息")
     String USER_INFO = "/iam-sso/user/info";
 

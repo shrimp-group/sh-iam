@@ -88,8 +88,8 @@ public class CaptchaHelper {
         // 绘制验证码字符
         drawCaptchaCharacters(g, captchaCode);
         // 添加边框
-        g.setColor(Color.GRAY);
-        g.drawRect(0, 0, WIDTH - 1, HEIGHT - 1);
+        // g.setColor(Color.GRAY);
+        // g.drawRect(0, 0, WIDTH - 1, HEIGHT - 1);
         // 释放资源
         g.dispose();
         // 将图片转换为base64
