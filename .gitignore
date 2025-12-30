@@ -7,6 +7,11 @@ application-local.yml
 target
 .flattened-pom.xml
 
+# nodejs
+node_modules
+*.lock
+
+
 # idea
 .idea
 
