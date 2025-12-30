@@ -19,3 +19,8 @@ export const userInfo = () => {
 export const userMenuTree = () => {
   return request({url: '/iam-sso/user/menu/tree', method: 'get'})
 }
+
+export const ssoRegister = (data) => {
+  return request({url: '/iam-sso/public/sso/register', method: 'post', data})
+}
+

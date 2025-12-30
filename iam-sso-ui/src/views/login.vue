@@ -28,11 +28,10 @@
             {{loginMessage}}
           </span>
         </div>
-        <!--
+        <el-divider />
         <div style="float: right;" v-if="register">
           <router-link class="link-type" :to="'/register'">立即注册</router-link>
         </div>
-        -->
       </el-form-item>
     </el-form>
     <!--  底部  -->
@@ -71,7 +70,7 @@ const loginRules = {
 const codeUrl = ref("")
 const loading = ref(false)
 // 注册开关
-const register = ref(false)
+const register = ref(true)
 const redirect = ref(undefined)
 
 watch(route, (newRoute) => {
@@ -121,11 +120,12 @@ function getCode() {
 <style lang='scss' scoped>
 .login {
   display: flex;
-  justify-content: center;
+  justify-content: right;
   align-items: center;
   height: 100%;
   background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
+  padding-right: 15%;
 }
 .title {
   margin: 0px auto 30px auto;
@@ -165,6 +165,11 @@ function getCode() {
     vertical-align: middle;
   }
 }
+
+.el-divider--horizontal {
+  margin: 24px 0 0 0;
+}
+
 .el-login-footer {
   height: 40px;
   line-height: 40px;
