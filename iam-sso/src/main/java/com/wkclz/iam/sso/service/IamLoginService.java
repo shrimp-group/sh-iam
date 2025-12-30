@@ -67,8 +67,9 @@ public class IamLoginService {
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
         param.setAuthType(AuthType.PASSWORD.name());
-        Integer loginFaildCountIn1Hour = ssoLoginLogMapper.getLoginFaildCountIn1Hour(param);
-        if (loginFaildCountIn1Hour > 0 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
+        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLoginFaildCountIn1Hour(param);
+        if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
+                && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             response.setLoginStatus(LoginStatus.NEED_CAPTCHA.getCode());
             response.setLoginMessage(LoginStatus.NEED_CAPTCHA.getMessage());
             loginLog(loginRequest, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
@@ -88,7 +89,7 @@ public class IamLoginService {
                 return response;
             }
             // 验证码错误
-            if (!captchaCode.equals(redisCaptchaCode)) {
+            if (!captchaCode.equalsIgnoreCase(redisCaptchaCode)) {
                 response.setLoginStatus(LoginStatus.INVALID_CAPTCHA.getCode());
                 response.setLoginMessage(LoginStatus.INVALID_CAPTCHA.getMessage());
                 loginLog(loginRequest, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
@@ -142,7 +143,7 @@ public class IamLoginService {
 
         ZonedDateTime zonedDateTime = auth.getLastChangedTime().atZone(ZoneId.systemDefault());
         long timestamp = zonedDateTime.toInstant().toEpochMilli();
-        long passwordExpireAt = timestamp + passwordExpireDays + 24 * 60 * 60 * 1000L;
+        long passwordExpireAt = timestamp + passwordExpireDays * 24 * 60 * 60 * 1000L;
         if (passwordExpireAt < System.currentTimeMillis()) {
             response.setLoginStatus(LoginStatus.EXPIRED_PASSWORD.getCode());
             response.setLoginMessage(LoginStatus.EXPIRED_PASSWORD.getMessage());

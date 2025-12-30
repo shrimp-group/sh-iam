@@ -68,7 +68,7 @@ public enum LoginStatus {
     /**
      * 验证码错误
      */
-    CAPTCHA_TIMEOUT(61, "验证码越野"),
+    CAPTCHA_TIMEOUT(61, "验证码超时"),
     
     /**
      * 内部错误
