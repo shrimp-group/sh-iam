@@ -3,7 +3,7 @@ package com.wkclz.iam.sso;
 import com.wkclz.core.annotation.Desc;
 import com.wkclz.core.annotation.Router;
 
-@Router(value = "iam-sso")
+@Router(module = "iam-sso", prefix = Route.PREFIX)
 public interface Route {
 
     String PREFIX = "/iam-sso";

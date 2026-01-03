@@ -2,8 +2,10 @@ package com.wkclz.iam.admin.init;
 
 import com.wkclz.iam.admin.service.IamApiService;
 import com.wkclz.iam.common.entity.IamApi;
+import com.wkclz.redis.helper.RedisIdGenerator;
 import com.wkclz.web.bean.RestInfo;
 import com.wkclz.web.helper.RestHelper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -13,11 +15,15 @@ import java.util.*;
 
 /**
  * @author shrimp
- */@Component
+ */
+@Slf4j
+@Component
 public class RestfulScan implements ApplicationRunner {
 
      @Autowired
      private IamApiService iamApiService;
+     @Autowired
+     private RedisIdGenerator redisIdGenerator;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -73,12 +79,12 @@ public class RestfulScan implements ApplicationRunner {
             } else {
                 // API不存在，需要插入
                 IamApi newApi = new IamApi();
+                newApi.setAppCode(restInfo.getAppCode());
                 newApi.setApiUri(restInfo.getUri());
                 newApi.setApiMethod(restInfo.getMethod());
                 newApi.setApiName(restInfo.getName());
                 newApi.setModule(restInfo.getModule());
-                newApi.setAppCode(restInfo.getAppCode());
-                newApi.setWriteFlag(0);
+                newApi.setWriteFlag(restInfo.getWriteFlag());
                 inserts.add(newApi);
             }
         }
@@ -94,15 +100,18 @@ public class RestfulScan implements ApplicationRunner {
 
         // 执行数据库操作
         if (!inserts.isEmpty()) {
-            iamApiService.insertBatch(inserts);
-            System.out.println("✅ 插入了 " + inserts.size() + " 个API");
+            for (IamApi insert : inserts) {
+                insert.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
+                iamApiService.insert(insert);
+            }
+            log.info("✅ 插入了 " + inserts.size() + " 个API");
         }
         
         if (!updates.isEmpty()) {
             for (IamApi update : updates) {
                 iamApiService.updateById(update);
             }
-            System.out.println("✅ 更新了 " + updates.size() + " 个API");
+            log.info("✅ 更新了 " + updates.size() + " 个API");
         }
         
         if (!deletes.isEmpty()) {
@@ -112,12 +121,12 @@ public class RestfulScan implements ApplicationRunner {
             delete.setIds(ids);
             iamApiService.deleteByIds(delete);
             */
-            System.out.println("✅ 待删除 " + deletes.size() + " 个API");
+            log.info("✅ 待删除 " + deletes.size() + " 个API");
             for (IamApi delete : deletes) {
-                System.out.println("待删除：" + delete.getApiMethod() + ":" + delete.getApiUri() + ":" + delete.getApiName());
+                log.info("待删除清单：" + delete.getApiMethod() + ":" + delete.getApiUri() + ":" + delete.getApiName());
             }
         }
 
-        System.out.println("✅ API 扫描完毕");
+        log.info("✅ API 扫描完毕");
     }
 }
