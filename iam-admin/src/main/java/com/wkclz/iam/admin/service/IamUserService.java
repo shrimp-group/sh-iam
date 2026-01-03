@@ -16,7 +16,6 @@ import com.wkclz.iam.sdk.enums.AuthType;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
-import com.wkclz.tool.tools.Md5Tool;
 import com.wkclz.tool.utils.SecretUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,7 +55,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         }
 
         // 用户入库
-        dto.setUserCode(redisIdGenerator.generateId("user_"));
+        dto.setUserCode(redisIdGenerator.generateIdWithPrefix("user_"));
         insert(dto);
 
         // 认证账号入库
