@@ -60,8 +60,8 @@ public class RestfulScan implements ApplicationRunner {
                 boolean needUpdate = false;
                 
                 // 对比属性，检查是否需要更新
-                if (!Objects.equals(existingApi.getApiName(), restInfo.getName())) {
-                    existingApi.setApiName(restInfo.getName());
+                if (!Objects.equals(existingApi.getApiName(), restInfo.getDesc())) {
+                    existingApi.setApiName(restInfo.getDesc());
                     needUpdate = true;
                 }
                 if (!Objects.equals(existingApi.getModule(), restInfo.getModule())) {
@@ -82,7 +82,7 @@ public class RestfulScan implements ApplicationRunner {
                 newApi.setAppCode(restInfo.getAppCode());
                 newApi.setApiUri(restInfo.getUri());
                 newApi.setApiMethod(restInfo.getMethod());
-                newApi.setApiName(restInfo.getName());
+                newApi.setApiName(restInfo.getDesc());
                 newApi.setModule(restInfo.getModule());
                 newApi.setWriteFlag(restInfo.getWriteFlag());
                 inserts.add(newApi);
@@ -115,12 +115,6 @@ public class RestfulScan implements ApplicationRunner {
         }
         
         if (!deletes.isEmpty()) {
-            /*
-            List<Long> ids = deletes.stream().map(BaseEntity::getId).collect(Collectors.toList());
-            IamApi delete = new IamApi();
-            delete.setIds(ids);
-            iamApiService.deleteByIds(delete);
-            */
             log.info("✅ 待删除 " + deletes.size() + " 个API");
             for (IamApi delete : deletes) {
                 log.info("待删除清单：" + delete.getApiMethod() + ":" + delete.getApiUri() + ":" + delete.getApiName());
