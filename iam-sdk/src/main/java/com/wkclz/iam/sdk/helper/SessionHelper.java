@@ -24,7 +24,7 @@ public class SessionHelper {
         // 1. 从请求头中获取token
         String token = request.getHeader("Authorization");
         if (StringUtils.isBlank(token)) {
-            token = request.getParameter("token");
+            token = request.getHeader("token");
         }
 
         if (token != null && token.startsWith("Bearer ")) {
