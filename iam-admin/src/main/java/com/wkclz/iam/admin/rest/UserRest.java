@@ -25,18 +25,18 @@ public class UserRest {
 
     @PostMapping(Route.USER_CREATE)
     public R userCreate(@RequestBody IamUserDto iamUserDto) {
-        return R.ok(iamUserService.userCreate(iamUserDto));
+        return R.ok(iamUserService.create(iamUserDto));
     }
 
 
     @PostMapping(Route.USER_UPDATE)
     public R userUpdate(@RequestBody IamUserDto iamUserDto) {
-        return R.ok(iamUserService.userCreate(iamUserDto));
+        return R.ok(iamUserService.customCreate(iamUserDto));
     }
 
     @PostMapping(Route.USER_REMOVE)
     public R userRemove(@RequestBody IamUserDto iamUserDto) {
-        return R.ok(iamUserService.userCreate(iamUserDto));
+        return R.ok(iamUserService.customCreate(iamUserDto));
     }
 
 

@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <mapper namespace="com.wkclz.iam.admin.mapper.IamUserMapper">
+
 
     <select id="getUserList" parameterType="com.wkclz.iam.common.entity.IamUser" resultType="com.wkclz.iam.common.entity.IamUser">
         SELECT
@@ -32,4 +32,6 @@
             id DESC
     </select>
 
+
 </mapper>
+
