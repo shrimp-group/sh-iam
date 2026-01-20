@@ -3,7 +3,7 @@ package com.wkclz.iam.sso;
 import com.wkclz.core.annotation.Desc;
 import com.wkclz.core.annotation.Router;
 
-@Router(value = "iam-sso")
+@Router(module = "iam-sso", prefix = Route.PREFIX)
 public interface Route {
 
     String PREFIX = "/iam-sso";
@@ -11,6 +11,8 @@ public interface Route {
 
     @Desc("sso 验证码")
     String PUBLIC_CAPTCHA_CHART = "/public/captcha/chart";
+    @Desc("sso 单点注册")
+    String PUBLIC_SSO_REGISTER = "/public/sso/register";
     @Desc("sso 单点登录")
     String PUBLIC_SSO_LOGIN = "/public/sso/login";
     @Desc("sso 单点登出")
