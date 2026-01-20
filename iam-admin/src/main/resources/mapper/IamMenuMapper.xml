@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.admin.mapper.IamMenuMapper">
+      
+    <!-- 示例查询, 可删除 -->
+    <select id="example" resultType="java.lang.Long">
+    SELECT
+      1 count
+    FROM
+      DUAL
+  </select>
+    
+    <!-- 根据用户编码查询菜单列表 -->
+    <select id="selectMenusByUserCode" parameterType="com.wkclz.iam.common.entity.IamMenu" resultType="com.wkclz.iam.common.entity.IamMenu">
+        SELECT DISTINCT
+            m.*
+        FROM
+            iam_user_role ur
+            INNER JOIN iam_role_menu rm ON rm.role_code = ur.role_code
+            INNER JOIN iam_menu m ON m.menu_code = rm.menu_code
+        WHERE
+            ur.deleted = 0
+            AND rm.deleted = 0
+            AND m.deleted = 0
+            AND ur.user_code = #{userCode}
+            AND ur.app_code = #{appCode}
+        ORDER BY
+            m.sort ASC,
+            m.id ASC
+    </select>
+    
+</mapper>
+

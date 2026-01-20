@@ -13,15 +13,9 @@
     <name>iam-sdk</name>
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>com.wkclz.framework</groupId>
-            <artifactId>sh-core</artifactId>
+            <artifactId>sh-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
