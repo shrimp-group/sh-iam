@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import logo from '~/public/favicon.svg'
+import logo from '/favicon.svg'
 import useSettingsStore from '@/store/modules/settings'
 import variables from '@/assets/styles/variables.module.scss'
 import {title} from '~/env';
