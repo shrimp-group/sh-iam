@@ -26,7 +26,7 @@ public class RestfulScan implements ApplicationRunner {
      private RedisIdGenerator redisIdGenerator;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
 
         List<IamApi> iamApis = iamApiService.selectAll();
         List<RestInfo> mapping = RestHelper.getMapping();
