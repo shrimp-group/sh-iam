@@ -20,6 +20,10 @@ public class SessionHelper {
     }
 
 
+    public static String getAppCode(HttpServletRequest request) {
+        // 1. 从请求头中获取token
+        return request.getHeader("app-code");
+    }
     public static String getToken(HttpServletRequest request) {
         // 1. 从请求头中获取token
         String token = request.getHeader("Authorization");
