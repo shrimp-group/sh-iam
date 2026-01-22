@@ -24,8 +24,6 @@ import org.springframework.stereotype.Service;
 public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
     @Autowired
-    private RestfulScan restfulScan;
-    @Autowired
     private RedisIdGenerator redisIdGenerator;
 
     public PageData<IamApi> getApiPage(IamApi entity) {
@@ -63,13 +61,6 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         return oldEntity;
     }
 
-    public void syncApi() {
-        try {
-            restfulScan.run(null);
-        } catch (Exception e) {
-            throw new RuntimeException("API同步失败：" + e.getMessage());
-        }
-    }
 
     private void duplicateCheck(IamApi entity) {
         // 唯一条件为空，直接通过
