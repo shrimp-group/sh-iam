@@ -85,10 +85,10 @@ const handleClick = (type) => {
       router.push('/system/role')
       break
     case 'permission':
-      router.push('/iam/permission')
+      router.push('/system/role')
       break
     case 'resource':
-      router.push('/iam/resource')
+      router.push('/resource/app')
       break
   }
 }

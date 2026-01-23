@@ -21,7 +21,7 @@
 import { useRouter } from 'vue-router'
 import {
   Plus, User, Avatar, Lock, DocumentCopy,
-  Setting, Shield, Bell, FileText
+  Setting, Lock as Shield, Bell, Document
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -85,11 +85,11 @@ const actions = [
   },
   {
     key: 'audit-logs',
-    icon: FileText,
+    icon: Document,
     iconClass: 'bg-gray',
     label: '审计日志',
     desc: '查看操作记录',
-    route: '/iam/audit'
+    route: '/log/login'
   }
 ]
 

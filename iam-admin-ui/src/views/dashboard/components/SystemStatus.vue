@@ -5,7 +5,7 @@
       <el-dropdown>
         <span class="dropdown-trigger">
           {{ timeRange }}
-          <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          <el-icon class="el-icon--right"><CaretBottom /></el-icon>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
@@ -58,7 +58,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { CaretBottom } from '@element-plus/icons-vue'
 
 const timeRange = ref('实时')
 

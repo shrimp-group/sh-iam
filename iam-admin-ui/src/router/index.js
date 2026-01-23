@@ -102,7 +102,7 @@ export const dynamicRoutes = [
           title: '用户管理',
           icon: 'user',
           roles: ['admin'],
-          permissions: ['system:user:list']
+          permissions: ['iam:user:list']
         }
       },
       {
@@ -113,7 +113,7 @@ export const dynamicRoutes = [
           title: '角色管理',
           icon: 'role',
           roles: ['admin'],
-          permissions: ['system:role:list']
+          permissions: ['iam:role:list']
         }
       },
       {
@@ -124,164 +124,88 @@ export const dynamicRoutes = [
           title: '菜单管理',
           icon: 'menu',
           roles: ['admin'],
-          permissions: ['system:menu:list']
+          permissions: ['iam:menu:list']
         }
-      },
-      {
-        path: 'dept',
-        component: () => import('@/views/error/404'),
-        name: 'Dept',
-        meta: {
-          title: '部门管理',
-          icon: 'dept',
-          roles: ['admin'],
-          permissions: ['system:dept:list']
-        }
-      },
-      {
-        path: 'post',
-        component: () => import('@/views/error/404'),
-        name: 'Post',
-        meta: {
-          title: '岗位管理',
-          icon: 'post',
-          roles: ['admin'],
-          permissions: ['system:post:list']
-        }
-      },
-      {
-        path: 'dict',
-        component: () => import('@/views/error/404'),
-        name: 'Dict',
-        meta: {
-          title: '字典管理',
-          icon: 'dict',
-          roles: ['admin'],
-          permissions: ['system:dict:list']
-        }
-      },
-      {
-        path: 'config',
-        component: () => import('@/views/error/404'),
-        name: 'Config',
-        meta: {
-          title: '参数设置',
-          icon: 'config',
-          roles: ['admin'],
-          permissions: ['system:config:list']
-        }
-      },
-      {
-        path: 'notice',
-        component: () => import('@/views/error/404'),
-        name: 'Notice',
-        meta: {
-          title: '通知公告',
-          icon: 'notice',
-          roles: ['admin'],
-          permissions: ['system:notice:list']
-        }
-      },
-      {
-        path: 'log',
-        component: Layout,
-        redirect: '/system/log/login',
-        name: 'Log',
-        meta: {
-          title: '日志管理',
-          icon: 'log'
-        },
-        children: [
-          {
-            path: 'login',
-            component: () => import('@/views/error/404'),
-            name: 'LoginLog',
-            meta: {
-              title: '登录日志',
-              icon: 'login-log',
-              roles: ['admin'],
-              permissions: ['system:log:login']
-            }
-          },
-          {
-            path: 'operate',
-            component: () => import('@/views/error/404'),
-            name: 'OperateLog',
-            meta: {
-              title: '操作日志',
-              icon: 'operate-log',
-              roles: ['admin'],
-              permissions: ['system:log:operate']
-            }
-          }
-        ]
       }
     ]
   },
   {
-    path: '/iam',
+    path: '/resource',
     component: Layout,
-    redirect: '/iam/permission',
-    name: 'IAM',
+    redirect: '/resource/app',
+    name: 'Resource',
     meta: {
-      title: '授权中心',
-      icon: 'iam',
+      title: '资源管理',
+      icon: 'resource',
       roles: ['admin']
     },
     children: [
       {
-        path: 'permission',
+        path: 'app',
         component: () => import('@/views/error/404'),
-        name: 'IAMPermission',
+        name: 'App',
         meta: {
-          title: '权限管理',
-          icon: 'permission',
+          title: '应用管理',
+          icon: 'app',
           roles: ['admin'],
-          permissions: ['iam:permission:list']
+          permissions: ['iam:app:list']
         }
       },
       {
-        path: 'resource',
+        path: 'api',
         component: () => import('@/views/error/404'),
-        name: 'IAMResource',
+        name: 'Api',
         meta: {
-          title: '资源管理',
-          icon: 'resource',
+          title: 'API管理',
+          icon: 'api',
           roles: ['admin'],
-          permissions: ['iam:resource:list']
+          permissions: ['iam:api:list']
         }
       },
       {
-        path: 'authorization',
+        path: 'data-dimension',
         component: () => import('@/views/error/404'),
-        name: 'Authorization',
+        name: 'DataDimension',
         meta: {
-          title: '授权管理',
-          icon: 'authorization',
+          title: '数据维度管理',
+          icon: 'data',
           roles: ['admin'],
-          permissions: ['iam:authorization:list']
+          permissions: ['iam:data-dimension:list']
+        }
+      }
+    ]
+  },
+  {
+    path: '/log',
+    component: Layout,
+    redirect: '/log/login',
+    name: 'Log',
+    meta: {
+      title: '日志管理',
+      icon: 'log',
+      roles: ['admin']
+    },
+    children: [
+      {
+        path: 'login',
+        component: () => import('@/views/error/404'),
+        name: 'LoginLog',
+        meta: {
+          title: '登录日志',
+          icon: 'login',
+          roles: ['admin'],
+          permissions: ['iam:login-log:list']
         }
       },
       {
-        path: 'policy',
+        path: 'request',
         component: () => import('@/views/error/404'),
-        name: 'IAMPolicy',
+        name: 'RequestLog',
         meta: {
-          title: '策略管理',
-          icon: 'policy',
+          title: '请求日志',
+          icon: 'request',
           roles: ['admin'],
-          permissions: ['iam:policy:list']
-        }
-      },
-      {
-        path: 'audit',
-        component: () => import('@/views/error/404'),
-        name: 'IAMAudit',
-        meta: {
-          title: '审计日志',
-          icon: 'audit',
-          roles: ['admin'],
-          permissions: ['iam:audit:list']
+          permissions: ['iam:request-log:list']
         }
       }
     ]
