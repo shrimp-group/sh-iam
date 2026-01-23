@@ -23,14 +23,10 @@ public interface Route {
     String PUBLIC_SSO_RESET_PASSWORD = "/public/sso/reset-password";
 
     // 注册模块
-    @Desc("1. sso 单点注册")
+    @Desc("1. sso 单点注册(发送验证码)")
     String PUBLIC_SSO_REGISTER = "/public/sso/register";
-    @Desc("2. sso 发送注册验证码")
-    String PUBLIC_SSO_SEND_REGISTER_CODE = "/public/sso/send-register-code";
-    @Desc("3. sso 验证注册验证码")
-    String PUBLIC_SSO_VERIFY_REGISTER_CODE = "/public/sso/verify-register-code";
-    @Desc("4. sso 激活账号")
-    String PUBLIC_SSO_ACTIVATE_ACCOUNT = "/public/sso/activate-account";
+    @Desc("2. sso 注册验证")
+    String PUBLIC_SSO_REGISTER_VERIFY = "/public/sso/register/verify";
 
     // 个人中心模块
     @Desc("1. 用户信息")
