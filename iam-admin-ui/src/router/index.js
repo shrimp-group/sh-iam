@@ -43,11 +43,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/register',
-    component: () => import('@/views/register'),
-    hidden: true
-  },
-  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404'),
     hidden: true
@@ -64,7 +59,7 @@ export const constantRoutes = [
     children: [
       {
         path: '/index',
-        component: () => import('@/views/index'),
+        component: () => import('@/views/dashboard/index'),
         name: 'Index',
         meta: { title: '首页', icon: 'dashboard', affix: true }
       }
@@ -78,7 +73,7 @@ export const constantRoutes = [
     children: [
       {
         path: 'profile/:activeTab?',
-        component: () => import('@/views/user/profile/index'),
+        component: () => import('@/views/error/404'),
         name: 'Profile',
         meta: { title: '个人中心', icon: 'user' }
       }
@@ -88,100 +83,205 @@ export const constantRoutes = [
 
 // 动态路由，基于用户权限动态去加载
 export const dynamicRoutes = [
-  // 个人中心模块
   {
-    path: '/personal',
+    path: '/system',
     component: Layout,
-    redirect: '/personal/info',
-    name: 'PersonalCenter',
+    redirect: '/system/user',
+    name: 'System',
     meta: {
-      title: '个人中心',
-      icon: 'user',
+      title: '系统管理',
+      icon: 'system',
+      roles: ['admin']
     },
     children: [
       {
-        path: 'info',
-        component: () => import('@/views/user/profile/index'),
-        name: 'PersonalInfo',
+        path: 'user',
+        component: () => import('@/views/error/404'),
+        name: 'User',
         meta: {
-          title: '个人信息',
-          icon: 'information',
+          title: '用户管理',
+          icon: 'user',
+          roles: ['admin'],
+          permissions: ['system:user:list']
         }
       },
       {
-        path: 'change-password',
-        component: () => import('@/views/user/change-password'),
-        name: 'ChangePassword',
+        path: 'role',
+        component: () => import('@/views/error/404'),
+        name: 'Role',
         meta: {
-          title: '修改密码',
-          icon: 'lock',
+          title: '角色管理',
+          icon: 'role',
+          roles: ['admin'],
+          permissions: ['system:role:list']
         }
       },
       {
-        path: 'login-records',
-        component: () => import('@/views/user/login-records'),
-        name: 'LoginRecords',
+        path: 'menu',
+        component: () => import('@/views/error/404'),
+        name: 'Menu',
         meta: {
-          title: '登录记录',
-          icon: 'record',
+          title: '菜单管理',
+          icon: 'menu',
+          roles: ['admin'],
+          permissions: ['system:menu:list']
         }
       },
       {
-        path: 'operate-logs',
-        component: () => import('@/views/user/operate-logs'),
-        name: 'OperateLogs',
+        path: 'dept',
+        component: () => import('@/views/error/404'),
+        name: 'Dept',
         meta: {
-          title: '操作日志',
-          icon: 'log',
+          title: '部门管理',
+          icon: 'dept',
+          roles: ['admin'],
+          permissions: ['system:dept:list']
         }
+      },
+      {
+        path: 'post',
+        component: () => import('@/views/error/404'),
+        name: 'Post',
+        meta: {
+          title: '岗位管理',
+          icon: 'post',
+          roles: ['admin'],
+          permissions: ['system:post:list']
+        }
+      },
+      {
+        path: 'dict',
+        component: () => import('@/views/error/404'),
+        name: 'Dict',
+        meta: {
+          title: '字典管理',
+          icon: 'dict',
+          roles: ['admin'],
+          permissions: ['system:dict:list']
+        }
+      },
+      {
+        path: 'config',
+        component: () => import('@/views/error/404'),
+        name: 'Config',
+        meta: {
+          title: '参数设置',
+          icon: 'config',
+          roles: ['admin'],
+          permissions: ['system:config:list']
+        }
+      },
+      {
+        path: 'notice',
+        component: () => import('@/views/error/404'),
+        name: 'Notice',
+        meta: {
+          title: '通知公告',
+          icon: 'notice',
+          roles: ['admin'],
+          permissions: ['system:notice:list']
+        }
+      },
+      {
+        path: 'log',
+        component: Layout,
+        redirect: '/system/log/login',
+        name: 'Log',
+        meta: {
+          title: '日志管理',
+          icon: 'log'
+        },
+        children: [
+          {
+            path: 'login',
+            component: () => import('@/views/error/404'),
+            name: 'LoginLog',
+            meta: {
+              title: '登录日志',
+              icon: 'login-log',
+              roles: ['admin'],
+              permissions: ['system:log:login']
+            }
+          },
+          {
+            path: 'operate',
+            component: () => import('@/views/error/404'),
+            name: 'OperateLog',
+            meta: {
+              title: '操作日志',
+              icon: 'operate-log',
+              roles: ['admin'],
+              permissions: ['system:log:operate']
+            }
+          }
+        ]
       }
     ]
   },
-  // 门户网站模块
   {
-    path: '/portal',
+    path: '/iam',
     component: Layout,
-    redirect: '/portal/index',
-    name: 'Portal',
+    redirect: '/iam/permission',
+    name: 'IAM',
     meta: {
-      title: '门户网站',
-      icon: 'component',
+      title: '授权中心',
+      icon: 'iam',
+      roles: ['admin']
     },
     children: [
       {
-        path: 'index',
-        component: () => import('@/views/portal/index'),
-        name: 'PortalIndex',
+        path: 'permission',
+        component: () => import('@/views/error/404'),
+        name: 'IAMPermission',
         meta: {
-          title: '首页数据',
-          icon: 'dashboard',
+          title: '权限管理',
+          icon: 'permission',
+          roles: ['admin'],
+          permissions: ['iam:permission:list']
         }
       },
       {
-        path: 'notices',
-        component: () => import('@/views/portal/notices'),
-        name: 'PortalNotices',
+        path: 'resource',
+        component: () => import('@/views/error/404'),
+        name: 'IAMResource',
         meta: {
-          title: '公告列表',
-          icon: 'notice',
+          title: '资源管理',
+          icon: 'resource',
+          roles: ['admin'],
+          permissions: ['iam:resource:list']
         }
       },
       {
-        path: 'statistics',
-        component: () => import('@/views/portal/statistics'),
-        name: 'PortalStatistics',
+        path: 'authorization',
+        component: () => import('@/views/error/404'),
+        name: 'Authorization',
         meta: {
-          title: '统计数据',
-          icon: 'statistics',
+          title: '授权管理',
+          icon: 'authorization',
+          roles: ['admin'],
+          permissions: ['iam:authorization:list']
         }
       },
       {
-        path: 'todo-list',
-        component: () => import('@/views/portal/todo-list'),
-        name: 'PortalTodoList',
+        path: 'policy',
+        component: () => import('@/views/error/404'),
+        name: 'IAMPolicy',
         meta: {
-          title: '待办事项',
-          icon: 'todo',
+          title: '策略管理',
+          icon: 'policy',
+          roles: ['admin'],
+          permissions: ['iam:policy:list']
+        }
+      },
+      {
+        path: 'audit',
+        component: () => import('@/views/error/404'),
+        name: 'IAMAudit',
+        meta: {
+          title: '审计日志',
+          icon: 'audit',
+          roles: ['admin'],
+          permissions: ['iam:audit:list']
         }
       }
     ]
