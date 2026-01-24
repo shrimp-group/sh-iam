@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.admin.mapper.IamAccessKeyMapper">
+      
+    <select id="getAccessKeyList" parameterType="com.wkclz.iam.common.entity.IamAccessKey" resultType="com.wkclz.iam.common.entity.IamAccessKey">
+        SELECT
+            id,
+            app_code,
+            access_key_id,
+            access_key,
+            secret_key,
+            enable_status,
+            enable_start,
+            enable_stop,
+            sort,
+            create_time,
+            create_by,
+            update_time,
+            update_by,
+            remark,
+            version
+        FROM
+            iam_access_key
+        WHERE
+            deleted = 0
+            <if test="appCode != null">AND app_code = #{appCode}</if>
+            <if test="accessKeyId != null">AND access_key_id = #{accessKeyId}</if>
+            <if test="enableStatus != null">AND enable_status = #{enableStatus}</if>
+        ORDER BY
+            sort ASC,
+            id ASC
+  </select>
+    
+</mapper>
