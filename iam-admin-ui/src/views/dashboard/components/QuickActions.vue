@@ -20,7 +20,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import {
-  Plus, User, Avatar, Lock, DocumentCopy,
+  Plus, User, Lock, DocumentCopy,
   Setting, Lock as Shield, Bell, Document
 } from '@element-plus/icons-vue'
 
@@ -33,7 +33,7 @@ const actions = [
     iconClass: 'bg-blue',
     label: '创建用户',
     desc: '添加新用户账号',
-    route: '/system/user'
+    route: '/user/list'
   },
   {
     key: 'create-role',
@@ -41,47 +41,47 @@ const actions = [
     iconClass: 'bg-green',
     label: '创建角色',
     desc: '新建角色并分配权限',
-    route: '/system/role'
+    route: '/user/role'
   },
   {
-    key: 'create-permission',
-    icon: Lock,
-    iconClass: 'bg-purple',
-    label: '创建权限',
-    desc: '定义系统权限规则',
-    route: '/iam/permission'
-  },
-  {
-    key: 'create-resource',
+    key: 'create-app',
     icon: DocumentCopy,
     iconClass: 'bg-orange',
-    label: '创建资源',
-    desc: '添加受保护资源',
-    route: '/iam/resource'
+    label: '创建应用',
+    desc: '添加新应用',
+    route: '/system/app'
   },
   {
-    key: 'system-setting',
+    key: 'create-api',
+    icon: Lock,
+    iconClass: 'bg-purple',
+    label: '创建接口',
+    desc: '添加新接口',
+    route: '/system/api'
+  },
+  {
+    key: 'menu-management',
     icon: Setting,
     iconClass: 'bg-cyan',
-    label: '系统设置',
-    desc: '配置系统参数',
-    route: '/system/config'
+    label: '菜单管理',
+    desc: '配置系统菜单',
+    route: '/system/menu'
   },
   {
-    key: 'security-policy',
+    key: 'data-dimension',
     icon: Shield,
     iconClass: 'bg-red',
-    label: '安全策略',
-    desc: '管理安全规则',
-    route: '/iam/policy'
+    label: '数据维度',
+    desc: '管理数据维度',
+    route: '/system/data-dimension'
   },
   {
-    key: 'notifications',
+    key: 'ak-management',
     icon: Bell,
     iconClass: 'bg-yellow',
-    label: '通知管理',
-    desc: '查看系统通知',
-    route: '/system/notice'
+    label: '密钥管理',
+    desc: '管理访问密钥',
+    route: '/system/ak'
   },
   {
     key: 'audit-logs',

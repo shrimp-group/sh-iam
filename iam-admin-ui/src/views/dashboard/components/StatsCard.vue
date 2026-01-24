@@ -79,16 +79,16 @@ const resourceChange = ref(-3)
 const handleClick = (type) => {
   switch (type) {
     case 'user':
-      router.push('/system/user')
+      router.push('/user/list')
       break
     case 'role':
-      router.push('/system/role')
+      router.push('/user/role')
       break
     case 'permission':
-      router.push('/system/role')
+      router.push('/user/role')
       break
     case 'resource':
-      router.push('/resource/app')
+      router.push('/system/app')
       break
   }
 }
