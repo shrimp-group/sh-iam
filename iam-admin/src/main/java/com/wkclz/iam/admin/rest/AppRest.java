@@ -55,9 +55,9 @@ public class AppRest {
 
 
     private void paramCheck(IamApp entity) {
-        if (entity.getId() != null) {
+        if (entity.getId() == null) {
+            // 新增时
         } else {
-            Assert.notNull(entity.getId(), "id 不能为空");
             Assert.notNull(entity.getVersion(), "version 不能为空");
         }
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");
