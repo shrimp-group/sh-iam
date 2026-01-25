@@ -82,7 +82,7 @@ export const constantRoutes = [
 ]
 
 // 动态路由，基于用户权限动态去加载
-export const dynamicRoutes = [  
+export const dynamicRoutes = [
   {
     path: '/system',
     component: Layout,
@@ -95,7 +95,7 @@ export const dynamicRoutes = [
     children: [
       {
         path: 'app',
-        component: () => import('@/views/error/404'),
+        component: () => import('@/views/system/app/index'),
         name: 'App',
         meta: {
           title: '应用管理',
@@ -204,7 +204,7 @@ export const dynamicRoutes = [
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes: constantRoutes,
+  routes: [...constantRoutes, ...dynamicRoutes],
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition
