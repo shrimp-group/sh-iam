@@ -90,8 +90,7 @@ export const dynamicRoutes = [
     name: 'System',
     meta: {
       title: '系统管理',
-      icon: 'system',
-      roles: ['admin']
+      icon: 'system'
     },
     children: [
       {
@@ -100,9 +99,7 @@ export const dynamicRoutes = [
         name: 'App',
         meta: {
           title: '应用管理',
-          icon: 'component',
-          roles: ['admin'],
-          permissions: ['iam:app:list']
+          icon: 'component'
         }
       },
       {
@@ -111,9 +108,7 @@ export const dynamicRoutes = [
         name: 'Api',
         meta: {
           title: '接口管理',
-          icon: 'swagger',
-          roles: ['admin'],
-          permissions: ['iam:api:list']
+          icon: 'swagger'
         }
       },
       {
@@ -122,9 +117,7 @@ export const dynamicRoutes = [
         name: 'Menu',
         meta: {
           title: '菜单管理',
-          icon: 'list',
-          roles: ['admin'],
-          permissions: ['iam:menu:list']
+          icon: 'list'
         }
       },
       {
@@ -133,9 +126,7 @@ export const dynamicRoutes = [
         name: 'DataDimension',
         meta: {
           title: '数据维度管理',
-          icon: 'chart',
-          roles: ['admin'],
-          permissions: ['iam:data-dimension:list']
+          icon: 'chart'
         }
       },
       {
@@ -144,9 +135,7 @@ export const dynamicRoutes = [
         name: 'AK',
         meta: {
           title: '密钥管理',
-          icon: 'lock',
-          roles: ['admin'],
-          permissions: ['iam:ak:list']
+          icon: 'lock'
         }
       }
     ]
@@ -157,9 +146,8 @@ export const dynamicRoutes = [
     redirect: '/user/list',
     name: 'User',
     meta: {
-      title: '用户管理',
-      icon: 'user',
-      roles: ['admin']
+      title: '身份管理',
+      icon: 'user'
     },
     children: [
       {
@@ -167,10 +155,8 @@ export const dynamicRoutes = [
         component: () => import('@/views/error/404'),
         name: 'UserList',
         meta: {
-          title: '用户列表',
-          icon: 'people',
-          roles: ['admin'],
-          permissions: ['iam:user:list']
+          title: '用户管理',
+          icon: 'people'
         }
       },
       {
@@ -179,9 +165,7 @@ export const dynamicRoutes = [
         name: 'Role',
         meta: {
           title: '角色管理',
-          icon: 'peoples',
-          roles: ['admin'],
-          permissions: ['iam:role:list']
+          icon: 'peoples'
         }
       }
     ]
@@ -193,8 +177,7 @@ export const dynamicRoutes = [
     name: 'Log',
     meta: {
       title: '日志管理',
-      icon: 'log',
-      roles: ['admin']
+      icon: 'log'
     },
     children: [
       {
@@ -203,9 +186,7 @@ export const dynamicRoutes = [
         name: 'LoginLog',
         meta: {
           title: '登录日志',
-          icon: 'logininfor',
-          roles: ['admin'],
-          permissions: ['iam:login-log:list']
+          icon: 'logininfor'
         }
       },
       {
@@ -214,9 +195,7 @@ export const dynamicRoutes = [
         name: 'RequestLog',
         meta: {
           title: '请求日志',
-          icon: 'monitor',
-          roles: ['admin'],
-          permissions: ['iam:request-log:list']
+          icon: 'monitor'
         }
       }
     ]
