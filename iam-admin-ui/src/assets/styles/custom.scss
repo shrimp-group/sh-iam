@@ -1,0 +1,77 @@
+// 自定义 css
+
+// 调整整个 Navbar 的高度
+.navbar {
+  height: 36px !important;
+  // Navbar 里面切换菜单格式的高度
+  .hamburger-container {
+    line-height: 36px !important;
+  }
+
+  // 右侧按钮高度
+  .right-menu {
+    line-height: 36px !important;
+  }
+
+  // 头像高度
+  .avatar-wrapper {
+    margin-top: 2px !important;
+    .user-avatar {
+      width: 32px !important;
+      height: 32px !important;
+    }
+    i {
+      top: 12px !important;
+    }
+  }
+}
+
+// 调整面包屑的高度
+.app-breadcrumb {
+  line-height: 36px !important;
+}
+
+// 调整 navbar 中，改变字体按钮的高度
+.size-icon--style {
+  line-height: 36px !important;
+}
+
+// 工作区内边距离
+.app-container {
+  margin-top: -6px;
+  padding: 6px !important;
+  .el-form-item {
+    margin-right: 12px !important;
+    margin-bottom: 8px !important;
+  }
+}
+
+// from 的右边距和下边距
+.el-form-item {
+  margin-right: 12px !important;
+  margin-bottom: 16px !important;
+}
+
+// 默认 table 高度：可视高度减固定差值
+.el-table {
+  height: calc(100vh - 166px);
+}
+
+// 修复 table 内 cell 打开图片被 row 覆盖问题
+.el-table .el-table__cell {
+  z-index: auto !important;
+}
+
+// el-drawer 的 header 太高了
+.el-drawer__header {
+  margin-bottom: 0;
+}
+
+// 分页组件高度
+.pagination-container {
+  margin-top: 0;
+  padding-top: 3px !important;
+  > div {
+    margin-right: 6px !important;
+  }
+}
