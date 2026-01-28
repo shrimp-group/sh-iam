@@ -40,6 +40,14 @@
             <groupId>com.wkclz.framework</groupId>
             <artifactId>sh-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>sh-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.wkclz.microapp</groupId>
+            <artifactId>micro-dict</artifactId>
+        </dependency>
 
     </dependencies>
 </project>
