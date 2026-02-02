@@ -15,6 +15,7 @@ import java.util.List;
 @Mapper
 public interface IamRequestLogMapper extends BaseMapper<IamRequestLog> {
 
+    Long getRequestLogCount(IamRequestLog entity);
     List<IamRequestLog> getRequestLogList(IamRequestLog entity);
 
 }

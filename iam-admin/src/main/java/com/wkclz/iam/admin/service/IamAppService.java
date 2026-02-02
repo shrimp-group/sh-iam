@@ -11,6 +11,8 @@ import com.wkclz.mybatis.service.BaseService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * Description Create by sh-generator
  * @author shrimp
@@ -53,6 +55,12 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
         deleteById(oldEntity);
         return oldEntity;
     }
+
+
+    public List<IamApp> getAppOptions() {
+        return mapper.getAppOptions();
+    }
+
 
     private void duplicateCheck(IamApp entity) {
         // 唯一条件为空，直接通过

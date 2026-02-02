@@ -29,6 +29,23 @@
             sort ASC,
             id ASC
   </select>
-    
+
+
+    <select id="getAppOptions" resultType="com.wkclz.iam.common.entity.IamApp">
+        SELECT
+            app_code,
+            app_name,
+            domain,
+            app_icon
+        FROM
+            iam_app
+        WHERE
+            deleted = 0
+        ORDER BY
+            sort ASC,
+            id ASC
+    </select>
+
+
 </mapper>
 

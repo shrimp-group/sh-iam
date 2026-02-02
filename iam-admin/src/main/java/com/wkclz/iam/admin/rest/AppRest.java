@@ -21,7 +21,7 @@ public class AppRest {
 
     @GetMapping(Route.APP_PAGE)
     public R appPage(IamApp entity) {
-        PageData<IamApp> page = iamAppService.selectPage(entity);
+        PageData<IamApp> page = iamAppService.getAppPage(entity);
         return R.ok(page);
     }
 
@@ -53,11 +53,17 @@ public class AppRest {
         return R.ok(entity);
     }
 
+    @GetMapping(Route.APP_OPTIONS)
+    public R appOptions() {
+        List<IamApp> options = iamAppService.getAppOptions();
+        return R.ok(options);
+    }
+
 
     private void paramCheck(IamApp entity) {
-        if (entity.getId() != null) {
+        if (entity.getId() == null) {
+            // 新增时
         } else {
-            Assert.notNull(entity.getId(), "id 不能为空");
             Assert.notNull(entity.getVersion(), "version 不能为空");
         }
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");

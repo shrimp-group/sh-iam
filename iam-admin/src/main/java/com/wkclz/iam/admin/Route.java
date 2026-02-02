@@ -43,6 +43,8 @@ public interface Route {
     String APP_UPDATE = "/app/update";
     @Desc("5. 应用管理-删除")
     String APP_REMOVE = "/app/remove";
+    @Desc("6. 应用管理-应用选项")
+    String APP_OPTIONS = "/app/options";
 
     // 数据权限维度管理
     @Desc("1. 数据权限维度-分页")
@@ -160,7 +162,16 @@ public interface Route {
     @Desc("2. 请求日志-详情")
     String REQUEST_LOG_INFO = "/request-log/info";
 
-
-
+    // 访问密钥管理
+    @Desc("1. 访问密钥-分页")
+    String ACCESS_KEY_PAGE = "/access-key/page";
+    @Desc("2. 访问密钥-详情")
+    String ACCESS_KEY_INFO = "/access-key/info";
+    @Desc("3. 访问密钥-创建")
+    String ACCESS_KEY_CREATE = "/access-key/create";
+    @Desc("4. 访问密钥-修改")
+    String ACCESS_KEY_UPDATE = "/access-key/update";
+    @Desc("5. 访问密钥-删除")
+    String ACCESS_KEY_REMOVE = "/access-key/remove";
 
 }

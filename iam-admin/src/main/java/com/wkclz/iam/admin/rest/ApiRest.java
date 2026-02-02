@@ -4,6 +4,7 @@ import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
 import com.wkclz.iam.common.entity.IamApi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(Route.PREFIX)
 public class ApiRest {
 
+    @Autowired
+    private RestfulScan restfulScan;
     @Autowired
     protected IamApiService iamApiService;
 
@@ -53,7 +56,7 @@ public class ApiRest {
 
     @PostMapping(Route.API_SYNC)
     public R apiSync() {
-        iamApiService.syncApi();
+        restfulScan.run(null);
         return R.ok();
     }
 

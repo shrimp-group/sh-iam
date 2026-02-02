@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.sso.mapper.SsoRequestLogMapper">
+
+  <insert id="insertLog" parameterType="com.wkclz.iam.common.entity.IamRequestLog">
+    INSERT INTO iam_request_log (
+      <trim suffixOverrides=",">
+          <if test="tenantCode != null">tenant_code, </if>
+          <if test="appCode != null">app_code, </if>
+          <if test="userAgent != null">user_agent, </if>
+          <if test="browserName != null">browser_name, </if>
+          <if test="browserVersion != null">browser_version, </if>
+          <if test="engineName != null">engine_name, </if>
+          <if test="engineVersion != null">engine_version, </if>
+          <if test="userOs != null">user_os, </if>
+          <if test="userPlatform != null">user_platform, </if>
+          <if test="characterEncoding != null">character_encoding, </if>
+          <if test="accept != null">accept, </if>
+          <if test="acceptLanguage != null">accept_language, </if>
+          <if test="acceptEncoding != null">accept_encoding, </if>
+          <if test="cookie != null">cookie, </if>
+          <if test="origin != null">origin, </if>
+          <if test="referer != null">referer, </if>
+          <if test="remoteAddr != null">remote_addr, </if>
+          <if test="method != null">method, </if>
+          <if test="httpProtocol != null">http_protocol, </if>
+          <if test="requestHost != null">request_host, </if>
+          <if test="requestUri != null">request_uri, </if>
+          <if test="queryString != null">query_string, </if>
+          <if test="requestBody != null">request_body, </if>
+          <if test="responseBody != null">response_body, </if>
+          <if test="httpStatus != null">http_status, </if>
+          <if test="location != null">location, </if>
+          <if test="isp != null">isp, </if>
+          <if test="token != null">token, </if>
+          <if test="userCode != null">user_code, </if>
+          <if test="username != null">username, </if>
+          <if test="nickname != null">nickname, </if>
+          <if test="costTime != null">cost_time, </if>
+          <if test="errorMsg != null">error_msg, </if>
+          <if test="createBy != null">create_by, </if>
+          <if test="updateBy != null">update_by, </if>
+          <if test="remark != null">remark, </if>
+      </trim>
+    ) VALUES (
+      <trim suffixOverrides=",">
+          <if test="tenantCode != null">#{tenantCode}, </if>
+          <if test="appCode != null">#{appCode}, </if>
+          <if test="userAgent != null">#{userAgent}, </if>
+          <if test="browserName != null">#{browserName}, </if>
+          <if test="browserVersion != null">#{browserVersion}, </if>
+          <if test="engineName != null">#{engineName}, </if>
+          <if test="engineVersion != null">#{engineVersion}, </if>
+          <if test="userOs != null">#{userOs}, </if>
+          <if test="userPlatform != null">#{userPlatform}, </if>
+          <if test="characterEncoding != null">#{characterEncoding}, </if>
+          <if test="accept != null">#{accept}, </if>
+          <if test="acceptLanguage != null">#{acceptLanguage}, </if>
+          <if test="acceptEncoding != null">#{acceptEncoding}, </if>
+          <if test="cookie != null">#{cookie}, </if>
+          <if test="origin != null">#{origin}, </if>
+          <if test="referer != null">#{referer}, </if>
+          <if test="remoteAddr != null">#{remoteAddr}, </if>
+          <if test="method != null">#{method}, </if>
+          <if test="httpProtocol != null">#{httpProtocol}, </if>
+          <if test="requestHost != null">#{requestHost}, </if>
+          <if test="requestUri != null">#{requestUri}, </if>
+          <if test="queryString != null">#{queryString}, </if>
+          <if test="requestBody != null">#{requestBody}, </if>
+          <if test="responseBody != null">#{responseBody}, </if>
+          <if test="httpStatus != null">#{httpStatus}, </if>
+          <if test="location != null">#{location}, </if>
+          <if test="isp != null">#{isp}, </if>
+          <if test="token != null">#{token}, </if>
+          <if test="userCode != null">#{userCode}, </if>
+          <if test="username != null">#{username}, </if>
+          <if test="nickname != null">#{nickname}, </if>
+          <if test="costTime != null">#{costTime}, </if>
+          <if test="errorMsg != null">#{errorMsg}, </if>
+          <if test="createBy != null">#{createBy}, </if>
+          <if test="updateBy != null">#{updateBy}, </if>
+          <if test="remark != null">#{remark}, </if>
+      </trim>
+    )
+  </insert>
+
+    <update id="updateMostLocation" parameterType="com.wkclz.iam.common.entity.IamRequestLog">
+        UPDATE
+          iam_request_log
+        SET
+          location = #{location},
+          isp = #{isp},
+          version = version + 1
+        WHERE
+          deleted = 0
+          AND location IS NULL
+          AND create_time > #{createTime}
+          AND remote_addr = #{remoteAddr}
+    </update>
+
+
+</mapper>
+

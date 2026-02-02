@@ -17,6 +17,8 @@ public interface IamAppMapper extends BaseMapper<IamApp> {
 
     List<IamApp> getAppList(IamApp entity);
 
+    List<IamApp> getAppOptions();
+
 
 }
 
