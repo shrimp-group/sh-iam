@@ -66,7 +66,6 @@ public class RoleRest {
             Assert.notNull(entity.getVersion(), "version 不能为空");
         }
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");
-        Assert.notNull(entity.getRoleCode(), "roleCode 不能为空");
         Assert.notNull(entity.getRoleName(), "roleName 不能为空");
     }
 

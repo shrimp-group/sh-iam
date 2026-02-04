@@ -161,7 +161,7 @@ export const dynamicRoutes = [
       },
       {
         path: 'role',
-        component: () => import('@/views/error/404'),
+        component: () => import('@/views/user/role/index'),
         name: 'Role',
         meta: {
           title: '角色管理',
