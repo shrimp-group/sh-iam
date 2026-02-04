@@ -75,9 +75,10 @@
             <template #default="{row}">{{ parseTime(row.updateTime) }}</template>
           </el-table-column>
           <el-table-column label="更新人" prop="updateBy" width="120" v-if="columns.updateBy.visible"/>
-          <el-table-column fixed="right" width="160">
+          <el-table-column fixed="right" width="240">
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
+              <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
               <el-button link type="danger" icon="Delete" @click="handleDelete(row)">删除</el-button>
             </template>
@@ -204,23 +205,30 @@ function updateBreadcrumb() {
   breadcrumb.value = [...currentPath.value];
 }
 
-function handleAdd() {
+function handleAdd(row) {
   if (!queryParams.value.appCode) {
     return;
   }
-  const param = {appCode: queryParams.value.appCode, parentCode: '0'};
+  const param = {appCode: queryParams.value.appCode, parentCode: row?.menuCode || '0'};
+  // 项级路径
   let parents = [{menuName: '顶级'}];
-  // 如果当前有路径，使用当前路径的最后一个菜单作为父菜单
+  // 当前路径
   const current = currentPath.value;
   if (current.length > 0) {
     const lastMenu = current[current.length - 1];
     param.parentCode = lastMenu.menuCode;
     parents = [...parents, ...current];
   }
-
+  // 子路径
+  if (row?.menuCode) {
+    param.parentCode = row.menuCode;
+    parents = [...parents, {menuName: row.menuName, icon: row.icon}];
+  }
   param.parents = parents;
   proxy.$refs["editRef"].init(param);
 }
+
+
 function handleUpdate(row) {
   // 为编辑的菜单添加完整的父菜单路径
   let parents = [{menuName: '顶级'}];
