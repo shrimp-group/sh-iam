@@ -1,7 +1,8 @@
 package com.wkclz.iam.admin.mapper;
 
-import com.wkclz.mybatis.mapper.BaseMapper;
+import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
+import com.wkclz.mybatis.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -16,8 +17,8 @@ import java.util.List;
 @Mapper
 public interface IamMenuMapper extends BaseMapper<IamMenu> {
 
-    // 示例查询,可删除
-    Long example();
+    List<IamMenuDto> getAppMenuList(@Param("appCode") String appCode);
+
 
     /**
      * 根据用户编码查询菜单列表

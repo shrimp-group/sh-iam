@@ -87,15 +87,17 @@ public interface Route {
     String ROLE_USER_UNBIND = "/role-user/unbind";
 
     // 菜单
-    @Desc("1. 菜单管理-树")
+    @Desc("1. 菜单管理-列表")
+    String MENU_LIST = "/menu/list";
+    @Desc("2. 菜单管理-树")
     String MENU_TREE = "/menu/tree";
-    @Desc("2. 菜单管理-详情")
+    @Desc("3. 菜单管理-详情")
     String MENU_INFO = "/menu/info";
-    @Desc("3. 菜单管理-创建")
+    @Desc("4. 菜单管理-创建")
     String MENU_CREATE = "/menu/create";
-    @Desc("4. 菜单管理-修改")
+    @Desc("5. 菜单管理-修改")
     String MENU_UPDATE = "/menu/update";
-    @Desc("5. 菜单管理-删除")
+    @Desc("6. 菜单管理-删除")
     String MENU_REMOVE = "/menu/remove";
 
     // 角色菜单关联

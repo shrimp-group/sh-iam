@@ -17,7 +17,11 @@ import java.util.List;
 public class IamMenuDto extends IamMenu {
 
 
-    List<IamMenuDto> children;
+    private Integer childrenCount;
+
+    private List<IamMenuDto> children;
+
+
 
 
 

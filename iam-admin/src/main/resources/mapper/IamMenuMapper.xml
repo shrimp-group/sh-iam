@@ -2,12 +2,38 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamMenuMapper">
       
-    <!-- 示例查询, 可删除 -->
-    <select id="example" resultType="java.lang.Long">
-    SELECT
-      1 count
-    FROM
-      DUAL
+    <select id="getAppMenuList" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamMenuDto">
+        SELECT
+            im1.id,
+            im1.app_code,
+            im1.parent_code,
+            im1.menu_code,
+            im1.menu_name,
+            im1.icon,
+            im1.menu_type,
+            im1.route_path,
+            im1.component,
+            im1.button_code,
+            im1.hidden,
+            im1.sort,
+            im1.create_time,
+            im1.create_by,
+            im1.update_time,
+            im1.update_by,
+            im1.remark,
+            im1.version,
+            COUNT(im2.id) children_count
+        FROM
+            iam_menu im1
+            LEFT JOIN iam_menu im2 ON im2.parent_code = im1.menu_code AND im2.app_code = im1.app_code AND im2.deleted = 0
+        WHERE
+            im1.deleted = 0
+            AND im1.app_code = #{appCode}
+        GROUP BY
+            im1.id
+        ORDER BY
+            im1.sort,
+            im1.id
   </select>
     
     <!-- 根据用户编码查询菜单列表 -->

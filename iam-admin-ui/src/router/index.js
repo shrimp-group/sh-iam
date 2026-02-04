@@ -113,7 +113,7 @@ export const dynamicRoutes = [
       },
       {
         path: 'menu',
-        component: () => import('@/views/error/404'),
+        component: () => import('@/views/system/menu/index'),
         name: 'Menu',
         meta: {
           title: '菜单管理',

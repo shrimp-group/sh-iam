@@ -1,7 +1,5 @@
 import request from "@/utils/request";
 
-
-// 接口管理
 // 1. 接口管理-分页
 export const apiPage = (params) => {
   return request({url: '/iam-admin/api/page', method: 'get', params: params})

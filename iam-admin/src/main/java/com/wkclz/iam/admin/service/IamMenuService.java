@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +28,10 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
 
     @Autowired
     private RedisIdGenerator redisIdGenerator;
+
+    public List<IamMenuDto> menuList(IamMenu entity) {
+        return mapper.getAppMenuList(entity.getAppCode());
+    }
 
     public List<IamMenuDto> menuTree(IamMenu entity) {
         // 查询所有菜单

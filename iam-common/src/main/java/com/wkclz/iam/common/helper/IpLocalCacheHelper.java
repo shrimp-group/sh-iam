@@ -4,6 +4,7 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSONPath;
 import com.wkclz.iam.common.entity.IamRequestLog;
+import com.wkclz.web.helper.IpHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -68,6 +69,17 @@ public class IpLocalCacheHelper {
         if (authRequestLog != null) {
             return authRequestLog;
         }
+        IamRequestLog requestLog = new IamRequestLog();
+        requestLog.setRemoteAddr(remoteAddr);
+
+        // 局域网 IP
+        if (IpHelper.isInnerAddress (remoteAddr)) {
+            requestLog.setLocation("本地局域网");
+            requestLog.setIsp("本地局域网");
+            IP_ADDR_CACHE.put(remoteAddr, requestLog);
+            return requestLog;
+        }
+
         String url = IP_LOCATION_SERVER + remoteAddr + "&_=" + System.currentTimeMillis();
 
         log.info("remoteAddr 2 location ---> url : {} ", url);
@@ -77,8 +89,6 @@ public class IpLocalCacheHelper {
         Object status = JSONPath.extract(body, "$.status");
         Object locationObj = JSONPath.extract(body, "$.data[0].location");
 
-        IamRequestLog requestLog = new IamRequestLog();
-        requestLog.setRemoteAddr(remoteAddr);
 
         if (status != null && "0".equals(status.toString()) && locationObj != null) {
             String location = locationObj.toString();

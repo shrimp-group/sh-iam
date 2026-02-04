@@ -33,7 +33,7 @@
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
           </el-form-item>
           <el-form-item style="float: right;">
-            <el-button type="primary" plain icon="Plus" @click="handleAdd">新增</el-button>
+            <el-button type="primary" plain icon="Plus" @click="handleAdd" :disabled="!queryParams.appCode">新增</el-button>
           </el-form-item>
         </el-form>
         <el-table v-loading="loading" :data="dataList">
@@ -145,7 +145,10 @@ function resetQuery() {
 }
 
 function handleAdd() {
-  proxy.$refs["editRef"].init();
+  if (!queryParams.value.appCode) {
+    return;
+  }
+  proxy.$refs["editRef"].init({appCode: queryParams.value.appCode});
 }
 function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);

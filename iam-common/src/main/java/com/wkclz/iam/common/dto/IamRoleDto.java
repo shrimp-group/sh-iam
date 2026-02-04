@@ -4,6 +4,8 @@ import com.wkclz.iam.common.entity.IamRole;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
  * Description Create by sh-generator
  * @author shrimp
@@ -14,6 +16,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class IamRoleDto extends IamRole {
 
+
+    private String childrenCount;
+
+    private List<IamRoleDto> children;
 
 
 

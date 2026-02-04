@@ -49,10 +49,10 @@ public class IamMenu extends BaseEntity {
     private String icon;
 
     /**
-     * 资源类型:菜单MENU, 按钮BUTTON
+     * 菜单类型:菜单MENU, 按钮BUTTON
      */
-    @Desc("资源类型:菜单MENU, 按钮BUTTON")
-    private String resType;
+    @Desc("菜单类型:菜单MENU, 按钮BUTTON")
+    private String menuType;
 
     /**
      * 路由地址
@@ -88,7 +88,7 @@ public class IamMenu extends BaseEntity {
         target.setMenuCode(source.getMenuCode());
         target.setMenuName(source.getMenuName());
         target.setIcon(source.getIcon());
-        target.setResType(source.getResType());
+        target.setMenuType(source.getMenuType());
         target.setRoutePath(source.getRoutePath());
         target.setComponent(source.getComponent());
         target.setButtonCode(source.getButtonCode());
@@ -112,7 +112,7 @@ public class IamMenu extends BaseEntity {
         if (source.getMenuCode() != null) { target.setMenuCode(source.getMenuCode()); }
         if (source.getMenuName() != null) { target.setMenuName(source.getMenuName()); }
         if (source.getIcon() != null) { target.setIcon(source.getIcon()); }
-        if (source.getResType() != null) { target.setResType(source.getResType()); }
+        if (source.getMenuType() != null) { target.setMenuType(source.getMenuType()); }
         if (source.getRoutePath() != null) { target.setRoutePath(source.getRoutePath()); }
         if (source.getComponent() != null) { target.setComponent(source.getComponent()); }
         if (source.getButtonCode() != null) { target.setButtonCode(source.getButtonCode()); }

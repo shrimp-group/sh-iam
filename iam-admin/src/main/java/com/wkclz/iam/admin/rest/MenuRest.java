@@ -19,6 +19,13 @@ public class MenuRest {
     @Autowired
     protected IamMenuService iamMenuService;
 
+    @GetMapping(Route.MENU_LIST)
+    public R menuList(IamMenu entity) {
+        Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
+        List<IamMenuDto> tree = iamMenuService.menuList(entity);
+        return R.ok(tree);
+    }
+
     @GetMapping(Route.MENU_TREE)
     public R menuTree(IamMenu entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
@@ -66,9 +73,8 @@ public class MenuRest {
             Assert.notNull(entity.getVersion(), "version 不能为空");
         }
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");
-        Assert.notNull(entity.getMenuCode(), "menuCode 不能为空");
         Assert.notNull(entity.getMenuName(), "menuName 不能为空");
-        Assert.notNull(entity.getResType(), "resType 不能为空");
+        Assert.notNull(entity.getMenuType(), "menuType 不能为空");
     }
 
 }

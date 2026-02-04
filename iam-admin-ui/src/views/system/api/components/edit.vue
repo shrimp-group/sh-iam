@@ -24,7 +24,7 @@
         </el-col>
         <el-col :span="10">
           <el-form-item label="应用编码" prop="appCode">
-            <el-input v-model="form.appCode" placeholder="请输入应用编码" />
+            <el-input v-model="form.appCode" placeholder="请输入应用编码" disabled/>
             <form-tip text="关联的应用编码，用于权限控制"/>
           </el-form-item>
           <el-form-item label="白名单" prop="writeFlag">
@@ -113,6 +113,7 @@ function init(row) {
   if (!row || !row.id) {
     open.value = true;
     title.value = "添加";
+    form.value.appCode = row?.appCode;
     form.value.apiMethod = 'GET';
     form.value.sort = 99;
     form.value.writeFlag = 0;
