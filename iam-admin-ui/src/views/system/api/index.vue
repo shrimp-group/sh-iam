@@ -36,15 +36,16 @@
             <el-button type="primary" plain icon="Plus" @click="handleAdd" :disabled="!queryParams.appCode">新增</el-button>
           </el-form-item>
         </el-form>
-        <el-table v-loading="loading" :data="dataList">
+        <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
+          <el-table-column type="selection" width="55" />
           <el-table-column label="ID" prop="id" width="80" v-if="columns.id.visible"/>
           <el-table-column label="模块" prop="module" width="120"/>
           <el-table-column label="应用编码" prop="appCode" width="120"/>
           <el-table-column label="请求方法" prop="apiMethod" width="120">
             <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
           </el-table-column>
-          <el-table-column label="URI" prop="apiUri" min-width="120"/>
-          <el-table-column label="接口名称" prop="apiName" min-width="120"/>
+          <el-table-column label="URI" prop="apiUri" min-width="120" sortable/>
+          <el-table-column label="接口名称" prop="apiName" min-width="120" sortable/>
           <el-table-column label="白名单" prop="writeFlag" width="80">
             <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.writeFlag" /></template>
           </el-table-column>
@@ -66,13 +67,19 @@
           </el-table-column>
         </el-table>
 
-        <pagination
-          v-show="total > 0"
-          :total="total"
-          v-model:page="queryParams.current"
-          v-model:limit="queryParams.size"
-          @pagination="getList"
-        />
+        <div>
+          <pagination
+            v-show="total > 0"
+            :total="total"
+            v-model:page="queryParams.current"
+            v-model:limit="queryParams.size"
+            @pagination="getList"/>
+          <div style="position: absolute; margin-top: -32px;">
+            <el-button type="primary" plain @click="copySelectedApis" :disabled="selectedRows.length=== 0">
+              复制为代码
+            </el-button>
+          </div>
+        </div>
       </template>
     </layout-split>
 
@@ -82,14 +89,17 @@
 
 <script setup name="IamApi">
 import { apiPage, apiRemove} from "@/api/system/api";
-import Edit from "./components/edit.vue"
+import Edit from "./components/edit"
 import AppOptions from "@/views/components/AppOptions"
+import { copy } from "@/utils/shrimp"
+
 
 const { proxy } = getCurrentInstance();
 const { BOOLEAN, API_METHOD } = proxy.useDict("BOOLEAN", "API_METHOD");
 const dataList = ref([]);
 const loading = ref(false);
 const total = ref(0);
+const selectedRows = ref([]);
 
 const appName = ref('');
 
@@ -162,6 +172,56 @@ function handleDelete(row) {
       proxy.$modal.msgSuccess("删除成功");
     })
   }).catch(() => {});
+}
+
+/** 处理表格选择变化 */
+function handleSelectionChange(selection) {
+  selectedRows.value = selection;
+}
+
+/** 复制选中的 API 接口代码 */
+function copySelectedApis() {
+  if (selectedRows.value.length === 0) {
+    proxy.$modal.msgWarning("请先选择要复制的 API 接口");
+    return;
+  }
+  let code = '';
+  selectedRows.value.forEach((api, index) => {
+    const funcName = generateFuncName(api.apiUri);
+    code += `// ${api.apiName}\nexport const ${funcName} = (params) => {\n`;
+    code += `  return request({url: '${api.apiUri}', method: '${api.apiMethod.toLowerCase()}', `;
+    if (api.apiMethod === 'GET') {
+      code += `params: params`;
+    } else {
+      code += `data: params`;
+    }
+    code += `})\n}\n\n`;
+  });
+  copy(code, "成功复制 " + selectedRows.value.length + " 个API 接口代码, 请粘贴到代码文件中!");
+}
+
+/** 生成函数名 */
+function generateFuncName(uri) {
+  if (uri.startsWith('/')) {
+    uri = uri.slice(1);
+  }
+  // 2. 按 '/' 分割路径，并移除第一段
+  const parts = uri.split('/').slice(1);
+  // 3. 将剩下的部分用 '-' 或 '_' 或其他非字母数字字符连接，再统一处理
+  // 先把每一段中的非字母数字字符全部移除
+  const cleanedParts = parts.map(part =>
+    part.replace(/[^a-zA-Z0-9]/g, '') // 移除所有非字母数字字符
+  ).filter(part => part.length > 0);  // 过滤掉空字符串
+  // 4. 转为小驼峰命名（camelCase）
+  return cleanedParts.map((part, index) => {
+    if (index === 0) {
+      // 第一部分全转小写
+      return part.toLowerCase();
+    } else {
+      // 后续部分首字母大写，其余小写
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }
+  }).join('');
 }
 
 </script>

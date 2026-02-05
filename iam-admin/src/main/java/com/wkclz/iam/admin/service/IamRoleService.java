@@ -4,12 +4,15 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamRoleMapper;
+import com.wkclz.iam.common.dto.IamRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * Description Create by sh-generator
@@ -23,6 +26,12 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
     @Autowired
     private RedisIdGenerator redisIdGenerator;
+
+
+    public List<IamRoleDto> roleList(IamRole entity) {
+        return mapper.getAppRoleList(entity.getAppCode());
+    }
+
 
     public IamRole create(IamRole entity) {
         duplicateCheck(entity);

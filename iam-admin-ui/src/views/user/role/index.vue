@@ -11,7 +11,7 @@
             <el-input v-model="queryParams.appCode" disabled style="width: 160px" @keyup.enter.native="handleQuery" />
           </el-form-item>
           <el-form-item prop="keyword">
-            <el-input v-model="keyword" placeholder="菜单名称, 快速匹配" clearable style="width: 200px" @input="handleFilter()" />
+            <el-input v-model="keyword" placeholder="角色名称" clearable style="width: 200px" @input="handleFilter()" />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">刷新</el-button>
@@ -21,7 +21,7 @@
           </el-form-item>
         </el-form>
 
-        <div class="menu-breadcrumb">
+        <div class="role-breadcrumb">
           <!-- 面包屑导航 -->
           <el-breadcrumb separator-class="el-icon-arrow-right">
             <el-breadcrumb-item @click="navigateToLevel(0)" class="breadcrumb-item">根目录</el-breadcrumb-item>
@@ -30,41 +30,31 @@
             </span>
             <span v-else>
               <el-breadcrumb-item v-for="(item, index) in breadcrumb" :key="index" @click="navigateToLevel(index + 1)" class="breadcrumb-item">
-                <span v-if="item.icon" style="margin-right: 8px;"><svg-icon :icon-class="item.icon"/></span>
-                <span>{{ item.menuName }}</span>
+                <span>{{ item.roleName }}</span>
               </el-breadcrumb-item>
             </span>
           </el-breadcrumb>
         </div>
 
         <el-table v-loading="loading" :data="showList">
-          <el-table-column label="菜单名称" prop="menuName" min-width="120">
+
+          <el-table-column label="角色名称" prop="roleName" min-width="120">
             <template #default="{row}">
               <!-- 非叶子 -->
-              <div v-if="row.childrenCount > 0" class="menu-name" @click="navigateToChild(row)">
-                <svg-icon v-if="row.icon" :icon-class="row.icon" style="margin-right: 8px;" />
-                <span>{{ row.menuName }}</span>
-                <el-icon class="menu-icon">
+              <div v-if="row.childrenCount > 0" class="role-name" @click="navigateToChild(row)">
+                <span>{{ row.roleName }}</span>
+                <el-icon class="role-icon">
                   <span>{{row.childrenCount}}</span>
                   <ArrowRight />
                 </el-icon>
               </div>
               <!-- 叶子 -->
               <div v-else>
-                <svg-icon v-if="row.icon" :icon-class="row.icon" style="margin-right: 8px;" />
-                <span>{{ row.menuName }}</span>
+                <span>{{ row.roleName }}</span>
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="菜单类型" prop="menuType" width="80">
-            <template #default="{row}"><dict-tag :options="MENU_TYPE" :value="row.menuType" /></template>
-          </el-table-column>
-          <el-table-column label="路由地址" prop="routePath" min-width="120"/>
-          <el-table-column label="组件" prop="component" min-width="120"/>
-          <el-table-column label="按钮编码" prop="buttonCode" min-width="120"/>
-          <el-table-column label="隐藏" prop="hidden" width="60">
-            <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.hidden" /></template>
-          </el-table-column>
+
           <el-table-column label="排序" prop="sort" width="60" v-if="columns.sort.visible"/>
           <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>
           <el-table-column label="创建时间" prop="createTime" width="160" v-if="columns.createTime.visible">
@@ -84,22 +74,31 @@
             </template>
           </el-table-column>
         </el-table>
+
+        <pagination
+            v-show="total > 0"
+            :total="total"
+            v-model:page="queryParams.current"
+            v-model:limit="queryParams.size"
+            @pagination="getList"
+        />
       </template>
     </layout-split>
     <edit ref="editRef" @change="getList"/>
   </div>
 </template>
 
-<script setup name="IamMenu">
-import { menuList, menuRemove} from "@/api/system/menu";
+<script setup name="IamUserRole">
+import { roleList, roleRemove} from "@/api/user/role";
 import Edit from "./components/edit"
 import AppOptions from "@/views/components/AppOptions"
 
 const { proxy } = getCurrentInstance();
-const { BOOLEAN, MENU_TYPE } = proxy.useDict("BOOLEAN", "MENU_TYPE");
+const { BOOLEAN } = proxy.useDict("BOOLEAN");
 const dataList = ref([]);
 const showList = ref([]);
 const loading = ref(false);
+const total = ref(0);
 
 const appName = ref('');
 const keyword = ref('');
@@ -117,14 +116,17 @@ const columns = ref({
 })
 
 const queryParams = ref({
+  current: 1,
+  size: 20,
+  tenantCode: undefined,
   appCode: undefined,
+  userCode: undefined,
+  roleCode: undefined,
 });
-
 
 function selectApp(row) {
   queryParams.value.appCode = row.appCode;
   appName.value = row.appName;
-  // 重置导航状态
   keyword.value = '';
   resetNavigation();
   handleQuery();
@@ -139,9 +141,10 @@ function handleQuery() {
   getList();
 }
 
+/** 查询参数列表 */
 function getList() {
   loading.value = true;
-  menuList(queryParams.value).then(res => {
+  roleList(queryParams.value).then(res => {
     dataList.value = res.data;
     keyword.value = '';
     handleFilter();
@@ -150,35 +153,37 @@ function getList() {
   });
 }
 
+
 function handleFilter() {
   showList.value = [];
   const result = [];
   if (keyword.value) {
     resetNavigation();
     // 包含筛选，按筛选的内容展示
-    for (const menu of dataList.value) {
-      if (menu.menuName.indexOf(keyword.value) > -1) {
-        result.push(menu);
+    for (const role of dataList.value) {
+      if (role.roleName.indexOf(keyword.value) > -1) {
+        result.push(role);
       }
     }
   } else {
     // 不筛选，根据当前层级展示
     const currentLevel = currentPath.value.length;
-    const parentCode = currentLevel > 0 ? currentPath.value[currentLevel - 1].menuCode : '0';
-    for (const menu of dataList.value) {
-      if (menu.parentCode === parentCode) {
-        result.push(menu);
+    const parentCode = currentLevel > 0 ? currentPath.value[currentLevel - 1].roleCode : '0';
+    for (const role of dataList.value) {
+      if (role.parentCode === parentCode) {
+        result.push(role);
       }
     }
   }
   showList.value = result;
 }
 
+
 // 导航到子菜单
-function navigateToChild(menu) {
+function navigateToChild(role) {
   // 只有当菜单有子菜单时才允许点击导航
-  if (menu.childrenCount > 0) {
-    currentPath.value.push(menu);
+  if (role.childrenCount > 0) {
+    currentPath.value.push(role);
     updateBreadcrumb();
     handleFilter();
   }
@@ -204,24 +209,25 @@ function updateBreadcrumb() {
   breadcrumb.value = [...currentPath.value];
 }
 
+
 function handleAdd(row) {
   if (!queryParams.value.appCode) {
     return;
   }
-  const param = {appCode: queryParams.value.appCode, parentCode: row?.menuCode || '0'};
+  const param = {appCode: queryParams.value.appCode, parentCode: row?.roleCode || '0'};
   // 项级路径
-  let parents = [{menuName: '顶级'}];
+  let parents = [{roleName: '顶级'}];
   // 当前路径
   const current = currentPath.value;
   if (current.length > 0) {
     const lastMenu = current[current.length - 1];
-    param.parentCode = lastMenu.menuCode;
+    param.parentCode = lastMenu.roleCode;
     parents = [...parents, ...current];
   }
   // 子路径
-  if (row?.menuCode) {
-    param.parentCode = row.menuCode;
-    parents = [...parents, {menuName: row.menuName, icon: row.icon}];
+  if (row?.roleCode) {
+    param.parentCode = row.roleCode;
+    parents = [...parents, {roleName: row.roleName}];
   }
   param.parents = parents;
   proxy.$refs["editRef"].init(param);
@@ -230,18 +236,19 @@ function handleAdd(row) {
 
 function handleUpdate(row) {
   // 为编辑的菜单添加完整的父菜单路径
-  let parents = [{menuName: '顶级'}];
+  let parents = [{roleName: '顶级'}];
   if (currentPath.value.length > 0) {
     parents = [...parents, ...currentPath.value];
   }
   row.parents = parents;
   proxy.$refs["editRef"].init(row);
 }
+
+/** 删除按钮操作 */
 function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除 :"' + row.menuName + '"？').then(() => {
-    menuRemove({id: row.id}).then(res => {
+  proxy.$modal.confirm('是否确认删除 :"' + row.roleCode + '"？').then(() => {
+    roleRemove({id: row.id}).then(res => {
       proxy.$modal.msgSuccess("删除成功");
-      // 重新加载数据并保持当前导航状态
       getList();
     })
   }).catch(() => {});
@@ -250,12 +257,12 @@ function handleDelete(row) {
 </script>
 
 <style scoped lang="scss">
-.menu-breadcrumb {
+.role-breadcrumb {
   font-size: 14px;
   margin: 8px 0;;
 }
 
-.menu-name {
+.role-name {
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -266,7 +273,7 @@ function handleDelete(row) {
   }
 }
 
-.menu-icon {
+.role-icon {
   margin-left: 4px;
 }
 

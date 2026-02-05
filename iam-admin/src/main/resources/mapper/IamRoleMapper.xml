@@ -1,13 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamRoleMapper">
-      
-    <!-- 示例查询, 可删除 -->
-    <select id="example" resultType="java.lang.Long">
-    SELECT
-      1 count
-    FROM
-      DUAL
+
+    <select id="getAppRoleList" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamRoleDto">
+        SELECT
+            r1.id,
+            r1.tenant_code,
+            r1.app_code,
+            r1.parent_code,
+            r1.role_code,
+            r1.role_name,
+            r1.sort,
+            r1.create_time,
+            r1.create_by,
+            r1.update_time,
+            r1.update_by,
+            r1.remark,
+            r1.version,
+            COUNT( r2.id ) children_count
+        FROM
+            iam_role r1
+            LEFT JOIN iam_role r2 ON r2.parent_code = r1.role_code AND r2.app_code = r1.app_code AND r2.deleted = 0
+        WHERE
+            r1.deleted = 0
+            AND r1.app_code = #{appCode}
+        GROUP BY
+            r1.id
+        ORDER BY
+            r1.sort,
+            r1.id
+
   </select>
     
 </mapper>

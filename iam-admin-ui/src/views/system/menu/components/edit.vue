@@ -5,9 +5,9 @@
         <el-col :span="10">
           <el-form-item label="父菜单" prop="parentCode">
             <div class="parent-breadcrumb">
-              <el-breadcrumb separator-class="el-icon-arrow-right" style="font-size: 14px; padding: 8px 16px; background-color: #f9fafc; border-radius: 6px; border: 1px solid #e9ecef; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s ease;">
-                <el-breadcrumb-item v-for="(item, index) in parents" :key="index" style="color: #495057; font-weight: 500; display: flex; align-items: center;">
-                  <svg-icon v-if="item.icon" :icon-class="item.icon" style="margin-right: 6px; color: #409eff; font-size: 12px;" />
+              <el-breadcrumb separator-class="el-icon-arrow-right" class="menu-breadcrumb">
+                <el-breadcrumb-item v-for="(item, index) in parents" :key="index" class="menu-breadcrumb-item">
+                  <svg-icon v-if="item.icon" :icon-class="item.icon" class="menu-breadcrumb-icon" />
                   <span>{{ item.menuName }}</span>
                 </el-breadcrumb-item>
               </el-breadcrumb>
@@ -61,7 +61,20 @@
               "/>
             </el-form-item>
             <el-form-item label="图标" prop="icon">
-              <el-input v-model="form.icon" placeholder="请输入图标" />
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <el-input v-model="form.icon" placeholder="请输入图标" style="flex: 1;">
+                  <template #prefix>
+                    <svg-icon v-if="form.icon" :icon-class="form.icon" class="el-input__icon" style="height: 32px;width: 16px;" />
+                    <el-icon v-else style="height: 32px;width: 16px;"><search /></el-icon>
+                  </template>
+                </el-input>
+                <el-popover placement="bottom" :width="400" trigger="click">
+                  <template #reference>
+                    <el-button type="primary" plain size="small">选择图标</el-button>
+                  </template>
+                  <IconSelect :active-icon="form.icon" @selected="(icon) => form.icon = icon"/>
+                </el-popover>
+              </div>
               <form-tip text="菜单图标，使用Element Plus图标名称"/>
             </el-form-item>
             <el-form-item label="隐藏" prop="hidden">
@@ -82,7 +95,7 @@
               <form-tip text="同一菜单下，按钮编码需要唯一"/>
             </el-form-item>
 
-            <div>
+            <el-form-item>
               <span>快捷填充:</span>
               <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
                 <el-button type="primary" plain size="small" @click="fillButton('分页', 'page')">分页</el-button>
@@ -94,7 +107,7 @@
                 <el-button type="primary" plain size="small" @click="fillButton('导入', 'import')">导入</el-button>
                 <el-button type="primary" plain size="small" @click="fillButton('导出', 'export')">导出</el-button>
               </div>
-            </div>
+            </el-form-item>
 
           </div>
         </el-col>
@@ -112,6 +125,8 @@
 
 <script setup name="IamMenuEdit">
 import {menuInfo, menuCreate, menuUpdate} from "@/api/system/menu";
+import IconSelect from "@/components/IconSelect/index.vue";
+import { ref, getCurrentInstance } from "vue";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);
@@ -142,8 +157,14 @@ const rules = ref({
   buttonCode: [
     { required: true, message: "按钮编码不能为空", trigger: "blur" },
   ],
+  component: [
+    { required: true, message: "页面组件不能为空", trigger: "blur" },
+  ],
   routePath: [
     { required: true, message: "路由地址不能为空", trigger: "blur" },
+  ],
+  hidden: [
+    { required: true, message: "隐藏不能为空", trigger: "blur" }
   ],
   sort: [
     { required: true, message: "排序不能为空", trigger: "blur" }
@@ -222,4 +243,30 @@ function submitForm() {
   });
 }
 </script>
+
+<style scoped lang="scss">
+.menu-breadcrumb {
+  font-size: 14px;
+  padding: 8px 16px;
+  background-color: #f9fafc;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.menu-breadcrumb-item {
+  color: #495057;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.menu-breadcrumb-icon {
+  margin-right: 6px;
+  color: #409eff;
+  font-size: 12px;
+}
+
+</style>
 

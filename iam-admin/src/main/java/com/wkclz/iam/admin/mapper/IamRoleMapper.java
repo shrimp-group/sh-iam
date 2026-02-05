@@ -1,8 +1,12 @@
 package com.wkclz.iam.admin.mapper;
 
-import com.wkclz.mybatis.mapper.BaseMapper;
+import com.wkclz.iam.common.dto.IamRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
+import com.wkclz.mybatis.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * Description Create by sh-generator
@@ -13,8 +17,7 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IamRoleMapper extends BaseMapper<IamRole> {
 
-    // 示例查询,可删除
-    Long example();
+    List<IamRoleDto> getAppRoleList(@Param("appCode") String appCode);
 
 }
 

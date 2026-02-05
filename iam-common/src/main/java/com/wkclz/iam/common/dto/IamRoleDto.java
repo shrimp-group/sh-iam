@@ -17,10 +17,8 @@ import java.util.List;
 public class IamRoleDto extends IamRole {
 
 
-    private String childrenCount;
-
+    private Integer childrenCount;
     private List<IamRoleDto> children;
-
 
 
     /**

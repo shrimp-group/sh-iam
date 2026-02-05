@@ -22,7 +22,7 @@ public class ApiRest {
 
     @GetMapping(Route.API_PAGE)
     public R apiPage(IamApi entity) {
-        PageData<IamApi> page = iamApiService.selectPage(entity);
+        PageData<IamApi> page = iamApiService.getApiPage(entity);
         return R.ok(page);
     }
 

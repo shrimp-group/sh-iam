@@ -4,7 +4,7 @@ import com.wkclz.core.base.R;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamRoleService;
-import com.wkclz.iam.common.entity.IamMenu;
+import com.wkclz.iam.common.dto.IamRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -22,7 +22,7 @@ public class RoleRest {
     @GetMapping(Route.ROLE_LIST)
     public R roleList(IamRole entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
-        List<IamRole> iamRoles = iamRoleService.selectByEntity(entity);
+        List<IamRoleDto> iamRoles = iamRoleService.roleList(entity);
         return R.ok(iamRoles);
     }
 
@@ -66,7 +66,6 @@ public class RoleRest {
             Assert.notNull(entity.getVersion(), "version 不能为空");
         }
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");
-        Assert.notNull(entity.getRoleCode(), "roleCode 不能为空");
         Assert.notNull(entity.getRoleName(), "roleName 不能为空");
     }
 
