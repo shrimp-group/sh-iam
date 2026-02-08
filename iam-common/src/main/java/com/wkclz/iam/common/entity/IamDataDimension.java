@@ -37,16 +37,16 @@ public class IamDataDimension extends BaseEntity {
     private String dimensionName;
 
     /**
-     * 元数据脚本(优先级低)
-     */
-    @Desc("元数据脚本(优先级低)")
-    private String dimensionScript;
-
-    /**
      * 元数据数组(优先于脚本)
      */
     @Desc("元数据数组(优先于脚本)")
     private String dimensionDataJson;
+
+    /**
+     * 元数据脚本(优先级低)
+     */
+    @Desc("元数据脚本(优先级低)")
+    private String dimensionScript;
 
 
     public static IamDataDimension copy(IamDataDimension source, IamDataDimension target) {
@@ -56,8 +56,8 @@ public class IamDataDimension extends BaseEntity {
         target.setAppCode(source.getAppCode());
         target.setDimensionCode(source.getDimensionCode());
         target.setDimensionName(source.getDimensionName());
-        target.setDimensionScript(source.getDimensionScript());
         target.setDimensionDataJson(source.getDimensionDataJson());
+        target.setDimensionScript(source.getDimensionScript());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -75,8 +75,8 @@ public class IamDataDimension extends BaseEntity {
         if (source.getAppCode() != null) { target.setAppCode(source.getAppCode()); }
         if (source.getDimensionCode() != null) { target.setDimensionCode(source.getDimensionCode()); }
         if (source.getDimensionName() != null) { target.setDimensionName(source.getDimensionName()); }
-        if (source.getDimensionScript() != null) { target.setDimensionScript(source.getDimensionScript()); }
         if (source.getDimensionDataJson() != null) { target.setDimensionDataJson(source.getDimensionDataJson()); }
+        if (source.getDimensionScript() != null) { target.setDimensionScript(source.getDimensionScript()); }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }

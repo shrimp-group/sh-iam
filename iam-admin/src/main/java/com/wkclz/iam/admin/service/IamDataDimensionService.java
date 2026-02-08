@@ -1,11 +1,14 @@
 package com.wkclz.iam.admin.service;
 
+import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamDataDimensionMapper;
 import com.wkclz.iam.common.entity.IamDataDimension;
+import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -18,6 +21,9 @@ import org.springframework.util.Assert;
 @Service
 public class IamDataDimensionService extends BaseService<IamDataDimension, IamDataDimensionMapper> {
 
+    public PageData<IamDataDimension> getDataDimensionPage(IamDataDimension entity) {
+        return PageQuery.page(entity, mapper::getDataDimensionList);
+    }
 
     public IamDataDimension create(IamDataDimension entity) {
         duplicateCheck(entity);
@@ -54,13 +60,14 @@ public class IamDataDimensionService extends BaseService<IamDataDimension, IamDa
 
     private void duplicateCheck(IamDataDimension entity) {
         // 唯一条件为空，直接通过
-        if (true) {
+        if (StringUtils.isBlank(entity.getDimensionCode())) {
             return;
         }
         
         // 唯一条件不为空，请设置唯一条件
         IamDataDimension param = new IamDataDimension();
         // 唯一条件
+        param.setAppCode(entity.getDimensionCode());
         param = selectOneByEntity(param);
         if (param == null) {
             return;

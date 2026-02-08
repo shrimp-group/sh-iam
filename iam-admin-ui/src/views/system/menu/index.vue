@@ -101,7 +101,6 @@ const dataList = ref([]);
 const showList = ref([]);
 const loading = ref(false);
 
-const appName = ref('');
 const keyword = ref('');
 // 菜单导航相关变量
 const currentPath = ref([]);
@@ -123,7 +122,6 @@ const queryParams = ref({
 
 function selectApp(row) {
   queryParams.value.appCode = row.appCode;
-  appName.value = row.appName;
   // 重置导航状态
   keyword.value = '';
   resetNavigation();

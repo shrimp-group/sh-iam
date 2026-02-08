@@ -101,8 +101,6 @@ const loading = ref(false);
 const total = ref(0);
 const selectedRows = ref([]);
 
-const appName = ref('');
-
 const columns = ref({
   id: {label: "ID", visible: false},
   sort: {label: "排序", visible: true},
@@ -126,7 +124,6 @@ const queryParams = ref({
 
 function selectApp(row) {
   queryParams.value.appCode = row.appCode;
-  appName.value = row.appName;
   handleQuery();
 }
 

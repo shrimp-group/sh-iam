@@ -122,7 +122,7 @@ export const dynamicRoutes = [
       },
       {
         path: 'data-dimension',
-        component: () => import('@/views/error/404'),
+        component: () => import('@/views/system/dimension/index'),
         name: 'DataDimension',
         meta: {
           title: '数据维度管理',
