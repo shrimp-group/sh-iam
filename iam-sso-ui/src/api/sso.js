@@ -12,12 +12,12 @@ export const ssoLogout = () => {
     return request({url: '/iam-sso/public/sso/logout', method: 'get'})
 }
 
-export const userInfo = () => {
+export const getUserInfo = () => {
   return request({url: '/iam-sso/user/info', method: 'get'})
 }
 
 export const userMenuTree = () => {
-  return request({url: '/iam-sso/user/menu/tree', method: 'get'})
+  return request({url: '/iam-sso/user/menu/tree/ruoyi', method: 'get'})
 }
 
 export const ssoRegister = (data) => {

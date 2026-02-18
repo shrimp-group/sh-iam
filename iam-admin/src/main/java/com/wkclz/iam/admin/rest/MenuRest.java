@@ -2,10 +2,12 @@ package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.R;
 import com.wkclz.core.enums.ResultCode;
+import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamMenuService;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
@@ -75,6 +77,11 @@ public class MenuRest {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");
         Assert.notNull(entity.getMenuName(), "menuName 不能为空");
         Assert.notNull(entity.getMenuType(), "menuType 不能为空");
+
+        if ("0".equals(entity.getParentCode()) && StringUtils.isNotBlank(entity.getRoutePath()) && !entity.getRoutePath().startsWith("/")) {
+            throw ValidationException.of("一缓步路由的路径必需以 / 开头!");
+        }
+
     }
 
 }

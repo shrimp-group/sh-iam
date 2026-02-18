@@ -18,6 +18,7 @@ import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
+import com.wkclz.tool.tools.RsaTool;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,9 +58,15 @@ public class IamLoginService {
         LoginResponse response = new LoginResponse();
 
         String username = loginRequest.getUsername();
-        String password = loginRequest.getPassword();
         String captchaCode = loginRequest.getCaptchaCode();
         String captchaId = loginRequest.getCaptchaId();
+
+        // 密码解密
+        String password = loginRequest.getPassword();
+        String privateKey = iamSsoConfig.getPrivateKey();
+        if (StringUtils.isNotBlank(privateKey) && password.length() > 32) {
+            password = RsaTool.decryptByPrivateKey(password, privateKey);
+        }
 
         IamUserAuthDto auth = ssoLoginMapper.getUserAuth4PasswordByUsername(username);
 

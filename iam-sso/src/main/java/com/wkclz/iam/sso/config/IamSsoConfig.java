@@ -15,4 +15,11 @@ public class IamSsoConfig {
     @Value("${iam.sso.password.expire-days:180}")
     private Integer passwordExpireDays;
 
+    @Value("${iam.login.public-key:}")
+    private String publicKey;
+    @Value("${iam.login.private-key:}")
+    private String privateKey;
+
+
+
 }

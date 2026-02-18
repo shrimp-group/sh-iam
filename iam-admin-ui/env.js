@@ -1,5 +1,5 @@
 const name = "授权中心";
-export const appCode = 'sh-admin';
+export const appCode = 'iam-admin';
 
 const configs = {
   "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "/api"},

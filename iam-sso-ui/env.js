@@ -1,9 +1,9 @@
 const name = "单点登录";
-export const appCode = 'sh-sso';
+export const appCode = 'iam-sso';
 
 const configs = {
-//"local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "/api"},
-  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
+  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "/api"},
+//  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
   "uat"  : {"cas": "http://cas.uat.husters.cn", "title": name + "【UAT】",   "baseApi": "https://api.uat.husters.cn"},
   "prod" : {"cas": "http://cas.husters.cn",     "title": name,               "baseApi": "https://api.husters.cn"}
 };

@@ -38,18 +38,17 @@ const usePermissionStore = defineStore(
           userMenuTree().then(res => {
             const sdata = JSON.parse(JSON.stringify(res.data))
             const rdata = JSON.parse(JSON.stringify(res.data))
-            const defaultData = JSON.parse(JSON.stringify(res.data))
+            const ddata = JSON.parse(JSON.stringify(res.data))
+
             const sidebarRoutes = filterAsyncRouter(sdata)
             const rewriteRoutes = filterAsyncRouter(rdata, false, true)
-            const defaultRoutes = filterAsyncRouter(defaultData)
-            /*
-            const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
-            asyncRoutes.forEach(route => { router.addRoute(route) })
-            */
+            const defaultRoutes = filterAsyncRouter(ddata)
+
             this.setRoutes(rewriteRoutes)
             this.setSidebarRouters(constantRoutes.concat(sidebarRoutes))
-            this.setDefaultRoutes(sidebarRoutes.concat(dynamicRoutes))
+            this.setDefaultRoutes(sidebarRoutes)
             this.setTopbarRoutes(defaultRoutes)
+
             resolve(rewriteRoutes)
           })
         })
@@ -72,7 +71,8 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       } else if (route.component === 'InnerLink') {
         route.component = InnerLink
       } else {
-        route.component = loadView(route.component)
+        console.log('route.component', route);
+        route.component = loadView(route.component);
       }
     }
     if (route.children != null && route.children && route.children.length) {
@@ -117,6 +117,7 @@ export function filterDynamicRoutes(routes) {
 
 export const loadView = (view) => {
   let res
+  console.log('modules', modules);
   for (const path in modules) {
     const dir = path.split('views/')[1].split('.vue')[0]
     if (dir === view) {

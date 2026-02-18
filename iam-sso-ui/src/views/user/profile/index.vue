@@ -66,7 +66,7 @@
 import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
 import resetPwd from "./resetPwd"
-import { getUserProfile } from "@/api/system/user"
+import { getUserInfo } from "@/api/sso"
 
 const route = useRoute()
 const selectedTab = ref("userinfo")
@@ -77,7 +77,7 @@ const state = reactive({
 })
 
 function getUser() {
-  getUserProfile().then(response => {
+  getUserInfo().then(response => {
     state.user = response.data
     state.roleGroup = response.roleGroup
     state.postGroup = response.postGroup

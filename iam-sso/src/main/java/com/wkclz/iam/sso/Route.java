@@ -22,6 +22,12 @@ public interface Route {
     @Desc("6. sso 重置密码")
     String PUBLIC_SSO_RESET_PASSWORD = "/public/sso/reset-password";
 
+
+    @Desc("4. 用户菜单树")
+    String USER_MENU_TREE = "/user/menu/tree";
+    @Desc("4. 用户菜单树")
+    String USER_MENU_TREE_RUOYI = "/user/menu/tree/ruoyi";
+
     // 注册模块
     @Desc("1. sso 单点注册(发送验证码)")
     String PUBLIC_SSO_REGISTER = "/public/sso/register";
@@ -35,15 +41,13 @@ public interface Route {
     String USER_UPDATE = "/user/update";
     @Desc("3. 修改密码")
     String USER_CHANGE_PASSWORD = "/user/change-password";
-    @Desc("4. 用户菜单树")
-    String USER_MENU_TREE = "/user/menu/tree";
-    @Desc("5. 绑定手机号")
+    @Desc("4. 绑定手机号")
     String USER_BIND_PHONE = "/user/bind-phone";
-    @Desc("6. 绑定邮箱")
+    @Desc("5. 绑定邮箱")
     String USER_BIND_EMAIL = "/user/bind-email";
-    @Desc("7. 登录记录")
+    @Desc("6. 登录记录")
     String USER_LOGIN_RECORDS = "/user/login-records";
-    @Desc("8. 操作日志")
+    @Desc("7. 操作日志")
     String USER_OPERATE_RECORDS = "/user/operate-records";
 
     // 门户模块

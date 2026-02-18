@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.sso.mapper.SsoResourceMapper">
+
+    <select id="getUserMenu" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamMenuDto">
+        SELECT
+            app_code,
+            parent_code,
+            menu_code,
+            menu_name,
+            icon,
+            menu_type,
+            route_path,
+            component,
+            button_code,
+            hidden
+        FROM
+            iam_menu
+        WHERE
+            deleted = 0
+            AND app_code = #{appCode}
+        ORDER BY
+            sort ASC,
+            id ASC
+    </select>
+
+</mapper>
+

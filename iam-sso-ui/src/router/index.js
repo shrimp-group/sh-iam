@@ -58,19 +58,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '',
-    component: Layout,
-    redirect: '/index',
-    children: [
-      {
-        path: '/index',
-        component: () => import('@/views/index'),
-        name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
-      }
-    ]
-  },
-  {
     path: '/user',
     component: Layout,
     hidden: true,
@@ -87,110 +74,11 @@ export const constantRoutes = [
 ]
 
 // 动态路由，基于用户权限动态去加载
-export const dynamicRoutes = [
-  // 个人中心模块
-  {
-    path: '/personal',
-    component: Layout,
-    redirect: '/personal/info',
-    name: 'PersonalCenter',
-    meta: {
-      title: '个人中心',
-      icon: 'user',
-    },
-    children: [
-      {
-        path: 'info',
-        component: () => import('@/views/user/profile/index'),
-        name: 'PersonalInfo',
-        meta: {
-          title: '个人信息',
-          icon: 'information',
-        }
-      },
-      {
-        path: 'change-password',
-        component: () => import('@/views/user/change-password'),
-        name: 'ChangePassword',
-        meta: {
-          title: '修改密码',
-          icon: 'lock',
-        }
-      },
-      {
-        path: 'login-records',
-        component: () => import('@/views/user/login-records'),
-        name: 'LoginRecords',
-        meta: {
-          title: '登录记录',
-          icon: 'record',
-        }
-      },
-      {
-        path: 'operate-logs',
-        component: () => import('@/views/user/operate-logs'),
-        name: 'OperateLogs',
-        meta: {
-          title: '操作日志',
-          icon: 'log',
-        }
-      }
-    ]
-  },
-  // 门户网站模块
-  {
-    path: '/portal',
-    component: Layout,
-    redirect: '/portal/index',
-    name: 'Portal',
-    meta: {
-      title: '门户网站',
-      icon: 'component',
-    },
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/portal/index'),
-        name: 'PortalIndex',
-        meta: {
-          title: '首页数据',
-          icon: 'dashboard',
-        }
-      },
-      {
-        path: 'notices',
-        component: () => import('@/views/portal/notices'),
-        name: 'PortalNotices',
-        meta: {
-          title: '公告列表',
-          icon: 'notice',
-        }
-      },
-      {
-        path: 'statistics',
-        component: () => import('@/views/portal/statistics'),
-        name: 'PortalStatistics',
-        meta: {
-          title: '统计数据',
-          icon: 'statistics',
-        }
-      },
-      {
-        path: 'todo-list',
-        component: () => import('@/views/portal/todo-list'),
-        name: 'PortalTodoList',
-        meta: {
-          title: '待办事项',
-          icon: 'todo',
-        }
-      }
-    ]
-  }
-]
+export const dynamicRoutes = []
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes: constantRoutes,
+  routes: [...constantRoutes, ...dynamicRoutes],
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition

@@ -68,10 +68,6 @@ public class RestfulScan implements ApplicationRunner {
                     existingApi.setModule(restInfo.getModule());
                     needUpdate = true;
                 }
-                if (!Objects.equals(existingApi.getAppCode(), restInfo.getAppCode())) {
-                    existingApi.setAppCode(restInfo.getAppCode());
-                    needUpdate = true;
-                }
                 
                 if (needUpdate) {
                     updates.add(existingApi);

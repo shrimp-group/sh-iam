@@ -53,19 +53,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '',
-    component: Layout,
-    redirect: '/index',
-    children: [
-      {
-        path: '/index',
-        component: () => import('@/views/dashboard/index'),
-        name: 'Index',
-        meta: { title: '首页', icon: 'dashboard', affix: true }
-      }
-    ]
-  },
-  {
     path: '/user',
     component: Layout,
     hidden: true,
@@ -82,125 +69,7 @@ export const constantRoutes = [
 ]
 
 // 动态路由，基于用户权限动态去加载
-export const dynamicRoutes = [
-  {
-    path: '/system',
-    component: Layout,
-    redirect: '/system/app',
-    name: 'System',
-    meta: {
-      title: '系统管理',
-      icon: 'system'
-    },
-    children: [
-      {
-        path: 'app',
-        component: () => import('@/views/system/app/index'),
-        name: 'App',
-        meta: {
-          title: '应用管理',
-          icon: 'component'
-        }
-      },
-      {
-        path: 'api',
-        component: () => import('@/views/system/api/index'),
-        name: 'Api',
-        meta: {
-          title: '接口管理',
-          icon: 'swagger'
-        }
-      },
-      {
-        path: 'menu',
-        component: () => import('@/views/system/menu/index'),
-        name: 'Menu',
-        meta: {
-          title: '菜单管理',
-          icon: 'list'
-        }
-      },
-      {
-        path: 'data-dimension',
-        component: () => import('@/views/system/dimension/index'),
-        name: 'DataDimension',
-        meta: {
-          title: '数据维度管理',
-          icon: 'chart'
-        }
-      },
-      {
-        path: 'ak',
-        component: () => import('@/views/error/404'),
-        name: 'AK',
-        meta: {
-          title: '密钥管理',
-          icon: 'lock'
-        }
-      }
-    ]
-  },
-  {
-    path: '/user',
-    component: Layout,
-    redirect: '/user/list',
-    name: 'User',
-    meta: {
-      title: '身份管理',
-      icon: 'user'
-    },
-    children: [
-      {
-        path: 'list',
-        component: () => import('@/views/user/user/index'),
-        name: 'UserList',
-        meta: {
-          title: '用户管理',
-          icon: 'people'
-        }
-      },
-      {
-        path: 'role',
-        component: () => import('@/views/user/role/index'),
-        name: 'Role',
-        meta: {
-          title: '角色管理',
-          icon: 'peoples'
-        }
-      }
-    ]
-  },
-  {
-    path: '/log',
-    component: Layout,
-    redirect: '/log/login',
-    name: 'Log',
-    meta: {
-      title: '日志管理',
-      icon: 'log'
-    },
-    children: [
-      {
-        path: 'login',
-        component: () => import('@/views/log/login/index'),
-        name: 'LoginLog',
-        meta: {
-          title: '登录日志',
-          icon: 'logininfor'
-        }
-      },
-      {
-        path: 'request',
-        component: () => import('@/views/log/request/index'),
-        name: 'RequestLog',
-        meta: {
-          title: '请求日志',
-          icon: 'monitor'
-        }
-      }
-    ]
-  }
-]
+export const dynamicRoutes = []
 
 const router = createRouter({
   history: createWebHashHistory(),

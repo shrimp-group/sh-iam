@@ -17,7 +17,7 @@ export const userInfo = () => {
 }
 
 export const userMenuTree = () => {
-  return request({url: '/iam-sso/user/menu/tree', method: 'get'})
+  return request({url: '/iam-sso/user/menu/tree/ruoyi', method: 'get'})
 }
 
 export const ssoRegister = (data) => {
