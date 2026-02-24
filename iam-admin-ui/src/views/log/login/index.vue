@@ -63,7 +63,7 @@ import {timeRangeShortcuts} from "@/utils/shrimp";
 
 const { proxy } = getCurrentInstance();
 
-const { BOOLEAN, AUTH_TYPE, LOGIN_STATUS } = proxy.useDict("BOOLEAN", "AUTH_TYPE", "LOGIN_STATUS");
+const { LOGIN_STATUS } = proxy.useDict("LOGIN_STATUS");
 const dataList = ref([]);
 const loading = ref(false);
 const total = ref(0);

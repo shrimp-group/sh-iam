@@ -88,7 +88,6 @@ import Detail from "./components/detail";
 
 const { proxy } = getCurrentInstance();
 
-const { BOOLEAN } = proxy.useDict("BOOLEAN");
 const dataList = ref([]);
 const loading = ref(false);
 const total = ref(0);

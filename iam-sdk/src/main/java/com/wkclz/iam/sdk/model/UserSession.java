@@ -15,4 +15,7 @@ public class UserSession implements Serializable {
     private String nickname;
     private String authType;
 
+    // 小程序登录场景
+    private String openId;
+
 }
