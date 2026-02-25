@@ -21,6 +21,6 @@ export const apiUpdate = (data) => {
 }
 
 // 5. 接口管理-删除
-export const apiRemove = (params) => {
-  return request({url: '/iam-admin/api/remove', method: 'post', params: params})
+export const apiRemove = (data) => {
+  return request({url: '/iam-admin/api/remove', method: 'post', data: data})
 }
