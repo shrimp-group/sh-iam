@@ -113,8 +113,10 @@ public class RestfulScan implements ApplicationRunner {
         if (!deletes.isEmpty()) {
             log.info("✅ 待删除 " + deletes.size() + " 个API");
             for (IamApi delete : deletes) {
-                log.info("待删除清单：" + delete.getApiMethod() + ":" + delete.getApiUri() + ":" + delete.getApiName());
+                log.info("待删除清单：" + delete.getApiMethod() + ":" + delete.getApiUri() + ":" + delete.getApiName() + ": DELETE FROM iam_api WHERE id = " + delete.getId() + ";");
             }
+            List<String> ids = deletes.stream().map(t -> t.getId() + "").toList();
+            log.info("快速删除：: DELETE FROM iam_api WHERE id IN (" +  String.join(",", ids) + ");");
         }
 
         log.info("✅ API 扫描完毕");
