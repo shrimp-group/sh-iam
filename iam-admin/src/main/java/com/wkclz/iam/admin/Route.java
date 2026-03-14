@@ -178,12 +178,21 @@ public interface Route {
 
 
     // 访问密钥-API 关系
-    @Desc("1. 访问密钥-分页")
-    String ACCESS_KEY_API_LIST = "/access-key/api/page";
-    @Desc("2. 访问密钥-创建")
+    @Desc("1. 访问密钥-API-分页")
+    String ACCESS_KEY_API_LIST = "/access-key/api/list";
+    @Desc("2. 访问密钥-API-创建")
     String ACCESS_KEY_API_CREATE = "/access-key/api/create";
-    @Desc("3. 访问密钥-删除")
+    @Desc("3. 访问密钥-API-删除")
     String ACCESS_KEY_API_REMOVE = "/access-key/api/remove";
+
+
+    // 菜单-API 关系
+    @Desc("1. 菜单-API-分页")
+    String MENU_API_LIST = "/menu/api/list";
+    @Desc("2. 访问密钥-API-创建")
+    String MENU_API_CREATE = "/menu/api/create";
+    @Desc("3. 访问密钥-API-删除")
+    String MENU_API_REMOVE = "/menu/api/remove";
 
 
 }
