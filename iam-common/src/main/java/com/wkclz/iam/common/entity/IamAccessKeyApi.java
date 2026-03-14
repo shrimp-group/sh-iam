@@ -31,10 +31,10 @@ public class IamAccessKeyApi extends BaseEntity {
     private String appId;
 
     /**
-     * AK
+     * API 编码
      */
-    @Desc("AK")
-    private String apiId;
+    @Desc("API 编码")
+    private String apiCode;
 
 
     public static IamAccessKeyApi copy(IamAccessKeyApi source, IamAccessKeyApi target) {
@@ -43,7 +43,7 @@ public class IamAccessKeyApi extends BaseEntity {
         target.setId(source.getId());
         target.setAppCode(source.getAppCode());
         target.setAppId(source.getAppId());
-        target.setApiId(source.getApiId());
+        target.setApiCode(source.getApiCode());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -60,7 +60,7 @@ public class IamAccessKeyApi extends BaseEntity {
         if (source.getId() != null) { target.setId(source.getId()); }
         if (source.getAppCode() != null) { target.setAppCode(source.getAppCode()); }
         if (source.getAppId() != null) { target.setAppId(source.getAppId()); }
-        if (source.getApiId() != null) { target.setApiId(source.getApiId()); }
+        if (source.getApiCode() != null) { target.setApiCode(source.getApiCode()); }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }

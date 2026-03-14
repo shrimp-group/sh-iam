@@ -9,6 +9,8 @@ import com.wkclz.mybatis.service.BaseService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import java.util.List;
+
 /**
  * Description Create by sh-generator
  * @author shrimp
@@ -18,32 +20,18 @@ import org.springframework.util.Assert;
 @Service
 public class IamAccessKeyApiService extends BaseService<IamAccessKeyApi, IamAccessKeyApiMapper> {
 
-    // 示例方法，可删除
-    public Long example() {
-        return mapper.example();
+
+    public List<IamAccessKeyApi> getAccessKeyList(String appId) {
+        IamAccessKeyApi param = new IamAccessKeyApi();
+        param.setAppId(appId);
+        return selectByEntity(param);
     }
+
 
     public IamAccessKeyApi create(IamAccessKeyApi entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
         return entity;
-    }
-
-    public IamAccessKeyApi update(IamAccessKeyApi entity) {
-        duplicateCheck(entity);
-        Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
-        Assert.notNull(entity.getVersion(), "请求错误！参数[version]不能为空");
-        IamAccessKeyApi oldEntity = selectById(entity.getId());
-        if (oldEntity == null) {
-            throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
-        }
-        IamAccessKeyApi.copyIfNotNull(entity, oldEntity);
-        updateByIdSelective(oldEntity);
-        return oldEntity;
-    }
-
-    public IamAccessKeyApi save(IamAccessKeyApi entity) {
-        return entity.getId() == null ? create(entity) : update(entity);
     }
 
     public IamAccessKeyApi remove(IamAccessKeyApi entity) {
@@ -58,12 +46,12 @@ public class IamAccessKeyApiService extends BaseService<IamAccessKeyApi, IamAcce
 
     private void duplicateCheck(IamAccessKeyApi entity) {
         // 唯一条件为空，直接通过
-        if (true) {
-            return;
-        }
-        
+
         // 唯一条件不为空，请设置唯一条件
         IamAccessKeyApi param = new IamAccessKeyApi();
+        param.setAppCode(entity.getAppCode());
+        param.setAppId(entity.getAppId());
+        param.setApiCode(entity.getApiCode());
         // 唯一条件
         param = selectOneByEntity(param);
         if (param == null) {

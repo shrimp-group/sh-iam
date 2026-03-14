@@ -176,4 +176,14 @@ public interface Route {
     @Desc("5. 访问密钥-删除")
     String ACCESS_KEY_REMOVE = "/access-key/remove";
 
+
+    // 访问密钥-API 关系
+    @Desc("1. 访问密钥-分页")
+    String ACCESS_KEY_API_LIST = "/access-key/api/page";
+    @Desc("2. 访问密钥-创建")
+    String ACCESS_KEY_API_CREATE = "/access-key/api/create";
+    @Desc("3. 访问密钥-删除")
+    String ACCESS_KEY_API_REMOVE = "/access-key/api/remove";
+
+
 }
