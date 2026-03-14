@@ -5,18 +5,18 @@ import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
+
 
 
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_access_key (AK 密钥) 重新生成代码会覆盖
+ * @table iam_access_key_api (AK 接口) 重新生成代码会覆盖
  */
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class IamAccessKey extends BaseEntity {
+public class IamAccessKeyApi extends BaseEntity {
 
     /**
      * 所属应用
@@ -34,44 +34,16 @@ public class IamAccessKey extends BaseEntity {
      * AK
      */
     @Desc("AK")
-    private String accessKey;
-
-    /**
-     * SK
-     */
-    @Desc("SK")
-    private String secretKey;
-
-    /**
-     * 生效状态
-     */
-    @Desc("生效状态")
-    private Integer enableStatus;
-
-    /**
-     * 生效时间开始
-     */
-    @Desc("生效时间开始")
-    private LocalDateTime enableStart;
-
-    /**
-     * 生效时间结束
-     */
-    @Desc("生效时间结束")
-    private LocalDateTime enableStop;
+    private String apiId;
 
 
-    public static IamAccessKey copy(IamAccessKey source, IamAccessKey target) {
-        if (target == null ) { target = new IamAccessKey();}
+    public static IamAccessKeyApi copy(IamAccessKeyApi source, IamAccessKeyApi target) {
+        if (target == null ) { target = new IamAccessKeyApi();}
         if (source == null) { return target; }
         target.setId(source.getId());
         target.setAppCode(source.getAppCode());
         target.setAppId(source.getAppId());
-        target.setAccessKey(source.getAccessKey());
-        target.setSecretKey(source.getSecretKey());
-        target.setEnableStatus(source.getEnableStatus());
-        target.setEnableStart(source.getEnableStart());
-        target.setEnableStop(source.getEnableStop());
+        target.setApiId(source.getApiId());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -82,17 +54,13 @@ public class IamAccessKey extends BaseEntity {
         return target;
     }
 
-    public static IamAccessKey copyIfNotNull(IamAccessKey source, IamAccessKey target) {
-        if (target == null ) { target = new IamAccessKey();}
+    public static IamAccessKeyApi copyIfNotNull(IamAccessKeyApi source, IamAccessKeyApi target) {
+        if (target == null ) { target = new IamAccessKeyApi();}
         if (source == null) { return target; }
         if (source.getId() != null) { target.setId(source.getId()); }
         if (source.getAppCode() != null) { target.setAppCode(source.getAppCode()); }
         if (source.getAppId() != null) { target.setAppId(source.getAppId()); }
-        if (source.getAccessKey() != null) { target.setAccessKey(source.getAccessKey()); }
-        if (source.getSecretKey() != null) { target.setSecretKey(source.getSecretKey()); }
-        if (source.getEnableStatus() != null) { target.setEnableStatus(source.getEnableStatus()); }
-        if (source.getEnableStart() != null) { target.setEnableStart(source.getEnableStart()); }
-        if (source.getEnableStop() != null) { target.setEnableStop(source.getEnableStop()); }
+        if (source.getApiId() != null) { target.setApiId(source.getApiId()); }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }

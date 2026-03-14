@@ -6,7 +6,7 @@
         SELECT
             id,
             app_code,
-            access_key_id,
+            app_id,
             access_key,
             secret_key,
             enable_status,
@@ -24,7 +24,7 @@
         WHERE
             deleted = 0
             <if test="appCode != null">AND app_code = #{appCode}</if>
-            <if test="accessKeyId != null">AND access_key_id = #{accessKeyId}</if>
+            <if test="appId != null">AND app_id = #{appId}</if>
             <if test="enableStatus != null">AND enable_status = #{enableStatus}</if>
         ORDER BY
             sort ASC,
