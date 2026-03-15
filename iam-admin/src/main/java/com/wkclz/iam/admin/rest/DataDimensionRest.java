@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(Route.PREFIX)
 public class DataDimensionRest {
@@ -50,6 +52,12 @@ public class DataDimensionRest {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamDataDimensionService.remove(entity);
         return R.ok(entity);
+    }
+
+    @GetMapping(Route.DATA_DIM_OPTIONS)
+    public R dataDimOption() {
+        List<IamDataDimension> iamDataDimensions = iamDataDimensionService.selectAll();
+        return R.ok(iamDataDimensions);
     }
 
 

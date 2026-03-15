@@ -57,6 +57,8 @@ public interface Route {
     String DATA_DIM_UPDATE = "/data-dim/update";
     @Desc("5. 数据权限维度-删除")
     String DATA_DIM_REMOVE = "/data-dim/remove";
+    @Desc("6. 数据权限维度-列表选项")
+    String DATA_DIM_OPTIONS = "/data-dim/options";
 
     // 角色
     @Desc("1. 角色管理-列表")
@@ -122,13 +124,6 @@ public interface Route {
     @Desc("3. 角色数据-解绑")
     String ROLE_DATA_UNBIND = "/role-data/unbind";
 
-    // 用户数据关联
-    @Desc("1. 用户数据-列表")
-    String USER_DATA_LIST = "/user-data/list";
-    @Desc("2. 用户数据-绑定")
-    String USER_DATA_BIND = "/user-data/bind";
-    @Desc("3. 用户数据-解绑")
-    String USER_DATA_UNBIND = "/user-data/unbind";
 
     // API管理
     @Desc("1. API管理-分页")
