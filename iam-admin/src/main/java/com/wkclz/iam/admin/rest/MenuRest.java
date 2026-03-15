@@ -59,13 +59,6 @@ public class MenuRest {
     @PostMapping(Route.MENU_REMOVE)
     public R menuRemove(@RequestBody IamMenu entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        // 检查菜单下是否有子菜单
-        IamMenu param = new IamMenu();
-        param.setParentCode(entity.getMenuCode());
-        long childrenMenuCount = iamMenuService.selectCountByEntity(param);
-        if (childrenMenuCount > 0) {
-            return R.error("请先删除子菜单");
-        }
         entity = iamMenuService.remove(entity);
         return R.ok(entity);
     }

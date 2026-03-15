@@ -67,6 +67,13 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 检查菜单下是否有子菜单
+        IamMenu param = new IamMenu();
+        param.setParentCode(oldEntity.getMenuCode());
+        long childrenMenuCount = mapper.selectCountByEntity(param);
+        if (childrenMenuCount > 0) {
+            throw ValidationException.of("请先删除子菜单");
+        }
         deleteById(oldEntity);
         return oldEntity;
     }
