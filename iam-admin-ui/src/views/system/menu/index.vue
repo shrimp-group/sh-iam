@@ -80,7 +80,12 @@
             <template #default="{row}">
               <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
-              <el-button link type="danger" icon="Delete" @click="handleDelete(row)">删除</el-button>
+              <el-popconfirm v-if="row.childrenCount === 0" :title="'确认删除:' + row.menuName + '?'" placement="top-end" @confirm="handleDelete(row)">
+                <template #reference><el-button link type="danger" icon="Delete">删除</el-button></template>
+              </el-popconfirm>
+              <el-tooltip v-if="row.childrenCount > 0" effect="dark" content="请先删除子菜单!" placement="top-start">
+                <el-button link type="danger" icon="Delete" disabled>删除</el-button>
+              </el-tooltip>
             </template>
           </el-table-column>
         </el-table>
@@ -91,7 +96,7 @@
 </template>
 
 <script setup name="IamMenu">
-import { menuList, menuRemove} from "@/api/system/menu";
+import {menuList, menuRemove} from "@/api/system/menu";
 import Edit from "./components/edit"
 import AppOptions from "@/views/components/AppOptions"
 
@@ -236,13 +241,13 @@ function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);
 }
 function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除 :"' + row.menuName + '"？').then(() => {
-    menuRemove({id: row.id}).then(res => {
-      proxy.$modal.msgSuccess("删除成功");
-      // 重新加载数据并保持当前导航状态
-      getList();
-    })
-  }).catch(() => {});
+  menuRemove({id: row.id}).then(res => {
+    proxy.$modal.msgSuccess("删除成功");
+    if (showList.value.length < 2 && currentPath.value.length > 0) {
+      navigateToLevel(currentPath.value.length - 1);
+    }
+    getList();
+  })
 }
 
 </script>
