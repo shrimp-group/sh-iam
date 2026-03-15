@@ -1,5 +1,5 @@
 <template>
-  <span>{{label}}</span>
+  <span>{{ label }}</span>
   <el-tooltip class="box-item" effect="dark" placement="top-start">
     <template #content>
       <span v-html="content"></span>
@@ -8,7 +8,7 @@
   </el-tooltip>
 </template>
 <script setup>
-const props = defineProps({
+defineProps({
   label: {
     type: String,
     default: '请设置标签',

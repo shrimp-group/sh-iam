@@ -184,6 +184,30 @@ export function handleTree(data, id, parentId, children) {
   return tree
 }
 
+
+// 禁用树当前，或当前之下的节点
+// 数据组，节点名称，当前节点编码
+export function disableChildren(data, codeName, currentCode) {
+  if (!data) return data;
+  if (!currentCode) return data;
+  disable(data, codeName, currentCode, false);
+  function disable(data, codeName, currentCode, disabled) {
+    if (!data) {
+      return;
+    }
+    for (const d of data) {
+      if (disabled || d[codeName] === currentCode) {
+        d.disabled = true;
+        disable(d.children, codeName, currentCode, true);
+      } else {
+        disable(d.children, codeName, currentCode, false);
+      }
+    }
+  }
+}
+
+
+
 /**
 * 参数处理
 * @param {*} params  参数

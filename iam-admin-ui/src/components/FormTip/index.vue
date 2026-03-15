@@ -1,11 +1,11 @@
 <template>
   <div class="form-tips">
-    <div v-if="html" v-html="html"/>
-    <div v-if="text">{{text}}</div>
+    <div v-if="html" v-html="html" />
+    <div v-if="text">{{ text }}</div>
   </div>
 </template>
 <script setup>
-const props = defineProps({
+defineProps({
   html: {
     type: String,
     default: undefined,
@@ -18,7 +18,6 @@ const props = defineProps({
 </script>
 
 <style lang="scss" scoped>
-
 .form-tips {
   color: silver;
   :deep(p) {

@@ -1,7 +1,7 @@
 <template>
   <div class="layout-container">
     <div class="left-panel" :style="{ width: leftWidth + 'px' }">
-      <slot name="left"/>
+      <slot name="left" />
     </div>
     <div class="resizer" @mousedown="startResize">
       <div class="resizer-icon">
@@ -9,7 +9,7 @@
       </div>
     </div>
     <div class="right-panel" :style="{ flex: 1 }">
-      <slot name="right"/>
+      <slot name="right" />
     </div>
   </div>
 </template>
@@ -21,7 +21,7 @@ const leftWidth = ref(200);
 const isResizing = ref(false);
 
 /** 开始拖动 */
-function startResize(event) {
+function startResize() {
   isResizing.value = true;
   document.addEventListener('mousemove', resize);
   document.addEventListener('mouseup', stopResize);

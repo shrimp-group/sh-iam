@@ -24,7 +24,6 @@ import elementIcons from '@/components/SvgIcon/svgicon'
 import './permission' // permission control
 
 import { useDict } from '@/utils/dict'
-import { getConfigKey } from "@/api/config"
 import { parseTime, resetForm, addDateRange, handleTree, selectDictLabel, selectDictLabels } from '@/utils/ruoyi'
 
 // 分页组件
@@ -51,7 +50,7 @@ import LabelTip from '@/components/LabelTip'
 import LayoutSplit from '@/components/LayoutSplit'
 
 // 全局默认属性设置
-import { ElTable, ElDialog, ElDrawer } from 'element-plus';
+import { ElTable, ElDialog, ElDrawer, ElDatePicker } from 'element-plus';
 
 ElTable.props.border = {type: Boolean, default: true};
 ElTable.TableColumn.props.align = {type: String, default: 'left'};
@@ -61,6 +60,8 @@ ElDialog.props.draggable = {type: Boolean, default: true};
 ElDialog.props.closeOnClickModal = {type: Boolean, default: false};
 ElDrawer.props.appendToBody = {type: Boolean, default: true};
 ElDrawer.props.closeOnClickModal = {type: Boolean, default: false};
+ElDatePicker.props.format = {type: String, default: 'YYYY-MM-DD HH:mm:ss'};
+ElDatePicker.props.valueFormat = {type: String, default: 'YYYY-MM-DDTHH:mm:ss'};
 
 const app = createApp(App)
 
@@ -71,7 +72,6 @@ app.config.globalProperties.parseTime = parseTime
 app.config.globalProperties.resetForm = resetForm
 app.config.globalProperties.handleTree = handleTree
 app.config.globalProperties.addDateRange = addDateRange
-app.config.globalProperties.getConfigKey = getConfigKey
 app.config.globalProperties.selectDictLabel = selectDictLabel
 app.config.globalProperties.selectDictLabels = selectDictLabels
 
