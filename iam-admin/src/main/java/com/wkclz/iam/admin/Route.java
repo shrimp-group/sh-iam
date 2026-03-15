@@ -144,13 +144,6 @@ public interface Route {
     @Desc("6. API管理-同步")
     String API_SYNC = "/api/sync";
 
-    // 角色API关联
-    @Desc("1. 角色API-列表")
-    String ROLE_API_LIST = "/role-api/list";
-    @Desc("2. 角色API-绑定")
-    String ROLE_API_BIND = "/role-api/bind";
-    @Desc("3. 角色API-解绑")
-    String ROLE_API_UNBIND = "/role-api/unbind";
 
     // 登录日志
     @Desc("1. 登录日志-分页")
@@ -179,20 +172,20 @@ public interface Route {
 
     // 访问密钥-API 关系
     @Desc("1. 访问密钥-API-分页")
-    String ACCESS_KEY_API_LIST = "/access-key/api/list";
+    String ACCESS_KEY_API_LIST = "/access-key-api/list";
     @Desc("2. 访问密钥-API-创建")
-    String ACCESS_KEY_API_CREATE = "/access-key/api/create";
+    String ACCESS_KEY_API_BIND = "/access-key-api/bind";
     @Desc("3. 访问密钥-API-删除")
-    String ACCESS_KEY_API_REMOVE = "/access-key/api/remove";
+    String ACCESS_KEY_API_UNBIND = "/access-key-api/unbind";
 
 
     // 菜单-API 关系
     @Desc("1. 菜单-API-分页")
-    String MENU_API_LIST = "/menu/api/list";
+    String MENU_API_LIST = "/menu-api/list";
     @Desc("2. 访问密钥-API-创建")
-    String MENU_API_CREATE = "/menu/api/create";
+    String MENU_API_BIND = "/menu-api/bind";
     @Desc("3. 访问密钥-API-删除")
-    String MENU_API_REMOVE = "/menu/api/remove";
+    String MENU_API_UNBIND = "/menu-api/unbind";
 
 
 }

@@ -25,15 +25,15 @@ public class MenuApiRest {
         return R.ok(list);
     }
 
-    @PostMapping(Route.MENU_API_CREATE)
-    public R menuApiCreate(@RequestBody IamMenuApi entity) {
+    @PostMapping(Route.MENU_API_BIND)
+    public R menuApiBind(@RequestBody IamMenuApi entity) {
         paramCheck(entity);
         entity = iamMenuApiService.create(entity);
         return R.ok(entity);
     }
 
-    @PostMapping(Route.MENU_API_REMOVE)
-    public R menuApiRemove(@RequestBody IamMenuApi entity) {
+    @PostMapping(Route.MENU_API_UNBIND)
+    public R menuApiUnbind(@RequestBody IamMenuApi entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamMenuApiService.remove(entity);
         return R.ok(entity);
