@@ -70,7 +70,9 @@
             <template #default="{row}">
               <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
-              <el-button link type="danger" icon="Delete" @click="handleDelete(row)">删除</el-button>
+              <el-popconfirm :title="'确认删除角色:' + row.roleName + '?'" placement="top-end" @confirm="handleDelete(row)">
+                <template #reference><el-button link type="danger" icon="Delete">删除</el-button></template>
+              </el-popconfirm>
             </template>
           </el-table-column>
         </el-table>
@@ -244,12 +246,10 @@ function handleUpdate(row) {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除 :"' + row.roleCode + '"？').then(() => {
-    roleRemove({id: row.id}).then(res => {
-      proxy.$modal.msgSuccess("删除成功");
-      getList();
-    })
-  }).catch(() => {});
+  roleRemove({id: row.id}).then(res => {
+    proxy.$modal.msgSuccess("删除成功");
+    getList();
+  });
 }
 
 </script>

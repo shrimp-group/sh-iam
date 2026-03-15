@@ -50,7 +50,9 @@
         <template #header><table-setting v-model:columns="columns"/></template>
         <template #default="{row}">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(row)" title="编辑"/>
-          <el-button link type="danger" icon="Delete" @click="handleDelete(row)" title="删除"/>
+          <el-popconfirm :title="'确认删除用户:' + row.username + '?'" placement="top-end" @confirm="handleDelete(row)">
+            <template #reference><el-button link type="danger" icon="Delete" title="删除"/></template>
+          </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
@@ -132,12 +134,10 @@ function handleUpdate(row) {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除用户 :"' + row.username + '"？').then(() => {
-    userRemove({id: row.id}).then(res => {
-      proxy.$modal.msgSuccess("删除成功");
-      getList();
-    })
-  }).catch(() => {});
+  userRemove({id: row.id}).then(res => {
+    proxy.$modal.msgSuccess("删除成功");
+    getList();
+  });
 }
 
 init();
