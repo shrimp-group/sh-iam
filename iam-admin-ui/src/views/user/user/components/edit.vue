@@ -51,7 +51,6 @@
 
 <script setup name="IamUserEdit">
 import {userInfo, userCreate, userUpdate} from "@/api/user/user";
-import FormTip from "@/components/FormTip/index.vue";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);

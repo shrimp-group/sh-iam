@@ -125,7 +125,7 @@
 
 <script setup name="IamMenuEdit">
 import {menuInfo, menuCreate, menuUpdate} from "@/api/system/menu";
-import IconSelect from "@/components/IconSelect/index.vue";
+import IconSelect from "@/components/IconSelect";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);

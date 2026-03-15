@@ -54,7 +54,6 @@
 
 <script setup name="IamAppEdit">
 import {appInfo, appCreate, appUpdate} from "@/api/system/app";
-import FormTip from "@/components/FormTip/index.vue";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);

@@ -62,7 +62,7 @@
 
 <script setup name="IamApp">
 import { appPage, appRemove} from "@/api/system/app";
-import Edit from "./components/edit.vue"
+import Edit from "./components/edit"
 
 const { proxy } = getCurrentInstance();
 const { AUTH_TYPE } = proxy.useDict("AUTH_TYPE");

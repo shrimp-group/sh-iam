@@ -43,7 +43,6 @@
 
 <script setup name="IamUserRoleEdit">
 import {roleInfo, roleCreate, roleUpdate} from "@/api/user/role";
-import {ref} from "vue";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);
