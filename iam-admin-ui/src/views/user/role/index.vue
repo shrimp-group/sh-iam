@@ -70,9 +70,12 @@
             <template #default="{row}">
               <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
-              <el-popconfirm :title="'确认删除角色:' + row.roleName + '?'" placement="top-end" @confirm="handleDelete(row)">
+              <el-popconfirm v-if="row.childrenCount === 0" :title="'确认删除:' + row.roleName + '?'" placement="top-end" @confirm="handleDelete(row)">
                 <template #reference><el-button link type="danger" icon="Delete">删除</el-button></template>
               </el-popconfirm>
+              <el-tooltip v-if="row.childrenCount > 0" effect="dark" content="请先删除子角色!" placement="top-start">
+                <el-button link type="danger" icon="Delete" disabled>删除</el-button>
+              </el-tooltip>
             </template>
           </el-table-column>
         </el-table>
@@ -248,6 +251,9 @@ function handleUpdate(row) {
 function handleDelete(row) {
   roleRemove({id: row.id}).then(res => {
     proxy.$modal.msgSuccess("删除成功");
+    if (showList.value.length < 2 && currentPath.value.length > 0) {
+      navigateToLevel(currentPath.value.length - 1);
+    }
     getList();
   });
 }
