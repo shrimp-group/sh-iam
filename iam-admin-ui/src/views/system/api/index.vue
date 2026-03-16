@@ -185,13 +185,10 @@ function copySelectedApis() {
   let code = '';
   selectedRows.value.forEach((api, index) => {
     const funcName = generateFuncName(api.apiUri);
-    code += `// ${api.apiName}\nexport const ${funcName} = (params) => {\n`;
+    const varname = api.apiMethod === 'GET' ? 'params':'data';
+    code += `// ${api.apiName}\nexport const ${funcName} = (${varname}) => {\n`;
     code += `  return request({url: '${api.apiUri}', method: '${api.apiMethod.toLowerCase()}', `;
-    if (api.apiMethod === 'GET') {
-      code += `params: params`;
-    } else {
-      code += `data: params`;
-    }
+    code += varname;
     code += `})\n}\n\n`;
   });
   copy(code, "成功复制 " + selectedRows.value.length + " 个API 接口代码, 请粘贴到代码文件中!");
