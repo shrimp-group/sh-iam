@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import java.security.SecureRandom;
+
 /**
  * Description Create by sh-generator
  * @author shrimp
@@ -21,6 +23,14 @@ import org.springframework.util.Assert;
  
 @Service
 public class IamAccessKeyService extends BaseService<IamAccessKey, IamAccessKeyMapper> {
+
+
+    private static final int AK_LENGTH = 16;
+    private static final int SK_LENGTH = 32;
+    private static final String APPID_PREFIX = "app_";
+    private static final String AK_PREFIX = "AK_";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     @Autowired
     private RedisIdGenerator redisIdGenerator;
@@ -31,23 +41,28 @@ public class IamAccessKeyService extends BaseService<IamAccessKey, IamAccessKeyM
 
 
     public IamAccessKey create(IamAccessKey entity) {
-        duplicateCheck(entity);
+        String appId = redisIdGenerator.generateIdWithPrefix(APPID_PREFIX);
+        String ak = AK_PREFIX + generateRandomString(AK_LENGTH);
+        String sk = generateRandomString(SK_LENGTH);
 
-        String appId = redisIdGenerator.generateIdWithPrefix("ak_");
         entity.setAppId(appId);
+        entity.setAccessKey(ak);
+        entity.setSecretKey(sk);
 
         mapper.insert(entity);
         return entity;
     }
 
     public IamAccessKey update(IamAccessKey entity) {
-        duplicateCheck(entity);
         Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
         Assert.notNull(entity.getVersion(), "请求错误！参数[version]不能为空");
         IamAccessKey oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        entity.setAppId(null);
+        entity.setAccessKey(null);
+        entity.setSecretKey(null);
         IamAccessKey.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
         return oldEntity;
@@ -68,28 +83,14 @@ public class IamAccessKeyService extends BaseService<IamAccessKey, IamAccessKeyM
     }
 
 
-    private void duplicateCheck(IamAccessKey entity) {
-        // 唯一条件为空，直接通过
-        if (true) {
-            return;
+    private static String generateRandomString(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            int index = SECURE_RANDOM.nextInt(CHARS.length());
+            sb.append(CHARS.charAt(index));
         }
-        
-        // 唯一条件不为空，请设置唯一条件
-        IamAccessKey param = new IamAccessKey();
-        // 唯一条件
-        param = selectOneByEntity(param);
-        if (param == null) {
-            return;
-        }
-        if (param.getId().equals(entity.getId())) {
-            return;
-        }
-        // 查到有值，为新增或 id 不一样场景，为数据重复
-        throw UserException.of(ResultCode.RECORD_DUPLICATE);
+        return sb.toString();
     }
-
-
-
 
 }
 

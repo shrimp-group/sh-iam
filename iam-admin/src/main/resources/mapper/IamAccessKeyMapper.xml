@@ -8,7 +8,6 @@
             app_code,
             app_id,
             access_key,
-            secret_key,
             enable_status,
             enable_start,
             enable_stop,
