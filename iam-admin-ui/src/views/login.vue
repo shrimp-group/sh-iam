@@ -23,10 +23,8 @@
           <span v-if="loading">登 录 中...</span>
           <span v-else>登 录</span>
         </el-button>
-        <div v-if="loginMessage" style="color: orange;">
-          <span>
-            {{loginMessage}}
-          </span>
+        <div style="color: orange;">
+            {{loginMessage || '&nbsp;'}}
         </div>
         <el-divider />
         <div style="float: right;" v-if="register">
@@ -167,7 +165,7 @@ function getCode() {
 }
 
 .el-divider--horizontal {
-  margin: 24px 0 0 0;
+  margin: 12px 0 0 0;
 }
 
 .el-login-footer {
