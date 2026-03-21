@@ -52,7 +52,7 @@
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)" title="编辑"/>
-              <el-popconfirm :title="'确认删除:' + row.id + '?'" placement="top-end" @confirm="handleDelete(row)">
+              <el-popconfirm :title="'确认删除:' + row.appId + '?'" placement="top-end" @confirm="handleDelete(row)">
                 <template #reference><el-button link type="danger" icon="Delete" title="删除"/></template>
               </el-popconfirm>
             </template>
