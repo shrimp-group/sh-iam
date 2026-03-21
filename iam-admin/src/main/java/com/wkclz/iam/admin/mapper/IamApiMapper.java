@@ -17,5 +17,9 @@ public interface IamApiMapper extends BaseMapper<IamApi> {
 
     List<IamApi> getApiList(IamApi entity);
 
+    List<IamApi> getApiOptions(IamApi entity);
+
+    List<IamApi> getApis4Copy(IamApi entity);
+
 }
 

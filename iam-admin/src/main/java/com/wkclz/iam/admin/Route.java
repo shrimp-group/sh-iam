@@ -136,9 +136,14 @@ public interface Route {
     String API_UPDATE = "/api/update";
     @Desc("5. API管理-删除")
     String API_REMOVE = "/api/remove";
-    @Desc("6. API管理-同步")
+    @Desc("6. API管理-选项")
+    String API_OPTIONS = "/api/options";
+    @Desc("7. API管理-同步")
     String API_SYNC = "/api/sync";
-
+    @Desc("8. API管理-复制为json")
+    String API_COPY = "/api/copy";
+    @Desc("9. API管理-粘贴JSON")
+    String API_PASTE = "/api/paste";
 
     // 登录日志
     @Desc("1. 登录日志-分页")

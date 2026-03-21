@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(Route.PREFIX)
 public class ApiRest {
@@ -54,11 +56,29 @@ public class ApiRest {
         return R.ok(entity);
     }
 
+    @GetMapping(Route.API_OPTIONS)
+    public R apiOptions(IamApi entity) {
+        List<IamApi> list = iamApiService.getApiOptions(entity);
+        return R.ok(list);
+    }
+
     @PostMapping(Route.API_SYNC)
     public R apiSync() {
         restfulScan.run(null);
         return R.ok();
     }
+
+    @GetMapping(Route.API_COPY)
+    public R apiCopy(IamApi entity) {
+        List<IamApi> list = iamApiService.getApis4Copy(entity);
+        return R.ok(list);
+    }
+    @PostMapping(Route.API_PASTE)
+    public R apiPaste(@RequestBody List<IamApi> entity) {
+        Integer count = iamApiService.apiPaste(entity);
+        return R.ok(count);
+    }
+
 
     private void paramCheck(IamApi entity) {
         if (entity.getId() != null) {
