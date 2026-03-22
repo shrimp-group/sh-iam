@@ -171,7 +171,7 @@ public interface Route {
 
 
     // 访问密钥-API 关系
-    @Desc("1. 访问密钥-API-分页")
+    @Desc("1. 访问密钥-API-列表")
     String ACCESS_KEY_API_LIST = "/access-key-api/list";
     @Desc("2. 访问密钥-API-创建")
     String ACCESS_KEY_API_BIND = "/access-key-api/bind";

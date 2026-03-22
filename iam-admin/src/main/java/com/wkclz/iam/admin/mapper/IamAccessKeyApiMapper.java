@@ -1,8 +1,12 @@
 package com.wkclz.iam.admin.mapper;
 
-import com.wkclz.mybatis.mapper.BaseMapper;
 import com.wkclz.iam.common.entity.IamAccessKeyApi;
+import com.wkclz.iam.common.entity.IamApi;
+import com.wkclz.mybatis.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * Description Create by sh-generator
@@ -13,8 +17,7 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IamAccessKeyApiMapper extends BaseMapper<IamAccessKeyApi> {
 
-    // 示例查询,可删除
-    Long example();
+    List<IamApi> getAkApisList(@Param("appId") String appId);
 
 }
 

@@ -5,6 +5,7 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamAccessKeyApiService;
 import com.wkclz.iam.common.entity.IamAccessKeyApi;
+import com.wkclz.iam.common.entity.IamApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +22,8 @@ public class AccessKeyApiRest {
     @GetMapping(Route.ACCESS_KEY_API_LIST)
     public R accessKeyApiList(IamAccessKeyApi entity) {
         Assert.notNull(entity.getAppId(), "appId 不能为空!");
-        List<IamAccessKeyApi> list = iamAccessKeyApiService.getAccessKeyList(entity.getAppId());
-        return R.ok(list);
+        List<IamApi> apis = iamAccessKeyApiService.getAccessKeyList(entity.getAppId());
+        return R.ok(apis);
     }
 
     @PostMapping(Route.ACCESS_KEY_API_BIND)
