@@ -12,8 +12,14 @@ import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Description Create by sh-generator
@@ -38,9 +44,83 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
     public List<IamApi> getApis4Copy(IamApi entity) {
         return mapper.getApis4Copy(entity);
     }
-    public Integer apiPaste(List<IamApi> entity) {
-        //
-        return 0;
+
+    @Transactional(rollbackFor = Exception.class)
+    public Integer apiPaste(List<IamApi> entitys) {
+        if (entitys == null || entitys.isEmpty()) {
+            return 0;
+        }
+        
+        // 收集所有apiCode
+        List<String> apiCodes = entitys.stream()
+            .map(IamApi::getApiCode)
+            .toList();
+
+        List<IamApi> existingApis = mapper.getApis4Paste(apiCodes);
+
+        // 新增的
+        List<String> existingApiCodes = existingApis.stream().map(IamApi::getApiCode).toList();
+        List<IamApi> inserts = entitys.stream().filter(t -> !existingApiCodes.contains(t.getApiCode())).toList();
+
+        // 修改的
+        List<IamApi> updates = new ArrayList<>();
+        Map<String, IamApi> existingApiMap = existingApis.stream().collect(Collectors.toMap(IamApi::getApiCode, t -> t));
+        for (IamApi entity : entitys) {
+            IamApi existingApi = existingApiMap.get(entity.getApiCode());
+            if (needUpdate(entity, existingApi)) {
+                updates.add(existingApi);
+            }
+        }
+        if (!CollectionUtils.isEmpty(inserts)) {
+            mapper.insertBatch(inserts);
+        }
+
+        if (!CollectionUtils.isEmpty(updates)) {
+            for (IamApi update : updates) {
+                mapper.updateById(update);
+            }
+        }
+        return inserts.size() + updates.size();
+    }
+    
+    private List<IamApi> getAllApis() {
+        // 查询所有接口，一次性批量查询
+        IamApi param = new IamApi();
+        return mapper.getApiList(param);
+    }
+    
+    private boolean needUpdate(IamApi newEntity, IamApi oldEntity) {
+        boolean chageFlag = false;
+        // 对比字段，只有在字段有变化时才需要修改
+        if (!StringUtils.equals(newEntity.getModule(), oldEntity.getModule())) {
+            oldEntity.setModule(newEntity.getModule());
+            chageFlag = true;
+        }
+        if (!StringUtils.equals(newEntity.getAppCode(), oldEntity.getAppCode())) {
+            oldEntity.setAppCode(newEntity.getAppCode());
+            chageFlag = true;
+        }
+        if (!StringUtils.equals(newEntity.getApiMethod(), oldEntity.getApiMethod())) {
+            oldEntity.setApiMethod(newEntity.getApiMethod());
+            chageFlag = true;
+        }
+        if (!StringUtils.equals(newEntity.getApiUri(), oldEntity.getApiUri())) {
+            oldEntity.setApiUri(newEntity.getApiUri());
+            chageFlag = true;
+        }
+        if (!StringUtils.equals(newEntity.getApiName(), oldEntity.getApiName())) {
+            oldEntity.setApiName(newEntity.getApiName());
+            chageFlag = true;
+        }
+        if (!Objects.equals(newEntity.getWriteFlag(), oldEntity.getWriteFlag())) {
+            oldEntity.setWriteFlag(newEntity.getWriteFlag());
+            chageFlag = true;
+        }
+        if (!StringUtils.equals(newEntity.getRemark(), oldEntity.getRemark())) {
+            oldEntity.setRemark(newEntity.getRemark());
+            chageFlag = true;
+        }
+        return chageFlag;
     }
 
 

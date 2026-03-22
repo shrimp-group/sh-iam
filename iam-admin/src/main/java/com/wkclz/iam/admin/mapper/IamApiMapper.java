@@ -3,6 +3,7 @@ package com.wkclz.iam.admin.mapper;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.mybatis.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -20,6 +21,8 @@ public interface IamApiMapper extends BaseMapper<IamApi> {
     List<IamApi> getApiOptions(IamApi entity);
 
     List<IamApi> getApis4Copy(IamApi entity);
+
+    List<IamApi> getApis4Paste(@Param("apiCodes") List<String> apiCodes );
 
 }
 
