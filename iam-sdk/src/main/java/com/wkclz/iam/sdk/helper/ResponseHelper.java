@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public class ResponseHelper {
 
@@ -24,8 +25,9 @@ public class ResponseHelper {
             r.setMsg(msg);
             String string = JSON.toJSONString(r);
             response.setHeader("Content-Type", "application/json;charset=UTF-8");
-            response.getWriter().print(string);
-            response.getWriter().close();
+            PrintWriter pw = response.getWriter();
+            pw.write(string);
+            pw.flush();
             return true;
         } catch (IOException e) {
             logger.error(e.getMessage(), e);

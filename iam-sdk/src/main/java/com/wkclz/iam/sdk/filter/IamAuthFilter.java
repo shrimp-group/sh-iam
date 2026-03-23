@@ -30,6 +30,10 @@ public class IamAuthFilter extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();
+        if ("/".equals(requestURI)) {
+            ResponseHelper.responseError(response, HttpStatus.FORBIDDEN, "Forbidden");
+            return;
+        }
         if (SessionHelper.match( "/*/public/**", requestURI)) {
             chain.doFilter(request, response);
             return;
