@@ -27,13 +27,17 @@
       </el-form-item>
     </el-form>
     <el-table v-loading="loading" :data="dataList">
+      <el-table-column prop="avatar" label="头像" width="60">
+        <template #default="{row}">
+          <el-image style='width: 25px; height: 25px' :src='row.avatar' :preview-src-list=[row.avatar]></el-image>
+        </template>
+      </el-table-column>
       <el-table-column label="ID" prop="id" width="80" v-if="columns.id.visible"/>
       <el-table-column label="用户编码" prop="userCode" min-width="120"/>
       <el-table-column label="用户名" prop="username" min-width="120"/>
       <el-table-column label="姓名" prop="nickname" min-width="120"/>
       <el-table-column label="邮箱" prop="email" min-width="120"/>
       <el-table-column label="手机号" prop="phone" min-width="120"/>
-      <el-table-column label="头像" prop="avatar" min-width="120"/>
       <el-table-column label="启用状态" prop="userStatus" width="130">
         <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.userStatus" /></template>
       </el-table-column>
