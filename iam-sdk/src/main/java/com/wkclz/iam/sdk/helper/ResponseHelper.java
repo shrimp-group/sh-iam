@@ -14,24 +14,24 @@ public class ResponseHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(ResponseHelper.class);
 
-    public static boolean responseError(HttpServletResponse response, HttpStatus status, String msg) {
+    public static void responseError(HttpServletResponse response, HttpStatus status, String msg) {
         try {
             if (status == null) {
                 status = HttpStatus.UNAUTHORIZED;
             }
             R r = new R<>();
-            response.setStatus(status.value());
             r.setCode(status.value());
             r.setMsg(msg);
             String string = JSON.toJSONString(r);
+
+            response.setStatus(status.value());
             response.setHeader("Content-Type", "application/json;charset=UTF-8");
             PrintWriter pw = response.getWriter();
             pw.write(string);
             pw.flush();
-            return true;
+            response.flushBuffer();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
-            return false;
         }
     }
 
