@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamAccessKeyApiMapper">
-      
-    <!-- 示例查询, 可删除 -->
-    <select id="example" resultType="java.lang.Long">
-    SELECT
-      1 count
-    FROM
-      DUAL
+
+    <select id="getAkApisList" parameterType="java.lang.String" resultType="com.wkclz.iam.common.entity.IamApi">
+        SELECT
+            a.module,
+            a.app_code,
+            a.api_code,
+            a.api_method,
+            a.api_uri,
+            a.api_name,
+            a.write_flag
+        FROM
+            iam_access_key_api ka
+            INNER JOIN iam_api a ON a.api_code = ka.api_code
+        WHERE
+            ka.deleted = 0
+            AND a.deleted = 0
+            AND ka.app_id = #{appId}
+        ORDER BY
+            a.api_uri ASC
   </select>
     
 </mapper>

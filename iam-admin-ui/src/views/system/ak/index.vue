@@ -48,11 +48,12 @@
             <template #default="{row}">{{ parseTime(row.updateTime) }}</template>
           </el-table-column>
           <el-table-column label="更新人" prop="updateBy" width="120" v-if="columns.updateBy.visible"/>
-          <el-table-column fixed="right" width="98">
+          <el-table-column fixed="right" width="180">
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)" title="编辑"/>
-              <el-popconfirm :title="'确认删除:' + row.id + '?'" placement="top-end" @confirm="handleDelete(row)">
+              <el-button link type="success" icon="Link" @click="handleAkApiRef(row)" title="API授权">API授权</el-button>
+              <el-popconfirm :title="'确认删除:' + row.appId + '?'" placement="top-end" @confirm="handleDelete(row)">
                 <template #reference><el-button link type="danger" icon="Delete" title="删除"/></template>
               </el-popconfirm>
             </template>
@@ -68,12 +69,14 @@
       </template>
     </layout-split>
     <edit ref="editRef" @change="getList"/>
+    <ak-api ref="akApiRef" />
   </div>
 </template>
 
 <script setup name="IamAccessKey">
 import { accesskeyPage, accesskeyRemove} from "@/api/system/ak";
 import Edit from "./components/edit"
+import AkApi from "./components/ak-api"
 import AppOptions from "@/views/components/AppOptions/index.vue";
 
 const { proxy } = getCurrentInstance();
@@ -143,6 +146,11 @@ function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);
 }
 
+/** API授权 */
+function handleAkApiRef(row) {
+  proxy.$refs["akApiRef"].init(row);
+}
+
 /** 删除按钮操作 */
 function handleDelete(row) {
   accesskeyRemove({id: row.id}).then(res => {
@@ -152,4 +160,3 @@ function handleDelete(row) {
 }
 
 </script>
-

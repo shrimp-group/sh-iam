@@ -30,8 +30,71 @@
             <if test="apiMethod != null">AND api_method = #{apiMethod}</if>
             <if test="writeFlag != null">AND write_flag = #{writeFlag}</if>
         ORDER BY
-            id ASC
+            api_uri ASC
     </select>
+
+
+    <select id="getApiOptions" parameterType="com.wkclz.iam.common.entity.IamApi" resultType="com.wkclz.iam.common.entity.IamApi">
+        SELECT
+            module,
+            app_code,
+            api_code,
+            api_method,
+            api_uri,
+            api_name,
+            write_flag
+        FROM
+            iam_api
+        WHERE
+            deleted = 0
+            <if test="module != null">AND module = #{module}</if>
+            <if test="appCode != null">AND app_code = #{appCode}</if>
+        ORDER BY
+            api_uri ASC
+    </select>
+
+    <select id="getApis4Copy" parameterType="com.wkclz.iam.common.entity.IamApi" resultType="com.wkclz.iam.common.entity.IamApi">
+        SELECT
+            module,
+            app_code,
+            api_code,
+            api_method,
+            api_uri,
+            api_name,
+            write_flag,
+            remark
+        FROM
+            iam_api
+        WHERE
+            deleted = 0
+            <if test="ids != null and ids.size > 0">AND id IN ( <foreach collection="ids" item="item" separator=","> #{item} </foreach> ) </if>
+            <if test="module != null">AND module = #{module}</if>
+            <if test="appCode != null">AND app_code = #{appCode}</if>
+        ORDER BY
+            api_uri ASC
+    </select>
+
+
+
+    <select id="getApis4Paste" parameterType="java.util.List" resultType="com.wkclz.iam.common.entity.IamApi">
+        SELECT
+            module,
+            app_code,
+            api_code,
+            api_method,
+            api_uri,
+            api_name,
+            write_flag,
+            remark
+        FROM
+            iam_api
+        WHERE
+            deleted = 0
+            api_code IN ( <foreach collection="apiCodes" item="item" separator=","> #{item} </foreach> )
+        ORDER BY
+            api_uri ASC
+    </select>
+
 
 </mapper>
 

@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.init;
 
+import com.wkclz.iam.admin.config.IamAdminConfig;
 import com.wkclz.iam.admin.service.IamApiService;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.redis.helper.RedisIdGenerator;
@@ -20,6 +21,8 @@ import java.util.*;
 @Component
 public class RestfulScan implements ApplicationRunner {
 
+    @Autowired
+    private IamAdminConfig iamAdminConfig;
      @Autowired
      private IamApiService iamApiService;
      @Autowired
@@ -96,11 +99,20 @@ public class RestfulScan implements ApplicationRunner {
 
         // 执行数据库操作
         if (!inserts.isEmpty()) {
+            Integer apiScanInsert = iamAdminConfig.getApiScanInsert();
+            log.info("✅ 待插入 " + inserts.size() + " 个API");
+            String values = inserts.stream().map(t -> "('" + t.getModule() + "','" + t.getAppCode() + "','" + t.getApiCode() + "','" + t.getApiMethod() + "','" + t.getApiUri() + "','" + t.getApiName() + "','" + t.getWriteFlag() + "')\r\n").toList().toString();
             for (IamApi insert : inserts) {
                 insert.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
-                iamApiService.insert(insert);
+                if (apiScanInsert == 1) {
+                    iamApiService.insert(insert);
+                }
             }
-            log.info("✅ 插入了 " + inserts.size() + " 个API");
+            if (apiScanInsert == 1) {
+                log.info("✅ 插入了 " + inserts.size() + " 个API");
+            } else {
+                log.info("待清单：\r\nDINSERT INTO iam_api (module,app_code,api_code,api_method,api_uri,api_name,write_flag) VALUES\r\n" + values);
+            }
         }
         
         if (!updates.isEmpty()) {

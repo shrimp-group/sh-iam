@@ -24,3 +24,24 @@ export const apiUpdate = (data) => {
 export const apiRemove = (data) => {
   return request({url: '/iam-admin/api/remove', method: 'post', data})
 }
+
+// 6. API管理-选项
+export const apiOptions = (params) => {
+  return request({url: '/iam-admin/api/options', method: 'get', params})
+}
+
+// 7. API管理-同步
+export const apiSync = (data) => {
+  return request({url: '/iam-admin/api/sync', method: 'post', data})
+}
+
+// 8. API管理-复制为json
+export const apiCopy = (params) => {
+  return request({url: '/iam-admin/api/copy', method: 'get', params})
+}
+
+// 9. API管理-粘贴JSON
+export const apiPaste = (data) => {
+  return request({url: '/iam-admin/api/paste', method: 'post', data})
+}
+

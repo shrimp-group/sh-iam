@@ -5,6 +5,7 @@ import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamAccessKeyApiMapper;
 import com.wkclz.iam.common.entity.IamAccessKeyApi;
+import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.mybatis.service.BaseService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -21,10 +22,8 @@ import java.util.List;
 public class IamAccessKeyApiService extends BaseService<IamAccessKeyApi, IamAccessKeyApiMapper> {
 
 
-    public List<IamAccessKeyApi> getAccessKeyList(String appId) {
-        IamAccessKeyApi param = new IamAccessKeyApi();
-        param.setAppId(appId);
-        return selectByEntity(param);
+    public List<IamApi> getAccessKeyList(String appId) {
+        return mapper.getAkApisList(appId);
     }
 
 
