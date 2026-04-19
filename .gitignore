@@ -18,3 +18,7 @@ node_modules
 
 # Mac
 .DS_Store
+
+# project
+demo
+*.vue

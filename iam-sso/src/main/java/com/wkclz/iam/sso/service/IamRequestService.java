@@ -16,9 +16,9 @@ public class IamRequestService {
     @Resource
     private SsoRequestLogMapper ssoRequestLogMapper;
 
-    public Long insertLog(RequestLog log) {
+    public void insertLog(RequestLog log) {
         if (log == null) {
-            return null;
+            return;
         }
         IamRequestLog iLog = new IamRequestLog();
         iLog.setTenantCode(log.getTenantCode());
@@ -65,7 +65,7 @@ public class IamRequestService {
             iLog.setCreateBy(iLog.getUserCode());
             iLog.setUpdateBy(iLog.getUserCode());
         }
-        return ssoRequestLogMapper.insertLog(iLog);
+        ssoRequestLogMapper.insertLog(iLog);
     }
 
 }
