@@ -31,6 +31,11 @@ public class RestfulScan implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
 
+        Integer apiScanEnabled = iamAdminConfig.getApiScanEnabled();
+        if (apiScanEnabled != 1) {
+            return;
+        }
+
         List<IamApi> iamApis = iamApiService.selectAll();
         List<RestInfo> mapping = RestHelper.getMapping();
 

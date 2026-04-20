@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class IamAdminConfig {
 
+    @Value("${iam.api.scan.enabled:0}")
+    private Integer apiScanEnabled;
     @Value("${iam.api.scan.insert:0}")
     private Integer apiScanInsert;
 
