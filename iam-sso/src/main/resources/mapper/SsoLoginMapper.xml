@@ -42,14 +42,14 @@
             id = #{id}
     </update>
 
-    <select id="batchGetNicknamesByUsernames" resultType="com.wkclz.iam.common.entity.IamUser">
+    <select id="batchGetNicknamesByUserCodes" resultType="com.wkclz.iam.common.entity.IamUser">
         SELECT
-            username, nickname
+            user_code, nickname
         FROM
             iam_user
         WHERE
             deleted = 0
-            AND username IN ( <foreach collection="usernames" item="item" separator=","> #{item} </foreach> )
+            AND user_code IN ( <foreach collection="userCodes" item="item" separator=","> #{item} </foreach> )
     </select>
 
 </mapper>
