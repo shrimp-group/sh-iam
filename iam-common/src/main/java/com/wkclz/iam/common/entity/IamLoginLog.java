@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,49 +21,49 @@ public class IamLoginLog extends BaseEntity {
     /**
      * 认证标识
      */
-    @Desc("认证标识")
+    @FieldDesc(value = "认证标识", notNull = true)
     private String authIdentifier;
 
     /**
      * 用户编码
      */
-    @Desc("用户编码")
+    @FieldDesc(value = "用户编码", notNull = true)
     private String userCode;
 
     /**
      * 登录用户名
      */
-    @Desc("登录用户名")
+    @FieldDesc(value = "登录用户名", notNull = true)
     private String username;
 
     /**
      * 登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等
      */
-    @Desc("登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等")
+    @FieldDesc(value = "登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等", notNull = true)
     private String authType;
 
     /**
      * 登录状态：SUCCESS(成功)、FAILED(失败)
      */
-    @Desc("登录状态：SUCCESS(成功)、FAILED(失败)")
+    @FieldDesc(value = "登录状态：SUCCESS(成功)、FAILED(失败)", notNull = true)
     private Integer loginStatus;
 
     /**
      * 登录结果消息
      */
-    @Desc("登录结果消息")
+    @FieldDesc(value = "登录结果消息", notNull = true)
     private String message;
 
     /**
      * 登录IP地址
      */
-    @Desc("登录IP地址")
+    @FieldDesc(value = "登录IP地址", notNull = true)
     private String ipAddress;
 
     /**
      * 用户代理信息
      */
-    @Desc("用户代理信息")
+    @FieldDesc(value = "用户代理信息", notNull = true)
     private String userAgent;
 
 

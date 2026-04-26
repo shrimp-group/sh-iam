@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,199 +21,199 @@ public class IamRequestLog extends BaseEntity {
     /**
      * 租户编码
      */
-    @Desc("租户编码")
+    @FieldDesc(value = "租户编码")
     private String tenantCode;
 
     /**
      * 应用编码
      */
-    @Desc("应用编码")
+    @FieldDesc(value = "应用编码")
     private String appCode;
 
     /**
      * UA
      */
-    @Desc("UA")
+    @FieldDesc(value = "UA")
     private String userAgent;
 
     /**
      * 浏览器名称
      */
-    @Desc("浏览器名称")
+    @FieldDesc(value = "浏览器名称")
     private String browserName;
 
     /**
      * 浏览器版本
      */
-    @Desc("浏览器版本")
+    @FieldDesc(value = "浏览器版本")
     private String browserVersion;
 
     /**
      * 引擎类型
      */
-    @Desc("引擎类型")
+    @FieldDesc(value = "引擎类型")
     private String engineName;
 
     /**
      * 引擎版本
      */
-    @Desc("引擎版本")
+    @FieldDesc(value = "引擎版本")
     private String engineVersion;
 
     /**
      * 用户系统
      */
-    @Desc("用户系统")
+    @FieldDesc(value = "用户系统")
     private String userOs;
 
     /**
      * 用户平台
      */
-    @Desc("用户平台")
+    @FieldDesc(value = "用户平台")
     private String userPlatform;
 
     /**
      * 请求编码
      */
-    @Desc("请求编码")
+    @FieldDesc(value = "请求编码")
     private String characterEncoding;
 
     /**
      * Accept
      */
-    @Desc("Accept")
+    @FieldDesc(value = "Accept")
     private String accept;
 
     /**
      * Accept-语言
      */
-    @Desc("Accept-语言")
+    @FieldDesc(value = "Accept-语言")
     private String acceptLanguage;
 
     /**
      * Accept-编码
      */
-    @Desc("Accept-编码")
+    @FieldDesc(value = "Accept-编码")
     private String acceptEncoding;
 
     /**
      * Cookie
      */
-    @Desc("Cookie")
+    @FieldDesc(value = "Cookie")
     private String cookie;
 
     /**
      * Origin
      */
-    @Desc("Origin")
+    @FieldDesc(value = "Origin")
     private String origin;
 
     /**
      * 引用页
      */
-    @Desc("引用页")
+    @FieldDesc(value = "引用页")
     private String referer;
 
     /**
      * 客户端地址
      */
-    @Desc("客户端地址")
+    @FieldDesc(value = "客户端地址")
     private String remoteAddr;
 
     /**
      * 请求方式
      */
-    @Desc("请求方式")
+    @FieldDesc(value = "请求方式")
     private String method;
 
     /**
      * 请求协议
      */
-    @Desc("请求协议")
+    @FieldDesc(value = "请求协议")
     private String httpProtocol;
 
     /**
      * 请求 主机
      */
-    @Desc("请求 主机")
+    @FieldDesc(value = "请求 主机")
     private String requestHost;
 
     /**
      * 请求 URI
      */
-    @Desc("请求 URI")
+    @FieldDesc(value = "请求 URI")
     private String requestUri;
 
     /**
      * 查询内容
      */
-    @Desc("查询内容")
+    @FieldDesc(value = "查询内容")
     private String queryString;
 
     /**
      * 请求体
      */
-    @Desc("请求体")
+    @FieldDesc(value = "请求体")
     private String requestBody;
 
     /**
      * 响应体
      */
-    @Desc("响应体")
+    @FieldDesc(value = "响应体")
     private String responseBody;
 
     /**
      * 响应状态
      */
-    @Desc("响应状态")
+    @FieldDesc(value = "响应状态")
     private Integer httpStatus;
 
     /**
      * 地区
      */
-    @Desc("地区")
+    @FieldDesc(value = "地区")
     private String location;
 
     /**
      * ISP运营商
      */
-    @Desc("ISP运营商")
+    @FieldDesc(value = "ISP运营商")
     private String isp;
 
     /**
      * 用户token
      */
-    @Desc("用户token")
+    @FieldDesc(value = "用户token")
     private String token;
 
     /**
      * 用户编码
      */
-    @Desc("用户编码")
+    @FieldDesc(value = "用户编码")
     private String userCode;
 
     /**
      * 用户名
      */
-    @Desc("用户名")
+    @FieldDesc(value = "用户名")
     private String username;
 
     /**
      * 用户昵称
      */
-    @Desc("用户昵称")
+    @FieldDesc(value = "用户昵称")
     private String nickname;
 
     /**
      * 耗时
      */
-    @Desc("耗时")
+    @FieldDesc(value = "耗时")
     private Long costTime;
 
     /**
      * 异常信息
      */
-    @Desc("异常信息")
+    @FieldDesc(value = "异常信息")
     private String errorMsg;
 
 

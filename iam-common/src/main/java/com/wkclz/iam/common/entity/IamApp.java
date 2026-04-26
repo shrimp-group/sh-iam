@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,37 +21,37 @@ public class IamApp extends BaseEntity {
     /**
      * 应用编码
      */
-    @Desc("应用编码")
+    @FieldDesc(value = "应用编码")
     private String appCode;
 
     /**
      * 应用名称
      */
-    @Desc("应用名称")
+    @FieldDesc(value = "应用名称")
     private String appName;
 
     /**
      * 应用域名
      */
-    @Desc("应用域名")
+    @FieldDesc(value = "应用域名")
     private String domain;
 
     /**
      * 鉴权类型
      */
-    @Desc("鉴权类型")
+    @FieldDesc(value = "鉴权类型")
     private String authType;
 
     /**
      * 图标
      */
-    @Desc("图标")
+    @FieldDesc(value = "图标")
     private String appIcon;
 
     /**
      * 登录页背景
      */
-    @Desc("登录页背景")
+    @FieldDesc(value = "登录页背景")
     private String loginBgp;
 
 

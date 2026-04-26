@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,49 +21,49 @@ public class IamUserAuth extends BaseEntity {
     /**
      * 用户编码
      */
-    @Desc("用户编码")
+    @FieldDesc(value = "用户编码", notNull = true)
     private String userCode;
 
     /**
      * 认证类型：PASSWORD(密码)、LDAP(LDAP认证)、第三方认证需结合代码实现
      */
-    @Desc("认证类型：PASSWORD(密码)、LDAP(LDAP认证)、第三方认证需结合代码实现")
+    @FieldDesc(value = "认证类型：PASSWORD(密码)、LDAP(LDAP认证)、第三方认证需结合代码实现", notNull = true)
     private String authType;
 
     /**
      * 认证标识：密码认证时为用户名，第三方认证时为第三方用户ID
      */
-    @Desc("认证标识：密码认证时为用户名，第三方认证时为第三方用户ID")
+    @FieldDesc(value = "认证标识：密码认证时为用户名，第三方认证时为第三方用户ID", notNull = true)
     private String authIdentifier;
 
     /**
      * 最后认证时间
      */
-    @Desc("最后认证时间")
+    @FieldDesc(value = "最后认证时间")
     private LocalDateTime lastAuthTime;
 
     /**
      * 状态：0-禁用,1-启用
      */
-    @Desc("状态：0-禁用,1-启用")
+    @FieldDesc(value = "状态：0-禁用,1-启用", notNull = true)
     private Integer authStatus;
 
     /**
      * 最后登录时间
      */
-    @Desc("最后登录时间")
+    @FieldDesc(value = "最后登录时间", notNull = true)
     private LocalDateTime lastLoginTime;
 
     /**
      * 最后登录IP
      */
-    @Desc("最后登录IP")
+    @FieldDesc(value = "最后登录IP")
     private String lastLoginIp;
 
     /**
      * 登录次数
      */
-    @Desc("登录次数")
+    @FieldDesc(value = "登录次数", notNull = true)
     private Integer loginCount;
 
 

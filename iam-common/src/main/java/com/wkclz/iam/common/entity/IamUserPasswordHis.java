@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,19 +21,19 @@ public class IamUserPasswordHis extends BaseEntity {
     /**
      * 用户编码
      */
-    @Desc("用户编码")
+    @FieldDesc(value = "用户编码", notNull = true)
     private String userCode;
 
     /**
      * 加密后的密码
      */
-    @Desc("加密后的密码")
+    @FieldDesc(value = "加密后的密码", notNull = true)
     private String password;
 
     /**
      * 密码盐值
      */
-    @Desc("密码盐值")
+    @FieldDesc(value = "密码盐值", notNull = true)
     private String salt;
 
 
