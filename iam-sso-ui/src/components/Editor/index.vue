@@ -36,7 +36,7 @@ import {baseApi} from '~/env';
 const { proxy } = getCurrentInstance()
 
 const quillEditorRef = ref()
-const uploadUrl = ref(baseApi + "/common/upload") // 上传的图片服务器地址
+const uploadUrl = ref(baseApi + "/micro-file/common/upload") // 上传的图片服务器地址
 const headers = ref({
   Authorization: "Bearer " + getToken()
 })
