@@ -4,7 +4,7 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSONPath;
 import com.wkclz.iam.common.entity.IamRequestLog;
-import com.wkclz.web.helper.IpHelper;
+import com.wkclz.tool.utils.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -73,7 +73,7 @@ public class IpLocalCacheHelper {
         requestLog.setRemoteAddr(remoteAddr);
 
         // 局域网 IP
-        if (IpHelper.isInnerAddress (remoteAddr)) {
+        if (NetworkUtil.isInnerAddress(remoteAddr)) {
             requestLog.setLocation("本地局域网");
             requestLog.setIsp("本地局域网");
             IP_ADDR_CACHE.put(remoteAddr, requestLog);
