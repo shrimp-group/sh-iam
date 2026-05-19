@@ -1,0 +1,65 @@
+# STORY-015 — 用户名密码登录
+
+| 属性 | 值 |
+|------|-----|
+| Story ID | STORY-015 |
+| 所属 Epic | SSO 登录认证模块 |
+| 所属模块 | iam-sso |
+| 优先级 | P0 |
+| 状态 | 待开发 |
+
+## 用户故事
+
+**作为** 系统用户，**我希望** 通过用户名和密码登录系统，**以便** 获取 JWT 令牌并访问受保护的资源。
+
+## 验收标准
+
+1. API 端点：`POST /iam-sso/public/sso/login`
+2. 接收 `LoginRequest`（username、password、captchaId、captchaCode）
+3. 登录流程（7 步校验）：
+   - RSA 解密前端密码（若配置了 RSA 私钥且密码长度 > 32）
+   - 跨三表 JOIN 查询用户认证信息
+   - 检查是否需要验证码（1h 内失败次数）
+   - 验证码校验（Redis 获取并删除，忽略大小写）
+   - 用户不存在返回 USER_NOT_FOUND
+   - 登录方式已禁用返回 EXPIRED_ACCOUNT
+   - 用户已锁定返回 ACCOUNT_LOCKED
+   - 用户已禁用返回 ACCOUNT_DISABLED
+   - 密码错误返回 INVALID_CREDENTIALS
+   - 密码过期返回 EXPIRED_PASSWORD
+4. 登录成功：
+   - 生成 JWT Token（HS256，4h 过期）
+   - 构建 UserSession 存入 Redis
+   - 记录登录日志
+   - 更新用户最后登录 IP
+5. 返回 `LoginResponse`（含 token、用户信息）
+6. 每次登录尝试（无论成功失败）都记录登录日志
+
+## 技术实现要点
+
+- 密码解密：`RsaTool.decryptByPrivateKey()`，仅当配置了 RSA 私钥且密码长度 > 32 时执行
+- 用户查询：`ssoLoginMapper.getUserAuth4PasswordByUsername()` 跨 iam_user + iam_user_auth + iam_user_auth_password 三表 JOIN
+- 验证码判断：查询最近 1 小时内该用户的登录失败次数
+- 验证码校验：从 Redis 获取并删除（一次性使用），忽略大小写
+- 密码校验：`PasswordHelper.validatePasswordWithSalt()`（自动识别 BCrypt/MD5）
+- 密码过期检查：`lastChangedTime + passwordExpireDays`
+- JWT 生成：`JwtUtil.generateToken()`
+- Redis Session：`iam:session:{username}:{md5(token)}` → UserSession JSON
+- 安全提示：用户不存在时提示"用户不存在, 或密码错误!"，防止信息泄露
+
+## 依赖故事
+
+- STORY-003（密码加密校验工具）
+- STORY-005（JWT 令牌工具）
+- STORY-012（图形验证码生成）
+
+## 涉及文件
+
+| 文件 | 路径 |
+|------|------|
+| LoginRest | iam-sso/src/main/java/com/wkclz/iam/sso/rest/LoginRest.java |
+| IamLoginService | iam-sso/src/main/java/com/wkclz/iam/sso/service/IamLoginService.java |
+| SsoLoginMapper | iam-sso/src/main/java/com/wkclz/iam/sso/mapper/SsoLoginMapper.java |
+| SsoLoginLogMapper | iam-sso/src/main/java/com/wkclz/iam/sso/mapper/SsoLoginLogMapper.java |
+| LoginRequest | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/LoginRequest.java |
+| LoginResponse | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/LoginResponse.java |

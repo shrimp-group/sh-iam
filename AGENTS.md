@@ -270,3 +270,102 @@ iam_request_log ── 请求日志 (独立)
 - 新增 Service 继承 `BaseService<Entity, Mapper>` 以获得标准 CRUD 能力
 - 缓存方案优先使用 Guava LoadingCache (已引入 guava 依赖)，注意最大容量与过期策略
 - Redis Key 命名遵循 `iam:模块:业务:标识` 模式
+
+---
+
+## 故事索引 (Story Index)
+
+故事文档目录：`docs/stories/`
+
+### 公共基础模块 (iam-common)
+
+| Story ID | 故事名称 | 优先级 | 文档 |
+|----------|---------|--------|------|
+| STORY-001 | IAM 实体与 DTO 体系定义 | P0 | [STORY-001](docs/stories/STORY-001-iam-entity-dto-system.md) |
+| STORY-002 | 关联关系实体定义 | P0 | [STORY-002](docs/stories/STORY-002-iam-relation-entities.md) |
+| STORY-003 | 密码加密校验工具 | P0 | [STORY-003](docs/stories/STORY-003-password-helper.md) |
+| STORY-004 | IP 归属地缓存工具 | P1 | [STORY-004](docs/stories/STORY-004-ip-location-cache.md) |
+
+### SDK 鉴权与安全模块 (iam-sdk)
+
+| Story ID | 故事名称 | 优先级 | 文档 |
+|----------|---------|--------|------|
+| STORY-005 | JWT 令牌生成与校验 | P0 | [STORY-005](docs/stories/STORY-005-jwt-token.md) |
+| STORY-006 | 用户会话上下文管理 | P0 | [STORY-006](docs/stories/STORY-006-session-helper.md) |
+| STORY-007 | IAM 鉴权过滤器 | P0 | [STORY-007](docs/stories/STORY-007-iam-auth-filter.md) |
+| STORY-008 | 请求日志采集过滤器 | P0 | [STORY-008](docs/stories/STORY-008-logging-filter.md) |
+| STORY-009 | 请求体可重复读取包装 | P0 | [STORY-009](docs/stories/STORY-009-request-wrapper-filter.md) |
+| STORY-010 | HTTP 安全过滤器 | P1 | [STORY-010](docs/stories/STORY-010-security-filter.md) |
+| STORY-011 | AK 签名工具 | P1 | [STORY-011](docs/stories/STORY-011-ak-sign-helper.md) |
+| STORY-012 | 图形验证码生成 | P0 | [STORY-012](docs/stories/STORY-012-captcha-helper.md) |
+| STORY-013 | SDK 配置与自动装配 | P0 | [STORY-013](docs/stories/STORY-013-sdk-auto-config.md) |
+| STORY-014 | SsoFacade 门面与 SsoService 接口 | P0 | [STORY-014](docs/stories/STORY-014-sso-facade-service.md) |
+
+### SSO 登录认证模块 (iam-sso)
+
+| Story ID | 故事名称 | 优先级 | 文档 |
+|----------|---------|--------|------|
+| STORY-015 | 用户名密码登录 | P0 | [STORY-015](docs/stories/STORY-015-username-password-login.md) |
+| STORY-016 | 图形验证码接口 | P0 | [STORY-016](docs/stories/STORY-016-captcha-rest.md) |
+| STORY-017 | 用户注册接口 | P2 | [STORY-017](docs/stories/STORY-017-user-register.md) |
+| STORY-018 | 用户登出 | P0 | [STORY-018](docs/stories/STORY-018-user-logout.md) |
+| STORY-019 | 用户信息与菜单资源查询 | P0 | [STORY-019](docs/stories/STORY-019-user-info-menu-resource.md) |
+| STORY-020 | 若依格式菜单树适配 | P1 | [STORY-020](docs/stories/STORY-020-ruoyi-menu-tree.md) |
+| STORY-021 | Token 校验服务实现 | P0 | [STORY-021](docs/stories/STORY-021-token-check-service.md) |
+| STORY-022 | 请求日志持久化服务 | P1 | [STORY-022](docs/stories/STORY-022-request-log-persistence.md) |
+| STORY-023 | 用户名缓存服务 | P1 | [STORY-023](docs/stories/STORY-023-username-cache-service.md) |
+| STORY-024 | SSO 配置与自动装配 | P0 | [STORY-024](docs/stories/STORY-024-sso-auto-config.md) |
+
+### 管理后台模块 (iam-admin)
+
+| Story ID | 故事名称 | 优先级 | 文档 |
+|----------|---------|--------|------|
+| STORY-025 | 用户 CRUD 管理 | P0 | [STORY-025](docs/stories/STORY-025-user-crud.md) |
+| STORY-026 | 用户认证方式管理 | P1 | [STORY-026](docs/stories/STORY-026-user-auth-management.md) |
+| STORY-027 | 角色 CRUD 管理 | P0 | [STORY-027](docs/stories/STORY-027-role-crud.md) |
+| STORY-028 | 菜单 CRUD 与树形管理 | P0 | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md) |
+| STORY-029 | 应用 CRUD 管理 | P0 | [STORY-029](docs/stories/STORY-029-app-crud.md) |
+| STORY-030 | API 路由 CRUD 管理 | P0 | [STORY-030](docs/stories/STORY-030-api-crud.md) |
+| STORY-031 | API 自动扫描同步 | P1 | [STORY-031](docs/stories/STORY-031-api-auto-scan.md) |
+| STORY-032 | 访问密钥 CRUD 管理 | P1 | [STORY-032](docs/stories/STORY-032-access-key-crud.md) |
+| STORY-033 | AK-API 关联管理 | P1 | [STORY-033](docs/stories/STORY-033-ak-api-binding.md) |
+| STORY-034 | 角色-菜单关联管理 | P0 | [STORY-034](docs/stories/STORY-034-role-menu-binding.md) |
+| STORY-035 | 角色-用户与用户-角色关联管理 | P0 | [STORY-035](docs/stories/STORY-035-user-role-binding.md) |
+| STORY-036 | 菜单-API 关联管理 | P0 | [STORY-036](docs/stories/STORY-036-menu-api-binding.md) |
+| STORY-037 | 数据权限维度管理 | P1 | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md) |
+| STORY-038 | 角色-数据权限关联管理 | P1 | [STORY-038](docs/stories/STORY-038-role-data-binding.md) |
+| STORY-039 | 登录日志查询 | P1 | [STORY-039](docs/stories/STORY-039-login-log-query.md) |
+| STORY-040 | 请求日志查询 | P1 | [STORY-040](docs/stories/STORY-040-request-log-query.md) |
+| STORY-041 | 当前用户菜单查询 | P0 | [STORY-041](docs/stories/STORY-041-user-menu-query.md) |
+| STORY-042 | Admin 自动配置与路由常量 | P0 | [STORY-042](docs/stories/STORY-042-admin-auto-config.md) |
+
+### 故事依赖关系概览
+
+```
+STORY-001 (实体体系) ──→ STORY-002 (关联实体) ──→ STORY-003 (密码工具)
+     │                       │
+     ├──→ STORY-005 (JWT) ──→ STORY-006 (会话上下文) ──→ STORY-007 (鉴权过滤器)
+     │        │                                          ├──→ STORY-015 (登录)
+     │        │                                          └──→ STORY-018 (登出)
+     │        └──→ STORY-021 (Token校验)
+     │
+     ├──→ STORY-012 (验证码) ──→ STORY-016 (验证码接口)
+     │
+     ├──→ STORY-025 (用户CRUD) ──→ STORY-026 (认证方式管理)
+     ├──→ STORY-027 (角色CRUD) ──→ STORY-034 (角色-菜单) ──→ STORY-036 (菜单-API)
+     │                            ├──→ STORY-035 (角色-用户)
+     │                            └──→ STORY-038 (角色-数据权限)
+     ├──→ STORY-028 (菜单CRUD)
+     ├──→ STORY-029 (应用CRUD)
+     ├──→ STORY-030 (API CRUD) ──→ STORY-031 (API自动扫描)
+     └──→ STORY-032 (AK CRUD) ──→ STORY-033 (AK-API关联)
+
+STORY-009 (请求包装) ──→ STORY-008 (日志过滤器) ──→ STORY-022 (日志持久化)
+STORY-013 (SDK配置)  ──→ STORY-010 (安全过滤器)
+                    ──→ STORY-011 (AK签名)
+                    ──→ STORY-014 (SsoFacade) ──→ STORY-021 (Token校验)
+STORY-024 (SSO配置)  ──→ STORY-019 (用户信息与菜单)
+                    ──→ STORY-020 (若依菜单树)
+                    ──→ STORY-023 (用户名缓存)
+STORY-042 (Admin配置) ──→ STORY-031 (API自动扫描)
+```

@@ -1,0 +1,50 @@
+# STORY-008 — 请求日志采集过滤器
+
+| 属性 | 值 |
+|------|-----|
+| Story ID | STORY-008 |
+| 所属 Epic | SDK 鉴权与安全模块 |
+| 所属模块 | iam-sdk |
+| 优先级 | P0 |
+| 状态 | 待开发 |
+
+## 用户故事
+
+**作为** 系统运维人员，**我希望** 系统能自动记录每个 HTTP 请求的完整信息（请求/响应体、耗时、用户信息等），**以便** 进行问题排查和安全审计。
+
+## 验收标准
+
+1. 继承 `OncePerRequestFilter`，Order = `Integer.MIN_VALUE + 1`
+2. 请求前采集元数据（URI、Method、Headers、IP、UA 等）
+3. 请求后补充用户信息、响应状态、耗时
+4. 使用 `ContentCachingResponseWrapper` 包装响应，实现响应体多次读取
+5. 静态资源请求不记录日志
+6. `/public/status` 健康检查路径不记录日志
+7. 请求体中的密码字段自动脱敏（`assword":"xxx"` → `assword":"***"`）
+8. 日志字段超长内容自动截断
+9. 通过 `SsoFacade.saveLog()` 异步远程保存日志
+10. 每次请求前清理 `LocalThreadHelper` 和 `UserContext`，防止线程池复用导致的上下文污染
+11. URI 日志判断结果缓存在 `LOGS_SET`，避免重复正则匹配
+
+## 技术实现要点
+
+- 执行顺序仅次于 RequestWrapperFilter（Order = MIN_VALUE + 1）
+- 请求体读取跳过 `multipart/form-data`
+- 响应体仅记录 `application/json` 类型
+- Debug 模式输出完整请求/响应，非 debug 仅输出请求参数
+- 静态资源后缀从 `IamSdkConfig.staticSubfix` 读取
+- `ssoFacade` 注入标记 `required = false`，无实现时不保存日志
+- `maskPwd()` 使用正则脱敏请求体中的密码字段
+- `subLog()` 截断各字段超长内容，防止数据库溢出
+
+## 依赖故事
+
+- STORY-009（请求体可重复读取包装）
+- STORY-014（SsoFacade 接口）
+
+## 涉及文件
+
+| 文件 | 路径 |
+|------|------|
+| LoggingFilter | iam-sdk/src/main/java/com/wkclz/iam/sdk/filter/LoggingFilter.java |
+| RequestLog | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/RequestLog.java |
