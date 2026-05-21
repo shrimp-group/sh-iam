@@ -1,0 +1,66 @@
+# STORY-001 — IAM 实体与 DTO 体系定义
+
+| 属性 | 值 |
+|------|-----|
+| Story ID | STORY-001 |
+| 所属 Epic | 公共基础模块 |
+| 所属模块 | iam-common |
+| 优先级 | P0 |
+| 状态 | 待开发 |
+
+## 用户故事
+
+**作为** IAM 系统开发者，**我希望** 定义完整的用户、角色、菜单、应用、API、访问密钥等核心实体与 DTO，**以便** 所有业务模块能够基于统一的实体体系进行数据操作和传输。
+
+## 验收标准
+
+1. 定义 `IamUser` 实体，包含 userCode、username、nickname、email、phone、avatar、userStatus 字段，继承 BaseEntity
+2. 定义 `IamRole` 实体，包含 tenantCode、appCode、parentCode、roleCode、roleName 字段
+3. 定义 `IamMenu` 实体，包含 appCode、parentCode、menuCode、menuName、icon、menuType(MENU/BUTTON)、routePath、component、buttonCode、hidden 字段
+4. 定义 `IamApp` 实体，包含 appCode、appName、domain、authType、appIcon、loginBgp 字段
+5. 定义 `IamApi` 实体，包含 module、appCode、apiCode、apiMethod、apiUri、apiName、writeFlag 字段
+6. 定义 `IamAccessKey` 实体，包含 appCode、appId、accessKey、secretKey、enableStatus、enableStart、enableStop 字段
+7. 定义 `IamUserAuth` 实体，包含 userCode、authType(PASSWORD/LDAP)、authIdentifier、lastAuthTime、authStatus、lastLoginTime、lastLoginIp、loginCount 字段
+8. 定义 `IamUserAuthPassword` 实体，包含 userCode、password、salt、lastChangedTime 字段
+9. 定义 `IamUserPasswordHis` 实体，包含 userCode、password、salt 字段
+10. 所有实体继承 `BaseEntity`，使用 `@Data` + `@EqualsAndHashCode(callSuper = false)` + `@FieldDesc` 注解
+11. 每个实体提供 `copy()` 和 `copyIfNotNull()` 静态方法
+12. 每个实体对应一个 DTO 类（继承对应 Entity），用于数据传输
+13. 所有实体对应数据库表名遵循 `iam_` + 下划线业务名规范
+
+## 技术实现要点
+
+- 实体类统一继承 `com.wkclz.core.base.BaseEntity`，自动获得 id、sort、createTime、createBy、updateTime、updateBy、remark、version、deleted 系统字段
+- `copyIfNotNull()` 方法用于更新场景，避免 null 值覆盖已有数据
+- DTO 类继承对应 Entity，可扩展查询/传输专用字段
+- `userStatus` 枚举值：1-启用、2-禁用、3-锁定
+- `authType` 枚举值：PASSWORD、LDAP
+- `menuType` 枚举值：MENU、BUTTON
+- `writeFlag`：1=白名单免鉴权
+
+## 依赖故事
+
+无（基础故事）
+
+## 涉及文件
+
+| 文件 | 路径 |
+|------|------|
+| IamUser | iam-common/src/main/java/com/wkclz/iam/common/entity/IamUser.java |
+| IamUserDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamUserDto.java |
+| IamRole | iam-common/src/main/java/com/wkclz/iam/common/entity/IamRole.java |
+| IamRoleDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamRoleDto.java |
+| IamMenu | iam-common/src/main/java/com/wkclz/iam/common/entity/IamMenu.java |
+| IamMenuDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamMenuDto.java |
+| IamApp | iam-common/src/main/java/com/wkclz/iam/common/entity/IamApp.java |
+| IamAppDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamAppDto.java |
+| IamApi | iam-common/src/main/java/com/wkclz/iam/common/entity/IamApi.java |
+| IamApiDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamApiDto.java |
+| IamAccessKey | iam-common/src/main/java/com/wkclz/iam/common/entity/IamAccessKey.java |
+| IamAccessKeyDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamAccessKeyDto.java |
+| IamUserAuth | iam-common/src/main/java/com/wkclz/iam/common/entity/IamUserAuth.java |
+| IamUserAuthDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamUserAuthDto.java |
+| IamUserAuthPassword | iam-common/src/main/java/com/wkclz/iam/common/entity/IamUserAuthPassword.java |
+| IamUserAuthPasswordDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamUserAuthPasswordDto.java |
+| IamUserPasswordHis | iam-common/src/main/java/com/wkclz/iam/common/entity/IamUserPasswordHis.java |
+| IamUserPasswordHisDto | iam-common/src/main/java/com/wkclz/iam/common/dto/IamUserPasswordHisDto.java |

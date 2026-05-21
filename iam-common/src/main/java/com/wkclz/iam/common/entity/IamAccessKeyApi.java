@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,19 +21,19 @@ public class IamAccessKeyApi extends BaseEntity {
     /**
      * 所属应用
      */
-    @Desc("所属应用")
+    @FieldDesc(value = "所属应用", notNull = true)
     private String appCode;
 
     /**
      * 应用id
      */
-    @Desc("应用id")
+    @FieldDesc(value = "应用id", notNull = true)
     private String appId;
 
     /**
      * API 编码
      */
-    @Desc("API 编码")
+    @FieldDesc(value = "API 编码", notNull = true)
     private String apiCode;
 
 

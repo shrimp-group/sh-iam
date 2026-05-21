@@ -36,6 +36,10 @@
             </el-radio-group>
             <form-tip html="是：正常使用；否：此用户不可再使用；"/>
           </el-form-item>
+          <el-form-item v-if="!form.id" label="密码" prop="password">
+            <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
+            <form-tip text="用户初始密码，长度8-20个字符"/>
+          </el-form-item>
         </el-col>
       </el-row>
 
@@ -81,6 +85,10 @@ const rules = ref({
   ],
   userStatus: [
     { required: true, message: "用户状态不能为空", trigger: "blur" }
+  ],
+  password: [
+    { required: true, message: "密码不能为空", trigger: "blur" },
+    { min: 8, max: 20, message: "密码长度应在 8-20 个字符之间", trigger: "blur" }
   ],
 })
 

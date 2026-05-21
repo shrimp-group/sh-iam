@@ -2,10 +2,13 @@ package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.service.IamUserAuthPasswordService;
 import com.wkclz.iam.admin.service.IamUserAuthService;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamUserAuth;
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +17,8 @@ public class UserAuthRest {
 
     @Autowired
     protected IamUserAuthService iamUserAuthService;
+    @Resource
+    private IamUserAuthPasswordService iamUserAuthPasswordService;
 
     @GetMapping(Route.USER_AUTH_LIST)
     public R userAuthList(IamUserAuth entity) {
@@ -39,6 +44,14 @@ public class UserAuthRest {
     @PostMapping(Route.USER_AUTH_REMOVE)
     public R userAuthRemove(@RequestBody IamUserAuthDto iamUserAuthDto) {
         return R.ok(iamUserAuthService.remove(iamUserAuthDto));
+    }
+
+    @PostMapping(Route.USER_AUTH_RESET_PASSWORD)
+    public R userAuthResetPassword(@RequestBody IamUserAuthDto dto) {
+        Assert.notNull(dto.getUserCode(), "用户编码不能为空");
+        Assert.notNull(dto.getPassword(), "新密码不能为空");
+        iamUserAuthPasswordService.resetPassword(dto.getUserCode(), dto.getPassword());
+        return R.ok();
     }
 
 }

@@ -2,6 +2,7 @@ import router from '@/router'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import defAva from '@/assets/images/profile.jpg'
 import {ssoLogin, ssoLogout} from "@/api/sso";
+import { encrypt } from "@/utils/jsencrypt"
 import {Base64} from 'js-base64';
 
 const useUserStore = defineStore(
@@ -19,7 +20,7 @@ const useUserStore = defineStore(
         return new Promise((resolve, reject) => {
             ssoLogin({
               username: userInfo.username.trim(),
-              password: userInfo.password,
+              password: encrypt(userInfo.password),
               captchaCode: userInfo.captchaCode,
               captchaId: userInfo.captchaId
           }).then(res => {

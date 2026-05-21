@@ -71,7 +71,6 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       } else if (route.component === 'InnerLink') {
         route.component = InnerLink
       } else {
-        console.log('route.component', route);
         route.component = loadView(route.component);
       }
     }
@@ -117,7 +116,6 @@ export function filterDynamicRoutes(routes) {
 
 export const loadView = (view) => {
   let res
-  console.log('modules', modules);
   for (const path in modules) {
     const dir = path.split('views/')[1].split('.vue')[0]
     if (dir === view) {

@@ -11,17 +11,21 @@ export const userInfo = (params) => {
 }
 
 // 3. 用户-创建
-export const userCreate = (params) => {
+export const userCreate = (data) => {
   return request({url: '/iam-admin/user/create', method: 'post', data})
 }
 
 // 4. 用户-修改
-export const userUpdate = (params) => {
+export const userUpdate = (data) => {
   return request({url: '/iam-admin/user/update', method: 'post', data})
 }
 
 // 5. 用户-删除
-export const userRemove = (params) => {
+export const userRemove = (data) => {
   return request({url: '/iam-admin/user/remove', method: 'post', data})
 }
 
+// 6. 用户认证-重置密码
+export const userAuthResetPassword = (data) => {
+  return request({url: '/iam-admin/user-auth/reset-password', method: 'post', data})
+}

@@ -42,5 +42,61 @@
             id = #{id}
     </update>
 
+    <select id="batchGetNicknamesByUserCodes" resultType="com.wkclz.iam.common.entity.IamUser">
+        SELECT
+            user_code, nickname
+        FROM
+            iam_user
+        WHERE
+            deleted = 0
+            AND user_code IN ( <foreach collection="userCodes" item="item" separator=","> #{item} </foreach> )
+    </select>
+
+    <select id="getPasswordByUserCode" parameterType="java.lang.String"
+            resultType="com.wkclz.iam.common.entity.IamUserAuthPassword">
+        SELECT
+        id, user_code, password, salt, last_changed_time, version
+        FROM
+        iam_user_auth_password
+        WHERE
+        deleted = 0
+        AND user_code = #{userCode}
+    </select>
+
+    <select id="getPasswordHisByUserCode" resultType="com.wkclz.iam.common.entity.IamUserPasswordHis">
+        SELECT
+        id, user_code, password, salt, create_time
+        FROM
+        iam_user_password_his
+        WHERE
+        deleted = 0
+        AND user_code = #{userCode}
+        ORDER BY
+        id DESC
+        LIMIT #{limit}
+    </select>
+
+    <update id="updatePasswordByUserCode" parameterType="com.wkclz.iam.common.entity.IamUserAuthPassword">
+        UPDATE iam_user_auth_password
+        SET
+        password = #{password},
+        salt = #{salt},
+        last_changed_time = NOW(),
+        version = version + 1
+        WHERE
+        deleted = 0
+        AND user_code = #{userCode}
+        AND version = #{version}
+    </update>
+
+    <insert id="insertPasswordHis" parameterType="com.wkclz.iam.common.entity.IamUserPasswordHis"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO iam_user_password_his (
+        user_code, password, salt, create_by, update_by
+        ) VALUES (
+        #{userCode}, #{password}, #{salt}, #{createBy}, #{updateBy}
+        )
+    </insert>
+
 </mapper>
 

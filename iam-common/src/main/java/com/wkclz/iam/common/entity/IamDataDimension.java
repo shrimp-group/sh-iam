@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.Desc;
+import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,31 +21,31 @@ public class IamDataDimension extends BaseEntity {
     /**
      * 应用编码
      */
-    @Desc("应用编码")
+    @FieldDesc(value = "应用编码")
     private String appCode;
 
     /**
      * 元数据编码
      */
-    @Desc("元数据编码")
+    @FieldDesc(value = "元数据编码")
     private String dimensionCode;
 
     /**
      * 元数据名称
      */
-    @Desc("元数据名称")
+    @FieldDesc(value = "元数据名称")
     private String dimensionName;
 
     /**
      * 元数据数组(优先于脚本)
      */
-    @Desc("元数据数组(优先于脚本)")
+    @FieldDesc(value = "元数据数组(优先于脚本)")
     private String dimensionDataJson;
 
     /**
      * 元数据脚本(优先级低)
      */
-    @Desc("元数据脚本(优先级低)")
+    @FieldDesc(value = "元数据脚本(优先级低)")
     private String dimensionScript;
 
 

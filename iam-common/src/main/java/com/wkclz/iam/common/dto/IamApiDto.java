@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table IamApi () 数据库实例扩展，代码重新生成不覆盖
+ * @table IamApi (路由映射) 数据库实例扩展，代码重新生成不覆盖
  */
 
 @Data

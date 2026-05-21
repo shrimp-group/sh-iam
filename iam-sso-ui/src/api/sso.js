@@ -23,4 +23,3 @@ export const userMenuTree = () => {
 export const ssoRegister = (data) => {
   return request({url: '/iam-sso/public/sso/register', method: 'post', data})
 }
-

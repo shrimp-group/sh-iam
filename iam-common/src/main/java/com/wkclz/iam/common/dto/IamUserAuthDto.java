@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table IamUserAuth () 数据库实例扩展，代码重新生成不覆盖
+ * @table IamUserAuth (用户认证关系表) 数据库实例扩展，代码重新生成不覆盖
  */
 
 @Data

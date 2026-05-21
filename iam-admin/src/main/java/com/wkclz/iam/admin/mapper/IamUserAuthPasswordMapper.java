@@ -1,8 +1,9 @@
 package com.wkclz.iam.admin.mapper;
 
-import com.wkclz.mybatis.mapper.BaseMapper;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
+import com.wkclz.mybatis.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * Description Create by sh-generator
@@ -13,8 +14,8 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IamUserAuthPasswordMapper extends BaseMapper<IamUserAuthPassword> {
 
-    // 示例查询,可删除
-    Long example();
+
+    IamUserAuthPassword selectByUserCode(@Param("userCode") String userCode);
 
 }
 

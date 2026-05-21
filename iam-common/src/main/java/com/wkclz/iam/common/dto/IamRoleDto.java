@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table IamRole () 数据库实例扩展，代码重新生成不覆盖
+ * @table IamRole (角色) 数据库实例扩展，代码重新生成不覆盖
  */
 
 @Data

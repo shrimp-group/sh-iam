@@ -1,0 +1,44 @@
+# STORY-003 — 密码加密校验工具
+
+| 属性 | 值 |
+|------|-----|
+| Story ID | STORY-003 |
+| 所属 Epic | 公共基础模块 |
+| 所属模块 | iam-common |
+| 优先级 | P0 |
+| 状态 | 待开发 |
+
+## 用户故事
+
+**作为** IAM 系统开发者，**我希望** 提供统一的密码加密与校验工具，支持 BCrypt 和 MD5+salt 双算法兼容及平滑升级，**以便** 系统能安全地处理用户密码，并支持从旧 MD5 算法向 BCrypt 的渐进式迁移。
+
+## 验收标准
+
+1. `PasswordHelper.generatePassword(password)` 使用 BCrypt 加密密码
+2. `PasswordHelper.generatePasswordWithSalt(password, salt)` 使用 BCrypt 加密 password+salt
+3. `PasswordHelper.generatePasswordLegacy(password, salt)` 使用 MD5 加密 password+salt（已废弃，兼容旧系统）
+4. `PasswordHelper.validatePassword(password, encodedPassword)` 自动识别 BCrypt/MD5 格式并校验
+5. `PasswordHelper.validatePasswordWithSalt(password, salt, encodedPassword)` 带 salt 的密码校验
+6. `PasswordHelper.isBcryptPassword(encodedPassword)` 判断是否为 BCrypt 加密（前缀 `$2a$`）
+7. `PasswordHelper.isLegacyMd5Password(encodedPassword)` 判断是否为旧版 MD5 加密
+8. `PasswordHelper.upgradePassword(password, salt)` 将旧 MD5 密码升级为 BCrypt 加密
+9. BCrypt 强度因子为 12（2^12 轮哈希）
+10. 所有方法对空值进行校验，抛出 `UserException`
+
+## 技术实现要点
+
+- 双算法兼容策略：通过 `encodedPassword.startsWith("$2a$")` 自动判断密码格式
+- BCrypt 密码走 `BCryptPasswordEncoder.matches()`，MD5 密码走 `Md5Tool.md5()` 比对
+- 密码升级路径：旧系统 MD5+salt 密码在用户登录成功后可通过 `upgradePassword()` 升级为 BCrypt
+- BCrypt 强度因子 12，比 MD5 安全性大幅提升
+- `BCRYPT_PREFIX = "$2a$"` 用于识别 BCrypt 加密的密码
+
+## 依赖故事
+
+- STORY-001（IamUserAuthPassword 实体定义）
+
+## 涉及文件
+
+| 文件 | 路径 |
+|------|------|
+| PasswordHelper | iam-common/src/main/java/com/wkclz/iam/common/helper/PasswordHelper.java |

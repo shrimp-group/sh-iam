@@ -17,7 +17,8 @@
 </template>
 
 <script setup>
-import { updateUserPwd } from "@/api/system/user"
+import { changePassword } from "@/api/user"
+import { encrypt } from "@/utils/jsencrypt"
 
 const { proxy } = getCurrentInstance()
 
@@ -45,7 +46,11 @@ const rules = ref({
 function submit() {
   proxy.$refs.pwdRef.validate(valid => {
     if (valid) {
-      updateUserPwd(user.oldPassword, user.newPassword).then(response => {
+      const data = {
+        oldPassword: encrypt(user.oldPassword),
+        newPassword: encrypt(user.newPassword)
+      }
+      changePassword(data).then(() => {
         proxy.$modal.msgSuccess("修改成功")
       })
     }

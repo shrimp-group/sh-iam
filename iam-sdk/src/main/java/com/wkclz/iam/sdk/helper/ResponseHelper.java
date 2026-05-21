@@ -29,7 +29,7 @@ public class ResponseHelper {
             PrintWriter pw = response.getWriter();
             pw.write(string);
             pw.flush();
-            response.flushBuffer();
+            pw.close();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }

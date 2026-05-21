@@ -1,0 +1,46 @@
+# STORY-024 — SSO 配置与自动装配
+
+| 属性 | 值 |
+|------|-----|
+| Story ID | STORY-024 |
+| 所属 Epic | SSO 登录认证模块 |
+| 所属模块 | iam-sso |
+| 优先级 | P0 |
+| 状态 | 待开发 |
+
+## 用户故事
+
+**作为** 系统开发者，**我希望** SSO 模块通过自动装配机制注册所有组件，**以便** 引入 iam-sso 依赖后即可使用完整的 SSO 功能。
+
+## 验收标准
+
+1. `IamSsoAutoConfig` 使用 `@AutoConfiguration` + `@ComponentScan` + `@MapperScan`
+2. 无条件装配（不依赖配置开关）
+3. 注册在 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
+4. `IamSsoConfig` 管理 SSO 专属配置：
+   - `iam.sso.password-expire-days`：密码过期天数（默认 180）
+   - `iam.sso.private-key`：RSA 私钥（密码解密）
+   - `iam.sso.public-key`：RSA 公钥（密码加密）
+5. Route 接口定义所有 SSO 路由常量，使用 `@Router` 注解标记
+6. 路由前缀：`/iam-sso`
+
+## 技术实现要点
+
+- `@ComponentScan` 扫描 `com.wkclz.iam.sso` 包
+- `@MapperScan` 扫描 Mapper 接口
+- SsoFacadeImpl 和 IamSsoServiceImpl 自动覆盖 SDK 默认实现
+- Route 接口使用 `@Router(module = "iam-sso", prefix = "/iam-sso")` 注解
+- 路由分类：`/public/` 开头为公开接口，`/user/` 开头需鉴权
+
+## 依赖故事
+
+- STORY-013（SDK 自动装配）
+
+## 涉及文件
+
+| 文件 | 路径 |
+|------|------|
+| IamSsoAutoConfig | iam-sso/src/main/java/com/wkclz/iam/sso/IamSsoAutoConfig.java |
+| IamSsoConfig | iam-sso/src/main/java/com/wkclz/iam/sso/config/IamSsoConfig.java |
+| Route | iam-sso/src/main/java/com/wkclz/iam/sso/Route.java |
+| AutoConfiguration.imports | iam-sso/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports |

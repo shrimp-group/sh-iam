@@ -50,9 +50,10 @@
         <template #default="{row}">{{ parseTime(row.updateTime) }}</template>
       </el-table-column>
       <el-table-column label="更新人" prop="updateBy" width="120" v-if="columns.updateBy.visible"/>
-      <el-table-column fixed="right" width="98">
+      <el-table-column fixed="right" width="130">
         <template #header><table-setting v-model:columns="columns"/></template>
         <template #default="{row}">
+          <el-button link type="warning" icon="Key" @click="handleResetPassword(row)" title="重置密码"/>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(row)" title="编辑"/>
           <el-popconfirm :title="'确认删除用户:' + row.username + '?'" placement="top-end" @confirm="handleDelete(row)">
             <template #reference><el-button link type="danger" icon="Delete" title="删除"/></template>
@@ -69,12 +70,14 @@
         @pagination="getList"
     />
     <edit ref="editRef" @change="getList"/>
+    <reset-password ref="resetPwdRef" @change="getList"/>
   </div>
 </template>
 
 <script setup name="IamUser">
 import { userPage, userRemove} from "@/api/user/user";
 import Edit from "./components/edit"
+import ResetPassword from "./components/reset-password"
 
 const { proxy } = getCurrentInstance();
 const { BOOLEAN } = proxy.useDict("BOOLEAN");
@@ -134,6 +137,9 @@ function handleAdd() {
 }
 function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);
+}
+function handleResetPassword(row) {
+  proxy.$refs["resetPwdRef"].init(row);
 }
 
 /** 删除按钮操作 */
