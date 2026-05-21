@@ -30,11 +30,6 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
     @Autowired
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
 
-    // 示例方法，可删除
-    public Long example() {
-        return mapper.example();
-    }
-
     public IamUserAuthPassword create(IamUserAuthPassword entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
