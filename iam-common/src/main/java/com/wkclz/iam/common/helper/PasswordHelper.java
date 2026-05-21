@@ -1,8 +1,11 @@
 package com.wkclz.iam.common.helper;
 
 import com.wkclz.core.exception.UserException;
+import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.tool.tools.Md5Tool;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 public class PasswordHelper {
 
@@ -28,6 +31,18 @@ public class PasswordHelper {
             throw UserException.of("md5 不能为空");
         }
         return md5.equals(Md5Tool.md5(password + salt));
+    }
+
+    public static boolean isPasswordInHistory(String newPassword, List<IamUserPasswordHis> historyList) {
+        if (StringUtils.isBlank(newPassword) || historyList == null || historyList.isEmpty()) {
+            return false;
+        }
+        for (IamUserPasswordHis his : historyList) {
+            if (validatePassword(newPassword, his.getSalt(), his.getPassword())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

@@ -31,6 +31,8 @@ public interface Route {
     String USER_AUTH_UPDATE = "/user-auth/update";
     @ApiDesc("5. 用户认证方式-删除")
     String USER_AUTH_REMOVE = "/user-auth/remove";
+    @ApiDesc("6. 用户认证方式-重置密码")
+    String USER_AUTH_RESET_PASSWORD = "/user-auth/reset-password";
 
     // 应用管理
     @ApiDesc("1. 应用管理-分页")
