@@ -1,15 +1,19 @@
 package com.wkclz.iam.sso.service;
 
 import com.alibaba.fastjson2.JSON;
+import com.wkclz.core.exception.UserException;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
+import com.wkclz.iam.common.entity.IamUserAuthPassword;
+import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.helper.PasswordHelper;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.enums.AuthType;
 import com.wkclz.iam.sdk.enums.LoginStatus;
 import com.wkclz.iam.sdk.helper.CaptchaHelper;
 import com.wkclz.iam.sdk.helper.SessionHelper;
+import com.wkclz.iam.sdk.model.ChangePasswordRequest;
 import com.wkclz.iam.sdk.model.LoginRequest;
 import com.wkclz.iam.sdk.model.LoginResponse;
 import com.wkclz.iam.sdk.model.UserJwt;
@@ -19,6 +23,7 @@ import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
 import com.wkclz.tool.tools.RsaTool;
+import com.wkclz.tool.utils.SecretUtil;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,9 +31,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Service
 public class IamLoginService {
@@ -207,6 +215,57 @@ public class IamLoginService {
         redisTemplate.opsForValue().getAndDelete(tokenRedisKey);
     }
 
+
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(ChangePasswordRequest request) {
+        Assert.notNull(request.getOldPassword(), "旧密码不能为空");
+        Assert.notNull(request.getNewPassword(), "新密码不能为空");
+
+        String userCode = SessionHelper.getUserCode();
+        String oldPassword = request.getOldPassword();
+        String newPassword = request.getNewPassword();
+        String privateKey = iamSsoConfig.getPrivateKey();
+        if (StringUtils.isNotBlank(privateKey)) {
+            if (oldPassword.length() > 32) {
+                oldPassword = RsaTool.decryptByPrivateKey(oldPassword, privateKey);
+            }
+            if (newPassword.length() > 32) {
+                newPassword = RsaTool.decryptByPrivateKey(newPassword, privateKey);
+            }
+        }
+
+        IamUserAuthPassword currentPwd = ssoLoginMapper.getPasswordByUserCode(userCode);
+        if (currentPwd == null) {
+            throw UserException.of("用户密码记录不存在");
+        }
+
+        if (!PasswordHelper.validatePassword(oldPassword, currentPwd.getSalt(), currentPwd.getPassword())) {
+            throw UserException.of("旧密码错误");
+        }
+
+        List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, 3);
+        if (PasswordHelper.isPasswordInHistory(newPassword, historyList)) {
+            throw UserException.of("新密码不能与最近3次使用过的密码相同");
+        }
+
+        String newSalt = SecretUtil.getKey();
+        String encryptedPassword = PasswordHelper.generatePassword(newPassword, newSalt);
+
+        IamUserAuthPassword updatePwd = new IamUserAuthPassword();
+        updatePwd.setUserCode(userCode);
+        updatePwd.setPassword(encryptedPassword);
+        updatePwd.setSalt(newSalt);
+        updatePwd.setVersion(currentPwd.getVersion());
+        ssoLoginMapper.updatePasswordByUserCode(updatePwd);
+
+        IamUserPasswordHis his = new IamUserPasswordHis();
+        his.setUserCode(userCode);
+        his.setPassword(encryptedPassword);
+        his.setSalt(newSalt);
+        his.setCreateBy(userCode);
+        his.setUpdateBy(userCode);
+        ssoLoginMapper.insertPasswordHis(his);
+    }
 
 
 

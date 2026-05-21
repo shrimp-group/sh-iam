@@ -3,6 +3,8 @@ package com.wkclz.iam.sso.mapper;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamUser;
 import com.wkclz.iam.common.entity.IamUserAuth;
+import com.wkclz.iam.common.entity.IamUserAuthPassword;
+import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,5 +20,16 @@ public interface SsoLoginMapper {
     Integer updateUserLoginInfo(IamUserAuth entity);
 
     List<IamUser> batchGetNicknamesByUserCodes(@Param("userCodes") List<String> userCodes);
+
+    IamUserAuthPassword getPasswordByUserCode(@Param("userCode") String userCode);
+
+    List<IamUserPasswordHis> getPasswordHisByUserCode(
+            @Param("userCode") String userCode,
+            @Param("limit") Integer limit
+    );
+
+    void updatePasswordByUserCode(IamUserAuthPassword password);
+
+    void insertPasswordHis(IamUserPasswordHis his);
 
 }

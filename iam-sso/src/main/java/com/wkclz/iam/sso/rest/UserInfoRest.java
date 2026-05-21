@@ -4,6 +4,7 @@ import com.wkclz.core.base.R;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.iam.sdk.helper.SessionHelper;
+import com.wkclz.iam.sdk.model.ChangePasswordRequest;
 import com.wkclz.iam.sdk.model.UserSession;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.entity.VueRouterMenu;
@@ -14,9 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,6 +59,12 @@ public class UserInfoRest {
 
         List<VueRouterMenu> vueRouterMenus = menuTreeVueRouterTree(menus, null, buttonsMap, namesCount);
         return R.ok(vueRouterMenus);
+    }
+
+    @PostMapping(Route.USER_CHANGE_PASSWORD)
+    public R changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+        iamLoginService.changePassword(changePasswordRequest);
+        return R.ok();
     }
 
 
