@@ -51,7 +51,7 @@ public class IamUserAuth extends BaseEntity {
     /**
      * 最后登录时间
      */
-    @FieldDesc(value = "最后登录时间", notNull = true)
+    @FieldDesc(value = "最后登录时间")
     private LocalDateTime lastLoginTime;
 
     /**

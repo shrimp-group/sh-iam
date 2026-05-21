@@ -19,6 +19,7 @@ import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import com.wkclz.tool.utils.SecretUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -85,7 +86,9 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         }
 
         // 用户入库
-        dto.setUserCode(redisIdGenerator.generateIdWithPrefix("user_"));
+        if (StringUtils.isBlank(dto.getUserCode())) {
+            dto.setUserCode(redisIdGenerator.generateIdWithPrefix("user_"));
+        }
         IamUser user = new IamUser();
         BeanUtils.copyProperties(dto, user);
         insert(user);

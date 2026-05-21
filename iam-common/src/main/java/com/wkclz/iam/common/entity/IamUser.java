@@ -51,7 +51,7 @@ public class IamUser extends BaseEntity {
     /**
      * 头像
      */
-    @FieldDesc(value = "头像", notNull = true)
+    @FieldDesc(value = "头像")
     private String avatar;
 
     /**
