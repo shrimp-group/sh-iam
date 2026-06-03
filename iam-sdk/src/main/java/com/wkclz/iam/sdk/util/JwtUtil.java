@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class JwtUtil {
 
-    private static final long DEFAULT_EXPIRATION = 24 * 60 * 60 * 1000L;
+    public static final long SESSION_TTL_SECONDS = 24 * 60 * 60L;
 
     // 使用 Base64 解码生成 SecretKey（更安全，避免 UTF-8 编码问题）
     private static SecretKey getSigningKey(String secretKey) {
@@ -26,6 +26,10 @@ public class JwtUtil {
         return "iam:session:" + identifier + ":" + Md5Tool.md5(token);
     }
 
+    public static String getSessionListRedisKey(String username) {
+        return "iam:session:list:" + username;
+    }
+
 
     /**
      * 生成带过期时间的JWT token
@@ -33,16 +37,15 @@ public class JwtUtil {
      * @return JWT token字符串
      */
     public static String generateToken(UserJwt userJwt, String secretKey) {
-        return generateToken(userJwt, secretKey, DEFAULT_EXPIRATION);
+        return generateToken(userJwt, secretKey, SESSION_TTL_SECONDS);
     }
 
     /**
      * 生成带过期时间的JWT token
      * @param userJwt 用户JWT对象
-     * @param expiration 过期时间（毫秒）
-     * @return JWT token字符串
+     * @param sessionTtlSeconds 过期 sessionTtlSeconds * @return JWT token字符串
      */
-    public static String generateToken(UserJwt userJwt, String secretKey, long expiration) {
+    public static String generateToken(UserJwt userJwt, String secretKey, long sessionTtlSeconds) {
         // 创建声明
         Map<String, Object> claims = new HashMap<>();
         claims.put("userCode", userJwt.getUserCode());
@@ -55,7 +58,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .claims(claims)
                 .issuedAt(new Date(System.currentTimeMillis() - 60 * 1000))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .expiration(new Date(System.currentTimeMillis() + sessionTtlSeconds * 1000))
                 .signWith(signingKey, Jwts.SIG.HS256)
                 .compact();
     }

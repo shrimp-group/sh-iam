@@ -39,11 +39,6 @@ public class SessionHelper {
         return token;
     }
 
-    public static void invalidToken() {
-        // TODO 需要补充逻辑
-    }
-
-
     public static void cacheUserInfo(HttpServletRequest request, UserJwt userJwt, UserSession userSession) {
         request.setAttribute("userJwt", userJwt);
         request.setAttribute("userSession", userSession);

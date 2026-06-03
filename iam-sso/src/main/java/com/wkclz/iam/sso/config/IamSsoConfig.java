@@ -20,6 +20,9 @@ public class IamSsoConfig {
     @Value("${iam.login.private-key:}")
     private String privateKey;
 
+    @Value("${iam.sso.max-concurrent-sessions:0}")
+    private Integer maxConcurrentSessions;
+
 
 
 }

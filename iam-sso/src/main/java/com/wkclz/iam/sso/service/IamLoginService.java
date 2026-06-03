@@ -22,12 +22,15 @@ import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
+import com.wkclz.tool.tools.Md5Tool;
 import com.wkclz.tool.tools.RsaTool;
 import com.wkclz.tool.utils.SecretUtil;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -37,9 +40,13 @@ import org.springframework.util.Assert;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class IamLoginService {
+
+    private static final Logger log = LoggerFactory.getLogger(IamLoginService.class);
 
     @Autowired
     private IamSsoConfig iamSsoConfig;
@@ -51,6 +58,8 @@ public class IamLoginService {
     private SsoLoginLogMapper ssoLoginLogMapper;
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    private IamSessionService iamSessionService;
 
     /**
      * 1. 用户不存在
@@ -184,7 +193,32 @@ public class IamLoginService {
         us.setAuthType(auth.getAuthType());
 
         String tokenRedisKey = JwtUtil.getTokenRedisKey(jwtToken, jwt.getUsername());
-        redisTemplate.opsForValue().set(tokenRedisKey, JSON.toJSONString(us));
+        redisTemplate.opsForValue().set(tokenRedisKey, JSON.toJSONString(us), JwtUtil.SESSION_TTL_SECONDS, TimeUnit.SECONDS);
+
+        // 注册会话到用户会话列表
+        String sessionListKey = JwtUtil.getSessionListRedisKey(jwt.getUsername());
+        String tokenMd5 = Md5Tool.md5(jwtToken);
+        long currentTime = System.currentTimeMillis();
+        redisTemplate.opsForZSet().add(sessionListKey, tokenMd5, currentTime);
+        log.info("用户 {} 登录成功，会话已注册, tokenMd5={}", jwt.getUsername(), tokenMd5);
+
+        // 并发会话数控制
+        Integer maxConcurrentSessions = iamSsoConfig.getMaxConcurrentSessions();
+        if (maxConcurrentSessions != null && maxConcurrentSessions > 0) {
+            Long sessionCount = redisTemplate.opsForZSet().size(sessionListKey);
+            if (sessionCount != null && sessionCount > maxConcurrentSessions) {
+                // 按 score 升序取出最早登录的会话，踢出
+                Set<String> earliestTokens = redisTemplate.opsForZSet().range(sessionListKey, 0, sessionCount - maxConcurrentSessions - 1);
+                if (earliestTokens != null) {
+                    for (String kickedTokenMd5 : earliestTokens) {
+                        String kickedSessionKey = "iam:session:" + jwt.getUsername() + ":" + kickedTokenMd5;
+                        redisTemplate.delete(kickedSessionKey);
+                        redisTemplate.opsForZSet().remove(sessionListKey, kickedTokenMd5);
+                        log.info("用户 {} 并发会话超限，踢出最早会话, tokenMd5={}", jwt.getUsername(), kickedTokenMd5);
+                    }
+                }
+            }
+        }
 
         response.setLoginStatus(LoginStatus.SUCCESS.getCode());
         response.setLoginMessage(LoginStatus.SUCCESS.getMessage());
@@ -213,6 +247,12 @@ public class IamLoginService {
 
         String tokenRedisKey = JwtUtil.getTokenRedisKey(token, userSession.getUsername());
         redisTemplate.opsForValue().getAndDelete(tokenRedisKey);
+
+        // 从用户会话列表中移除当前 Token
+        String sessionListKey = JwtUtil.getSessionListRedisKey(userSession.getUsername());
+        String tokenMd5 = Md5Tool.md5(token);
+        redisTemplate.opsForZSet().remove(sessionListKey, tokenMd5);
+        log.info("用户 {} 登出，会话已移除, tokenMd5={}", userSession.getUsername(), tokenMd5);
     }
 
 
@@ -265,6 +305,11 @@ public class IamLoginService {
         his.setCreateBy(userCode);
         his.setUpdateBy(userCode);
         ssoLoginMapper.insertPasswordHis(his);
+
+        // 修改密码成功，使该用户所有会话失效
+        String username = SessionHelper.getUserJwt().getUsername();
+        iamSessionService.invalidateAllSessions(username);
+        log.info("用户 {} 修改密码成功，所有会话已失效", username);
     }
 
 
