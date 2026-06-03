@@ -2,35 +2,46 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamApiMapper">
 
-    <select id="getApiList" parameterType="com.wkclz.iam.common.entity.IamApi" resultType="com.wkclz.iam.common.entity.IamApi">
+    <select id="getApiList" parameterType="com.wkclz.iam.common.dto.IamApiDto"
+            resultType="com.wkclz.iam.common.dto.IamApiDto">
         SELECT
-            id,
-            module,
-            app_code,
-            api_code,
-            api_method,
-            api_uri,
-            api_name,
-            write_flag,
-            create_time,
-            create_by,
-            update_time,
-            update_by,
-            remark,
-            version
+        a.id,
+        a.module,
+        a.app_code,
+        a.api_code,
+        a.api_method,
+        a.api_uri,
+        a.api_name,
+        a.write_flag,
+        a.create_time,
+        a.create_by,
+        a.update_time,
+        a.update_by,
+        a.remark,
+        a.version,
+        COUNT(DISTINCT ma.id) AS menu_bind_count
         FROM
-            iam_api
+        iam_api a
+        LEFT JOIN iam_menu_api ma ON ma.api_code = a.api_code AND ma.deleted = 0
         WHERE
-            deleted = 0
-            <if test="module != null">AND module = #{module}</if>
-            <if test="appCode != null">AND app_code = #{appCode}</if>
-            <if test="apiCode != null">AND api_code LIKE CONCAT('%', #{apiCode}, '%')</if>
-            <if test="apiUri != null">AND api_uri LIKE CONCAT('%', #{apiUri}, '%')</if>
-            <if test="apiName != null">AND api_name LIKE CONCAT('%', #{apiName}, '%')</if>
-            <if test="apiMethod != null">AND api_method = #{apiMethod}</if>
-            <if test="writeFlag != null">AND write_flag = #{writeFlag}</if>
+        a.deleted = 0
+        <if test="module != null">AND a.module = #{module}</if>
+        <if test="appCode != null">AND a.app_code = #{appCode}</if>
+        <if test="apiCode != null">AND a.api_code LIKE CONCAT('%', #{apiCode}, '%')</if>
+        <if test="apiUri != null">AND a.api_uri LIKE CONCAT('%', #{apiUri}, '%')</if>
+        <if test="apiName != null">AND a.api_name LIKE CONCAT('%', #{apiName}, '%')</if>
+        <if test="apiMethod != null">AND a.api_method = #{apiMethod}</if>
+        <if test="writeFlag != null">AND a.write_flag = #{writeFlag}</if>
+        GROUP BY
+        a.id
+        <if test="menuBindStatus != null and menuBindStatus == 1">
+            HAVING menu_bind_count > 0
+        </if>
+        <if test="menuBindStatus != null and menuBindStatus == 0">
+            HAVING menu_bind_count = 0
+        </if>
         ORDER BY
-            api_uri ASC
+        a.api_uri ASC
     </select>
 
 

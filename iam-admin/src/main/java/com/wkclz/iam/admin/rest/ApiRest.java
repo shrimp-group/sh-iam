@@ -6,6 +6,8 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
+import com.wkclz.iam.admin.bean.resp.ApiDetailResp;
+import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -23,8 +25,8 @@ public class ApiRest {
     protected IamApiService iamApiService;
 
     @GetMapping(Route.API_PAGE)
-    public R apiPage(IamApi entity) {
-        PageData<IamApi> page = iamApiService.getApiPage(entity);
+    public R apiPage(IamApiDto entity) {
+        PageData<IamApiDto> page = iamApiService.getApiPage(entity);
         return R.ok(page);
     }
 
@@ -33,6 +35,13 @@ public class ApiRest {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamApi api = iamApiService.selectById(entity.getId());
         return R.ok(api);
+    }
+
+    @GetMapping(Route.API_DETAIL)
+    public R apiDetail(IamApi entity) {
+        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
+        ApiDetailResp detail = iamApiService.getApiDetail(entity.getId());
+        return R.ok(detail);
     }
 
     @PostMapping(Route.API_CREATE)

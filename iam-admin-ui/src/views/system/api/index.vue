@@ -23,6 +23,11 @@
           <el-form-item prop="apiName">
             <el-input v-model="queryParams.apiName" placeholder="名称,模糊搜索" clearable style="width: 160px" @keyup.enter.native="handleQuery" />
           </el-form-item>
+          <el-form-item prop="menuBindStatus">
+            <el-select v-model="queryParams.menuBindStatus" placeholder="绑菜单" clearable filterable style="width: 100px" @change="handleQuery">
+              <el-option v-for="item in BOOLEAN" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
           <el-form-item prop="writeFlag">
             <el-select v-model="queryParams.writeFlag" placeholder="白名单" clearable filterable style="width: 100px" @change="handleQuery">
               <el-option v-for="item in BOOLEAN" :key="item.value" :label="item.label" :value="item.value" />
@@ -49,6 +54,11 @@
           <el-table-column label="白名单" prop="writeFlag" width="80">
             <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.writeFlag" /></template>
           </el-table-column>
+          <el-table-column label="菜单数" prop="menuBindCount" width="80">
+            <template #default="{row}">
+              <el-button link type="primary" @click="handleDetail(row)" :disabled="!row.menuBindCount || row.menuBindCount === 0">{{ row.menuBindCount || 0 }}</el-button>
+            </template>
+          </el-table-column>
           <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>
           <el-table-column label="创建时间" prop="createTime" width="160" v-if="columns.createTime.visible">
             <template #default="{row}">{{ parseTime(row.createTime) }}</template>
@@ -58,9 +68,10 @@
             <template #default="{row}">{{ parseTime(row.updateTime) }}</template>
           </el-table-column>
           <el-table-column label="更新人" prop="updateBy" width="120" v-if="columns.updateBy.visible"/>
-          <el-table-column fixed="right" width="98">
+          <el-table-column fixed="right" width="120">
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
+              <el-button link type="success" icon="View" @click="handleDetail(row)" title="详情"/>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)" title="编辑"/>
               <el-popconfirm :title="'确认删除API: '+row.apiUri+'?'" placement="top-end" @confirm="handleDelete(row)">
                 <template #reference><el-button link type="danger" icon="Delete" title="删除"/></template>
@@ -86,12 +97,14 @@
     </layout-split>
 
     <edit ref="editRef" @change="getList"/>
+    <detail ref="detailRef" />
   </div>
 </template>
 
 <script setup name="IamApi">
 import { apiPage, apiRemove} from "@/api/system/api";
 import Edit from "./components/edit"
+import Detail from "./components/detail"
 import AppOptions from "@/views/components/AppOptions"
 import { copy } from "@/utils/shrimp"
 
@@ -122,6 +135,8 @@ const queryParams = ref({
   apiUri: undefined,
   apiName: undefined,
   writeFlag: undefined,
+  menuBindStatus: undefined,
+  menuCode: undefined,
 });
 
 function selectApp(row) {
@@ -161,6 +176,11 @@ function handleAdd() {
 }
 function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);
+}
+
+/** 详情按钮操作 */
+function handleDetail(row) {
+  proxy.$refs["detailRef"].init(row);
 }
 
 /** 删除按钮操作 */

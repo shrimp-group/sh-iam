@@ -5,11 +5,17 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamApiMapper;
+import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
+import com.wkclz.iam.admin.bean.resp.ApiDetailResp;
+import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +36,14 @@ import java.util.stream.Collectors;
 @Service
 public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
+    private static final Logger log = LoggerFactory.getLogger(IamApiService.class);
+
     @Autowired
     private RedisIdGenerator redisIdGenerator;
+    @Autowired
+    private IamMenuApiMapper iamMenuApiMapper;
 
-    public PageData<IamApi> getApiPage(IamApi entity) {
+    public PageData<IamApiDto> getApiPage(IamApiDto entity) {
         return PageQuery.page(entity, mapper::getApiList);
     }
 
@@ -82,10 +92,10 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         }
         return inserts.size() + updates.size();
     }
-    
-    private List<IamApi> getAllApis() {
+
+    private List<IamApiDto> getAllApis() {
         // 查询所有接口，一次性批量查询
-        IamApi param = new IamApi();
+        IamApiDto param = new IamApiDto();
         return mapper.getApiList(param);
     }
     
@@ -153,6 +163,29 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         }
         deleteById(oldEntity);
         return oldEntity;
+    }
+
+    /**
+     * 查询 API 详情，包含已绑定的菜单全路径
+     *
+     * @param id API 主键ID
+     * @return API 详情响应
+     */
+    public ApiDetailResp getApiDetail(Long id) {
+        log.info("查询API详情, id={}", id);
+        IamApi api = selectById(id);
+        if (api == null) {
+            throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
+        }
+
+        ApiDetailResp resp = new ApiDetailResp();
+        BeanUtils.copyProperties(api, resp);
+
+        // 使用 RECURSIVE CTE 一次性查询所有已绑定菜单的全路径，避免 N+1 查询
+        List<String> boundMenuPaths = iamMenuApiMapper.getBoundMenuPathsByApiCode(api.getApiCode());
+        resp.setBoundMenuPaths(boundMenuPaths);
+        log.info("API详情查询完成, apiCode={}, 绑定菜单数={}", api.getApiCode(), boundMenuPaths.size());
+        return resp;
     }
 
 

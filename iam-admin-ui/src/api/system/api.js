@@ -45,3 +45,8 @@ export const apiPaste = (data) => {
   return request({url: '/iam-admin/api/paste', method: 'post', data})
 }
 
+// 10. API管理-详情页
+export const apiDetail = (params) => {
+  return request({url: '/iam-admin/api/detail', method: 'get', params})
+}
+
