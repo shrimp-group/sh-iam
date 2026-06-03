@@ -103,6 +103,8 @@ public interface Route {
     String MENU_UPDATE = "/menu/update";
     @ApiDesc("6. 菜单管理-删除")
     String MENU_REMOVE = "/menu/remove";
+    @ApiDesc("7. 菜单管理-详情页")
+    String MENU_DETAIL = "/menu/detail";
 
     // 角色菜单关联
     @ApiDesc("1. 角色菜单-列表")
@@ -146,6 +148,8 @@ public interface Route {
     String API_COPY = "/api/copy";
     @ApiDesc("9. API管理-粘贴JSON")
     String API_PASTE = "/api/paste";
+    @ApiDesc("10. API管理-详情页")
+    String API_DETAIL = "/api/detail";
 
     // 登录日志
     @ApiDesc("1. 登录日志-分页")
@@ -184,10 +188,14 @@ public interface Route {
     // 菜单-API 关系
     @ApiDesc("1. 菜单-API-分页")
     String MENU_API_LIST = "/menu-api/list";
-    @ApiDesc("2. 访问密钥-API-创建")
+    @ApiDesc("2. 菜单-API-绑定")
     String MENU_API_BIND = "/menu-api/bind";
-    @ApiDesc("3. 访问密钥-API-删除")
+    @ApiDesc("3. 菜单-API-解绑")
     String MENU_API_UNBIND = "/menu-api/unbind";
+    @ApiDesc("4. 菜单-API-已绑定列表")
+    String MENU_API_BOUND_LIST = "/menu-api/bound-list";
+    @ApiDesc("5. 菜单-API-未绑定列表")
+    String MENU_API_UNBOUND_LIST = "/menu-api/unbound-list";
 
 
 }

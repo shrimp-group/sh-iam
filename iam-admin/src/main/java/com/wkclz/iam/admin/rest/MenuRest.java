@@ -5,6 +5,7 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamMenuService;
+import com.wkclz.iam.admin.bean.resp.MenuDetailResp;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +62,13 @@ public class MenuRest {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamMenuService.remove(entity);
         return R.ok(entity);
+    }
+
+    @GetMapping(Route.MENU_DETAIL)
+    public R menuDetail(IamMenu entity) {
+        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
+        MenuDetailResp detail = iamMenuService.getMenuDetail(entity.getId());
+        return R.ok(detail);
     }
 
     private void paramCheck(IamMenu entity) {

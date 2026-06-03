@@ -29,3 +29,8 @@ export const menuUpdate = (data) => {
 export const menuRemove = (data) => {
   return request({url: '/iam-admin/menu/remove', method: 'post', data})
 }
+
+// 7. 菜单管理-详情页
+export const menuDetail = (params) => {
+  return request({url: '/iam-admin/menu/detail', method: 'get', params})
+}

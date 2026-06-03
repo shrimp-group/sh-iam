@@ -46,11 +46,13 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-common (`com.wkclz.iam.common`)
 
-| 包 | 类 | 说明 |
-|----|-----|------|
-| `entity` | IamUser, IamRole, IamMenu, IamApi, IamApp, IamAccessKey, IamUserAuth, IamUserAuthPassword, IamUserPasswordHis, IamLoginLog, IamRequestLog, IamUserRole, IamRoleMenu, IamMenuApi, IamAccessKeyApi, IamRoleData, IamDataDimension | 17 个实体，对应 17 张表 |
-| `dto` | IamUserDto, IamRoleDto, IamMenuDto, ... | 17 个 DTO，均继承对应 Entity |
-| `helper` | PasswordHelper, IpLocalCacheHelper | 密码 MD5+salt 加密校验、IP 归属地缓存 |
+| 包           | 类                                                                                                                                                                                                                               | 说明                              |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| `entity`    | IamUser, IamRole, IamMenu, IamApi, IamApp, IamAccessKey, IamUserAuth, IamUserAuthPassword, IamUserPasswordHis, IamLoginLog, IamRequestLog, IamUserRole, IamRoleMenu, IamMenuApi, IamAccessKeyApi, IamRoleData, IamDataDimension | 17 个实体，对应 17 张表                 |
+| `dto`       | IamUserDto, IamRoleDto, IamMenuDto, ...                                                                                                                                                                                         | 17 个 DTO，均继承对应 Entity           |
+| `bean.req`  | MenuApiBindReq, MenuApiListReq                                                                                                                                                                                                  | 请求 Bean，继承 sh-web IdReq/PageReq |
+| `bean.resp` | ApiBoundResp, ApiDetailResp, MenuDetailResp                                                                                                                                                                                     | 响应 Bean，继承 sh-web EntityResp    |
+| `helper`    | PasswordHelper, IpLocalCacheHelper                                                                                                                                                                                              | 密码 MD5+salt 加密校验、IP 归属地缓存       |
 
 ### iam-sdk (`com.wkclz.iam.sdk`)
 
@@ -318,26 +320,28 @@ iam_request_log ── 请求日志 (独立)
 
 ### 管理后台模块 (iam-admin)
 
-| Story ID | 故事名称 | 优先级 | 文档 |
-|----------|---------|--------|------|
-| STORY-025 | 用户 CRUD 管理 | P0 | [STORY-025](docs/stories/STORY-025-user-crud.md) |
-| STORY-026 | 用户认证方式管理 | P1 | [STORY-026](docs/stories/STORY-026-user-auth-management.md) |
-| STORY-027 | 角色 CRUD 管理 | P0 | [STORY-027](docs/stories/STORY-027-role-crud.md) |
-| STORY-028 | 菜单 CRUD 与树形管理 | P0 | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md) |
-| STORY-029 | 应用 CRUD 管理 | P0 | [STORY-029](docs/stories/STORY-029-app-crud.md) |
-| STORY-030 | API 路由 CRUD 管理 | P0 | [STORY-030](docs/stories/STORY-030-api-crud.md) |
-| STORY-031 | API 自动扫描同步 | P1 | [STORY-031](docs/stories/STORY-031-api-auto-scan.md) |
-| STORY-032 | 访问密钥 CRUD 管理 | P1 | [STORY-032](docs/stories/STORY-032-access-key-crud.md) |
-| STORY-033 | AK-API 关联管理 | P1 | [STORY-033](docs/stories/STORY-033-ak-api-binding.md) |
-| STORY-034 | 角色-菜单关联管理 | P0 | [STORY-034](docs/stories/STORY-034-role-menu-binding.md) |
-| STORY-035 | 角色-用户与用户-角色关联管理 | P0 | [STORY-035](docs/stories/STORY-035-user-role-binding.md) |
-| STORY-036 | 菜单-API 关联管理 | P0 | [STORY-036](docs/stories/STORY-036-menu-api-binding.md) |
-| STORY-037 | 数据权限维度管理 | P1 | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md) |
-| STORY-038 | 角色-数据权限关联管理 | P1 | [STORY-038](docs/stories/STORY-038-role-data-binding.md) |
-| STORY-039 | 登录日志查询 | P1 | [STORY-039](docs/stories/STORY-039-login-log-query.md) |
-| STORY-040 | 请求日志查询 | P1 | [STORY-040](docs/stories/STORY-040-request-log-query.md) |
-| STORY-041 | 当前用户菜单查询 | P0 | [STORY-041](docs/stories/STORY-041-user-menu-query.md) |
-| STORY-042 | Admin 自动配置与路由常量 | P0 | [STORY-042](docs/stories/STORY-042-admin-auto-config.md) |
+| Story ID     | 故事名称            | 优先级 | 文档                                                              |
+|--------------|-----------------|-----|-----------------------------------------------------------------|
+| STORY-025    | 用户 CRUD 管理      | P0  | [STORY-025](docs/stories/STORY-025-user-crud.md)                |
+| STORY-026    | 用户认证方式管理        | P1  | [STORY-026](docs/stories/STORY-026-user-auth-management.md)     |
+| STORY-027    | 角色 CRUD 管理      | P0  | [STORY-027](docs/stories/STORY-027-role-crud.md)                |
+| STORY-028    | 菜单 CRUD 与树形管理   | P0  | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md)           |
+| STORY-029    | 应用 CRUD 管理      | P0  | [STORY-029](docs/stories/STORY-029-app-crud.md)                 |
+| STORY-030    | API 路由 CRUD 管理  | P0  | [STORY-030](docs/stories/STORY-030-api-crud.md)                 |
+| STORY-030-01 | API 详情页与菜单绑定数   | P1  | API 详情弹窗展示已绑定菜单全路径，API 列表增加 menuBindCount 字段和 menuBindStatus 过滤 |
+| STORY-031    | API 自动扫描同步      | P1  | [STORY-031](docs/stories/STORY-031-api-auto-scan.md)            |
+| STORY-032    | 访问密钥 CRUD 管理    | P1  | [STORY-032](docs/stories/STORY-032-access-key-crud.md)          |
+| STORY-033    | AK-API 关联管理     | P1  | [STORY-033](docs/stories/STORY-033-ak-api-binding.md)           |
+| STORY-034    | 角色-菜单关联管理       | P0  | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)        |
+| STORY-035    | 角色-用户与用户-角色关联管理 | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md)        |
+| STORY-036    | 菜单-API 关联管理     | P0  | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)         |
+| STORY-036-01 | 菜单详情页与穿梭框绑定     | P1  | 菜单详情弹窗（穿梭框模式），支持已绑定/未绑定 API 列表查询、绑定/解绑操作、关键词搜索                  |
+| STORY-037    | 数据权限维度管理        | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)      |
+| STORY-038    | 角色-数据权限关联管理     | P1  | [STORY-038](docs/stories/STORY-038-role-data-binding.md)        |
+| STORY-039    | 登录日志查询          | P1  | [STORY-039](docs/stories/STORY-039-login-log-query.md)          |
+| STORY-040    | 请求日志查询          | P1  | [STORY-040](docs/stories/STORY-040-request-log-query.md)        |
+| STORY-041    | 当前用户菜单查询        | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)          |
+| STORY-042    | Admin 自动配置与路由常量 | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)        |
 
 ### 故事依赖关系概览
 

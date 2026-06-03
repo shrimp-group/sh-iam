@@ -75,9 +75,10 @@
             <template #default="{row}">{{ parseTime(row.updateTime) }}</template>
           </el-table-column>
           <el-table-column label="更新人" prop="updateBy" width="120" v-if="columns.updateBy.visible"/>
-          <el-table-column fixed="right" width="240">
+          <el-table-column fixed="right" width="280">
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
+              <el-button link type="success" icon="View" @click="handleDetail(row)">详情</el-button>
               <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
               <el-popconfirm v-if="row.childrenCount === 0" :title="'确认删除:' + row.menuName + '?'" placement="top-end" @confirm="handleDelete(row)">
@@ -92,12 +93,14 @@
       </template>
     </layout-split>
     <edit ref="editRef" @change="getList"/>
+    <detail ref="detailRef" />
   </div>
 </template>
 
 <script setup name="IamMenu">
 import {menuList, menuRemove} from "@/api/system/menu";
 import Edit from "./components/edit"
+import Detail from "./components/detail"
 import AppOptions from "@/views/components/AppOptions"
 
 const { proxy } = getCurrentInstance();
@@ -248,6 +251,11 @@ function handleDelete(row) {
     }
     getList();
   })
+}
+
+/** 详情按钮操作 */
+function handleDetail(row) {
+  proxy.$refs["detailRef"].init(row);
 }
 
 </script>

@@ -4,6 +4,8 @@ import com.wkclz.core.base.R;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamMenuApiService;
+import com.wkclz.iam.admin.bean.resp.ApiBoundResp;
+import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.iam.common.entity.IamMenuApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -22,6 +24,21 @@ public class MenuApiRest {
     public R menuApiList(IamMenuApi entity) {
         Assert.notNull(entity.getMenuCode(), "menuCode 不能为空!");
         List<IamMenuApi> list = iamMenuApiService.getMenuList(entity.getMenuCode());
+        return R.ok(list);
+    }
+
+    @GetMapping(Route.MENU_API_BOUND_LIST)
+    public R menuApiBoundList(IamMenuApi entity) {
+        Assert.notNull(entity.getMenuCode(), "menuCode 不能为空!");
+        List<ApiBoundResp> list = iamMenuApiService.getBoundApis(entity.getMenuCode());
+        return R.ok(list);
+    }
+
+    @GetMapping(Route.MENU_API_UNBOUND_LIST)
+    public R menuApiUnboundList(IamMenuApi entity) {
+        Assert.notNull(entity.getMenuCode(), "menuCode 不能为空!");
+        Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
+        List<IamApi> list = iamMenuApiService.getUnboundApis(entity.getMenuCode(), entity.getAppCode());
         return R.ok(list);
     }
 

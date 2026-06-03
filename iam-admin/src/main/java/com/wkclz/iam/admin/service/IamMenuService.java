@@ -4,11 +4,15 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamMenuMapper;
+import com.wkclz.iam.admin.bean.resp.MenuDetailResp;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +29,8 @@ import java.util.stream.Collectors;
  
 @Service
 public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
+
+    private static final Logger log = LoggerFactory.getLogger(IamMenuService.class);
 
     @Autowired
     private RedisIdGenerator redisIdGenerator;
@@ -76,6 +82,23 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         }
         deleteById(oldEntity);
         return oldEntity;
+    }
+
+    /**
+     * 查询菜单详情
+     *
+     * @param id 菜单主键ID
+     * @return 菜单详情响应
+     */
+    public MenuDetailResp getMenuDetail(Long id) {
+        log.info("查询菜单详情, id={}", id);
+        IamMenu menu = selectById(id);
+        if (menu == null) {
+            throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
+        }
+        MenuDetailResp resp = new MenuDetailResp();
+        BeanUtils.copyProperties(menu, resp);
+        return resp;
     }
 
     private void duplicateCheck(IamMenu entity) {
