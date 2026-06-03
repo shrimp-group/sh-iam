@@ -36,32 +36,6 @@
         a.api_uri ASC
     </select>
 
-    <!-- 查询菜单未绑定的 API 列表 -->
-    <select id="getUnboundApis" resultType="com.wkclz.iam.common.entity.IamApi">
-        SELECT
-        a.id,
-        a.module,
-        a.app_code,
-        a.api_code,
-        a.api_method,
-        a.api_uri,
-        a.api_name,
-        a.write_flag
-        FROM
-        iam_api a
-        WHERE
-        a.deleted = 0
-        AND a.app_code = #{appCode}
-        AND NOT EXISTS (
-        SELECT 1 FROM iam_menu_api ma
-        WHERE ma.deleted = 0
-        AND ma.menu_code = #{menuCode}
-        AND ma.api_code = a.api_code
-        )
-        ORDER BY
-        a.api_uri ASC
-    </select>
-
     <!-- 根据 API 编码一次性查询所有已绑定菜单的全路径（RECURSIVE CTE 避免 N+1 查询） -->
     <select id="getBoundMenuPathsByApiCode" resultType="java.lang.String">
         WITH RECURSIVE menu_path AS (

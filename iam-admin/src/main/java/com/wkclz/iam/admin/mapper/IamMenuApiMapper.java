@@ -1,7 +1,6 @@
 package com.wkclz.iam.admin.mapper;
 
 import com.wkclz.iam.admin.bean.resp.ApiBoundResp;
-import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.mybatis.mapper.BaseMapper;
 import com.wkclz.iam.common.entity.IamMenuApi;
 import org.apache.ibatis.annotations.Mapper;
@@ -28,15 +27,6 @@ public interface IamMenuApiMapper extends BaseMapper<IamMenuApi> {
      * @return API 绑定信息列表
      */
     List<ApiBoundResp> getBoundApis(@Param("menuCode") String menuCode);
-
-    /**
-     * 查询菜单未绑定的 API 列表
-     *
-     * @param menuCode 菜单编码
-     * @param appCode  应用编码
-     * @return 未绑定的 API 列表
-     */
-    List<IamApi> getUnboundApis(@Param("menuCode") String menuCode, @Param("appCode") String appCode);
 
     /**
      * 根据 API 编码一次性查询所有已绑定菜单的全路径

@@ -65,6 +65,9 @@
           <el-table-column label="隐藏" prop="hidden" width="60">
             <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.hidden" /></template>
           </el-table-column>
+          <el-table-column label="接口数" prop="apiBindCount" width="80">
+            <template #default="{row}">{{ row.apiBindCount || 0 }}</template>
+          </el-table-column>
           <el-table-column label="排序" prop="sort" width="60" v-if="columns.sort.visible"/>
           <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>
           <el-table-column label="创建时间" prop="createTime" width="160" v-if="columns.createTime.visible">

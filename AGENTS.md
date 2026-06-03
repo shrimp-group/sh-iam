@@ -335,7 +335,7 @@ iam_request_log ── 请求日志 (独立)
 | STORY-034    | 角色-菜单关联管理       | P0  | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)        |
 | STORY-035    | 角色-用户与用户-角色关联管理 | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md)        |
 | STORY-036    | 菜单-API 关联管理     | P0  | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)         |
-| STORY-036-01 | 菜单详情页与穿梭框绑定     | P1  | 菜单详情弹窗（穿梭框模式），支持已绑定/未绑定 API 列表查询、绑定/解绑操作、关键词搜索                  |
+| STORY-036-01 | 菜单详情页与穿梭框绑定     | P1  | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列     |
 | STORY-037    | 数据权限维度管理        | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)      |
 | STORY-038    | 角色-数据权限关联管理     | P1  | [STORY-038](docs/stories/STORY-038-role-data-binding.md)        |
 | STORY-039    | 登录日志查询          | P1  | [STORY-039](docs/stories/STORY-039-login-log-query.md)          |

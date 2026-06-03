@@ -22,10 +22,12 @@
             im1.update_by,
             im1.remark,
             im1.version,
-            COUNT(im2.id) children_count
+        COUNT(DISTINCT im2.id) children_count,
+        COUNT(DISTINCT ma.id) api_bind_count
         FROM
             iam_menu im1
             LEFT JOIN iam_menu im2 ON im2.parent_code = im1.menu_code AND im2.app_code = im1.app_code AND im2.deleted = 0
+        LEFT JOIN iam_menu_api ma ON ma.menu_code = im1.menu_code AND ma.deleted = 0
         WHERE
             im1.deleted = 0
             AND im1.app_code = #{appCode}

@@ -194,8 +194,6 @@ public interface Route {
     String MENU_API_UNBIND = "/menu-api/unbind";
     @ApiDesc("4. 菜单-API-已绑定列表")
     String MENU_API_BOUND_LIST = "/menu-api/bound-list";
-    @ApiDesc("5. 菜单-API-未绑定列表")
-    String MENU_API_UNBOUND_LIST = "/menu-api/unbound-list";
 
 
 }

@@ -5,7 +5,6 @@ import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
 import com.wkclz.iam.admin.bean.resp.ApiBoundResp;
-import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.iam.common.entity.IamMenuApi;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
@@ -42,18 +41,6 @@ public class IamMenuApiService extends BaseService<IamMenuApi, IamMenuApiMapper>
     public List<ApiBoundResp> getBoundApis(String menuCode) {
         log.info("查询菜单已绑定API列表, menuCode={}", menuCode);
         return mapper.getBoundApis(menuCode);
-    }
-
-    /**
-     * 查询菜单未绑定的 API 列表
-     *
-     * @param menuCode 菜单编码
-     * @param appCode  应用编码
-     * @return 未绑定的 API 列表
-     */
-    public List<IamApi> getUnboundApis(String menuCode, String appCode) {
-        log.info("查询菜单未绑定API列表, menuCode={}, appCode={}", menuCode, appCode);
-        return mapper.getUnboundApis(menuCode, appCode);
     }
 
     public IamMenuApi create(IamMenuApi entity) {

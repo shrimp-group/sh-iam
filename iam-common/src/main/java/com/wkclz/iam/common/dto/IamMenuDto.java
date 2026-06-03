@@ -21,6 +21,11 @@ public class IamMenuDto extends IamMenu {
 
     private List<IamMenuDto> children;
 
+    /**
+     * 已绑定接口数量
+     */
+    private Integer apiBindCount;
+
 
 
 
