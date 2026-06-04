@@ -1,13 +1,26 @@
 package com.wkclz.iam.admin.service;
 
+import com.wkclz.core.base.DbColumnEntity;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
+import com.wkclz.iam.admin.bean.resp.RoleBoundResp;
 import com.wkclz.iam.admin.mapper.IamRoleMenuMapper;
+import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamRoleMenu;
 import com.wkclz.mybatis.service.BaseService;
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Description Create by sh-generator
@@ -18,10 +31,10 @@ import org.springframework.util.Assert;
 @Service
 public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapper> {
 
-    // 示例方法，可删除
-    public Long example() {
-        return mapper.example();
-    }
+    private static final Logger log = LoggerFactory.getLogger(IamRoleMenuService.class);
+
+    @Autowired
+    private IamRoleService iamRoleService;
 
     public IamRoleMenu create(IamRoleMenu entity) {
         duplicateCheck(entity);
@@ -57,14 +70,9 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
     }
 
     private void duplicateCheck(IamRoleMenu entity) {
-        // 唯一条件为空，直接通过
-        if (true) {
-            return;
-        }
-        
-        // 唯一条件不为空，请设置唯一条件
         IamRoleMenu param = new IamRoleMenu();
-        // 唯一条件
+        param.setRoleCode(entity.getRoleCode());
+        param.setMenuCode(entity.getMenuCode());
         param = selectOneByEntity(param);
         if (param == null) {
             return;
@@ -72,8 +80,74 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
         if (param.getId().equals(entity.getId())) {
             return;
         }
-        // 查到有值，为新增或 id 不一样场景，为数据重复
         throw UserException.of(ResultCode.RECORD_DUPLICATE);
+    }
+
+    /**
+     * 查询角色已绑定的菜单编码列表
+     */
+    public List<String> getBoundMenuCodes(String roleCode) {
+        log.info("查询角色已绑定菜单编码列表, roleCode={}", roleCode);
+        List<IamRoleMenu> rms = mapper.getBoundMenuCodes(roleCode);
+        return rms.stream().map(IamRoleMenu::getMenuCode).toList();
+    }
+
+    /**
+     * 查询菜单已绑定的角色列表
+     */
+    public List<RoleBoundResp> getBoundRoles(String menuCode) {
+        log.info("查询菜单已绑定角色列表, menuCode={}", menuCode);
+        return mapper.getBoundRoles(menuCode);
+    }
+
+    /**
+     * 批量保存角色-菜单绑定关系（diff 计算，最少数据库操作）
+     *
+     * @param roleCode  角色编码
+     * @param menuCodes 需要绑定的菜单编码列表
+     */
+    public void saveRoleMenus(String roleCode, List<String> menuCodes) {
+        log.info("批量保存角色-菜单绑定, roleCode={}, menuCodes={}", roleCode, menuCodes);
+
+        if (menuCodes == null) {
+            menuCodes = Collections.emptyList();
+        }
+
+        // 查询角色信息获取 appCode
+        IamRole roleParam = new IamRole();
+        roleParam.setRoleCode(roleCode);
+        IamRole role = iamRoleService.selectOneByEntity(roleParam);
+        String appCode = role != null ? role.getAppCode() : null;
+
+        // 查询当前已绑定的 menuCode 列表
+        List<IamRoleMenu> oldMenus = mapper.getBoundMenuCodes(roleCode);
+        Set<String> oldCodeSet = oldMenus.stream().map(IamRoleMenu::getMenuCode).collect(Collectors.toSet());
+        Set<String> newCodeSet = new HashSet<>(menuCodes);
+
+        // 计算新增列表
+        List<String> toAdd = menuCodes.stream().filter(t -> !oldCodeSet.contains(t)).toList();
+
+        // 计算移除列表
+        List<IamRoleMenu> toRemove = oldMenus.stream().filter(t -> !newCodeSet.contains(t.getMenuCode())).toList();
+
+        // 新增绑定
+        if (CollectionUtils.isNotEmpty(toAdd)) {
+            List<IamRoleMenu> list = toAdd.stream().map(t -> {
+                IamRoleMenu entity = new IamRoleMenu();
+                entity.setAppCode(appCode);
+                entity.setRoleCode(roleCode);
+                entity.setMenuCode(t);
+                return entity;
+            }).toList();
+            mapper.insertBatch(list);
+        }
+
+        // 移除绑定（逻辑删除）
+        if (CollectionUtils.isNotEmpty(toRemove)) {
+            List<Long> ids = toRemove.stream().map(DbColumnEntity::getId).toList();
+            deleteByIds(ids);
+        }
+        log.info("角色-菜单绑定保存完成, roleCode={}, 新增{}条, 移除{}条", roleCode, toAdd.size(), toRemove.size());
     }
 
 }

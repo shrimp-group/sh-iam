@@ -109,10 +109,10 @@ public interface Route {
     // 角色菜单关联
     @ApiDesc("1. 角色菜单-列表")
     String ROLE_MENU_LIST = "/role-menu/list";
-    @ApiDesc("2. 角色菜单-绑定")
-    String ROLE_MENU_BIND = "/role-menu/bind";
-    @ApiDesc("3. 角色菜单-解绑")
-    String ROLE_MENU_UNBIND = "/role-menu/unbind";
+    @ApiDesc("2. 角色菜单-保存")
+    String ROLE_MENU_SAVE = "/role-menu/save";
+    @ApiDesc("3. 角色菜单-已绑定角色列表")
+    String ROLE_MENU_BOUND_ROLES = "/role-menu/bound-roles";
 
     // 用户菜单
     @ApiDesc("1. 用户菜单-列表")
