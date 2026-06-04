@@ -46,13 +46,13 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-common (`com.wkclz.iam.common`)
 
-| 包           | 类                                                                                                                                                                                                                               | 说明                              |
-|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
-| `entity`    | IamUser, IamRole, IamMenu, IamApi, IamApp, IamAccessKey, IamUserAuth, IamUserAuthPassword, IamUserPasswordHis, IamLoginLog, IamRequestLog, IamUserRole, IamRoleMenu, IamMenuApi, IamAccessKeyApi, IamRoleData, IamDataDimension | 17 个实体，对应 17 张表                 |
-| `dto`       | IamUserDto, IamRoleDto, IamMenuDto, ...                                                                                                                                                                                         | 17 个 DTO，均继承对应 Entity           |
-| `bean.req`  | MenuApiBindReq, MenuApiListReq                                                                                                                                                                                                  | 请求 Bean，继承 sh-web IdReq/PageReq |
-| `bean.resp` | ApiBoundResp, ApiDetailResp, MenuDetailResp                                                                                                                                                                                     | 响应 Bean，继承 sh-web EntityResp    |
-| `helper`    | PasswordHelper, IpLocalCacheHelper                                                                                                                                                                                              | 密码 MD5+salt 加密校验、IP 归属地缓存       |
+| 包           | 类                                                                                                                                                                                                                               | 说明                                    |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
+| `entity`    | IamUser, IamRole, IamMenu, IamApi, IamApp, IamAccessKey, IamUserAuth, IamUserAuthPassword, IamUserPasswordHis, IamLoginLog, IamRequestLog, IamUserRole, IamRoleMenu, IamMenuApi, IamAccessKeyApi, IamRoleData, IamDataDimension | 17 个实体，对应 17 张表                       |
+| `dto`       | IamUserDto, IamRoleDto, IamMenuDto, ...                                                                                                                                                                                         | 17 个 DTO，均继承对应 Entity                 |
+| `bean.req`  | MenuApiBindReq, MenuApiListReq, RoleMenuSaveReq                                                                                                                                                                                 | 请求 Bean，继承 sh-web IdReq/PageReq 或独立定义 |
+| `bean.resp` | ApiBoundResp, ApiDetailResp, MenuDetailResp                                                                                                                                                                                     | 响应 Bean，继承 sh-web EntityResp          |
+| `helper`    | PasswordHelper, IpLocalCacheHelper                                                                                                                                                                                              | 密码 MD5+salt 加密校验、IP 归属地缓存             |
 
 ### iam-sdk (`com.wkclz.iam.sdk`)
 
@@ -121,14 +121,14 @@ iam_request_log ── 请求日志 (独立)
 
 核心实体字段速查:
 
-| 实体 | 关键字段 |
-|------|---------|
-| IamUser | userCode, username, nickname, email, phone, avatar, userStatus(1启用/2禁用/3锁定) |
-| IamRole | tenantCode, appCode, parentCode, roleCode, roleName |
-| IamMenu | appCode, parentCode, menuCode, menuName, menuType(MENU/BUTTON), routePath, component, buttonCode |
-| IamApi | module, appCode, apiCode, apiMethod, apiUri, apiName, writeFlag |
-| IamUserAuth | userCode, authType(PASSWORD/LDAP), authIdentifier, authStatus(0禁用/1启用) |
-| IamAccessKey | appCode, appId, accessKey, secretKey, enableStatus |
+| 实体           | 关键字段                                                                                             |
+|--------------|--------------------------------------------------------------------------------------------------|
+| IamUser      | userCode, username, nickname, email, phone, avatar, userStatus(1启用/2禁用/3锁定)                      |
+| IamRole      | tenantCode, appCode, parentCode, roleCode, roleName, applicable(1=可申请/0=仅树节点)                    |
+| IamMenu      | appCode, parentCode, menuCode, menuName, menuType(MENU/BUTTON), routePath, component, buttonCode |
+| IamApi       | module, appCode, apiCode, apiMethod, apiUri, apiName, writeFlag                                  |
+| IamUserAuth  | userCode, authType(PASSWORD/LDAP), authIdentifier, authStatus(0禁用/1启用)                           |
+| IamAccessKey | appCode, appId, accessKey, secretKey, enableStatus                                               |
 
 ---
 

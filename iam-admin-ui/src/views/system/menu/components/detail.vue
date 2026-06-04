@@ -58,6 +58,19 @@
       </el-col>
     </el-row>
 
+    <!-- 已绑定角色 -->
+    <div style="margin-top: 16px;">
+      <div class="section-header" style="margin-bottom: 8px;">
+        <span class="section-title">已绑定角色</span>
+      </div>
+      <el-table :data="boundRoles" size="small" max-height="200">
+        <el-table-column label="角色名称" prop="roleName" min-width="150" />
+        <el-table-column label="是否可申请" prop="applicable" width="100">
+          <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.applicable" /></template>
+        </el-table-column>
+      </el-table>
+    </div>
+
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="close">关 闭</el-button>
@@ -69,11 +82,12 @@
 <script setup name="IamMenuDetail">
 import { menuDetail } from "@/api/system/menu";
 import { menuApiBoundList, menuApiBind, menuApiUnbind } from "@/api/system/menu-api";
+import { roleMenuBoundRoles } from "@/api/system/role-menu";
 import { apiOptions } from "@/api/system/api";
 
 defineExpose({ init });
 const { proxy } = getCurrentInstance();
-const { API_METHOD, MENU_TYPE } = proxy.useDict("API_METHOD", "MENU_TYPE");
+const { API_METHOD, MENU_TYPE, BOOLEAN } = proxy.useDict("API_METHOD", "MENU_TYPE", "BOOLEAN");
 
 const open = ref(false);
 const menuInfo = ref(null);
@@ -83,6 +97,8 @@ const loading = ref(false);
 const allApis = ref([]);
 // 已绑定的 API 列表（含 menuApiId）
 const boundApis = ref([]);
+// 已绑定的角色列表
+const boundRoles = ref([]);
 
 // 搜索关键词
 const leftSearchKeyword = ref("");
@@ -123,17 +139,20 @@ function init(row) {
   rightSearchKeyword.value = "";
   allApis.value = [];
   boundApis.value = [];
+  boundRoles.value = [];
   // 加载菜单详情
   menuDetail({ id: row.id }).then(res => {
     menuInfo.value = res.data;
-    // 并行加载全量 API 和已绑定 API
+    // 并行加载全量 API、已绑定 API 和已绑定角色
     loading.value = true;
     Promise.all([
       apiOptions({ appCode: menuInfo.value?.appCode }),
-      menuApiBoundList({ menuCode: menuInfo.value?.menuCode })
-    ]).then(([allRes, boundRes]) => {
+      menuApiBoundList({ menuCode: menuInfo.value?.menuCode }),
+      roleMenuBoundRoles({ menuCode: menuInfo.value?.menuCode })
+    ]).then(([allRes, boundRes, rolesRes]) => {
       allApis.value = allRes.data || [];
       boundApis.value = boundRes.data || [];
+      boundRoles.value = rolesRes.data || [];
     }).finally(() => {
       loading.value = false;
     });

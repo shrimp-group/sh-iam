@@ -11,7 +11,7 @@
             <el-input v-model="queryParams.appCode" disabled style="width: 160px" @keyup.enter.native="handleQuery" />
           </el-form-item>
           <el-form-item prop="keyword">
-            <el-input v-model="keyword" placeholder="角色名称" clearable style="width: 200px" @input="handleFilter()" />
+            <el-input v-model="keyword" placeholder="角色名称, 快速匹配" clearable style="width: 200px" @input="handleFilter()" />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" icon="Search" @click="handleQuery">刷新</el-button>
@@ -22,7 +22,6 @@
         </el-form>
 
         <div class="role-breadcrumb">
-          <!-- 面包屑导航 -->
           <el-breadcrumb separator-class="el-icon-arrow-right">
             <el-breadcrumb-item @click="navigateToLevel(0)" class="breadcrumb-item">根目录</el-breadcrumb-item>
             <span v-if="keyword">
@@ -37,7 +36,6 @@
         </div>
 
         <el-table v-loading="loading" :data="showList">
-
           <el-table-column label="角色名称" prop="roleName" min-width="120">
             <template #default="{row}">
               <!-- 非叶子 -->
@@ -54,20 +52,22 @@
               </div>
             </template>
           </el-table-column>
-
+          <el-table-column label="是否可申请" prop="applicable" width="100">
+            <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.applicable" /></template>
+          </el-table-column>
+          <el-table-column label="用户数" prop="userBindCount" width="80">
+            <template #default="{row}">{{ row.userBindCount || 0 }}</template>
+          </el-table-column>
           <el-table-column label="排序" prop="sort" width="60" v-if="columns.sort.visible"/>
           <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>
           <el-table-column label="创建时间" prop="createTime" width="160" v-if="columns.createTime.visible">
             <template #default="{row}">{{ parseTime(row.createTime) }}</template>
           </el-table-column>
           <el-table-column label="创建人" prop="createBy" width="120" v-if="columns.createBy.visible"/>
-          <el-table-column label="更新时间" prop="updateTime" width="160" v-if="columns.updateTime.visible">
-            <template #default="{row}">{{ parseTime(row.updateTime) }}</template>
-          </el-table-column>
-          <el-table-column label="更新人" prop="updateBy" width="120" v-if="columns.updateBy.visible"/>
-          <el-table-column fixed="right" width="240">
+          <el-table-column fixed="right" width="300">
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
+              <el-button link type="success" icon="Menu" @click="handleMenuBind(row)" v-if="row.applicable === 1">菜单</el-button>
               <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
               <el-popconfirm v-if="row.childrenCount === 0" :title="'确认删除:' + row.roleName + '?'" placement="top-end" @confirm="handleDelete(row)">
@@ -79,23 +79,17 @@
             </template>
           </el-table-column>
         </el-table>
-
-        <pagination
-            v-show="total > 0"
-            :total="total"
-            v-model:page="queryParams.current"
-            v-model:limit="queryParams.size"
-            @pagination="getList"
-        />
       </template>
     </layout-split>
     <edit ref="editRef" @change="getList"/>
+    <menu-bind ref="menuBindRef" />
   </div>
 </template>
 
-<script setup name="IamUserRole">
-import { roleList, roleRemove} from "@/api/user/role";
+<script setup name="IamRole">
+import {roleList, roleRemove} from "@/api/user/role";
 import Edit from "./components/edit"
+import MenuBind from "./components/menu-bind"
 import AppOptions from "@/views/components/AppOptions"
 
 const { proxy } = getCurrentInstance();
@@ -103,10 +97,8 @@ const { BOOLEAN } = proxy.useDict("BOOLEAN");
 const dataList = ref([]);
 const showList = ref([]);
 const loading = ref(false);
-const total = ref(0);
 
 const keyword = ref('');
-// 菜单导航相关变量
 const currentPath = ref([]);
 const breadcrumb = ref([]);
 
@@ -120,12 +112,7 @@ const columns = ref({
 })
 
 const queryParams = ref({
-  current: 1,
-  size: 20,
-  tenantCode: undefined,
   appCode: undefined,
-  userCode: undefined,
-  roleCode: undefined,
 });
 
 function selectApp(row) {
@@ -144,7 +131,6 @@ function handleQuery() {
   getList();
 }
 
-/** 查询参数列表 */
 function getList() {
   loading.value = true;
   roleList(queryParams.value).then(res => {
@@ -156,20 +142,17 @@ function getList() {
   });
 }
 
-
 function handleFilter() {
   showList.value = [];
   const result = [];
   if (keyword.value) {
     resetNavigation();
-    // 包含筛选，按筛选的内容展示
     for (const role of dataList.value) {
       if (role.roleName.indexOf(keyword.value) > -1) {
         result.push(role);
       }
     }
   } else {
-    // 不筛选，根据当前层级展示
     const currentLevel = currentPath.value.length;
     const parentCode = currentLevel > 0 ? currentPath.value[currentLevel - 1].roleCode : '0';
     for (const role of dataList.value) {
@@ -181,53 +164,41 @@ function handleFilter() {
   showList.value = result;
 }
 
-
-// 导航到子菜单
 function navigateToChild(role) {
-  // 只有当菜单有子菜单时才允许点击导航
   if (role.childrenCount > 0) {
     currentPath.value.push(role);
     updateBreadcrumb();
     handleFilter();
   }
-  // 没有子菜单的菜单项点击时不执行任何操作
 }
 
-// 导航到指定层级
 function navigateToLevel(level) {
   if (level === 0) {
-    // 导航到顶级
     resetNavigation();
   } else if (level <= currentPath.value.length) {
-    // 导航到指定层级
     currentPath.value = currentPath.value.slice(0, level);
     updateBreadcrumb();
   }
   handleFilter();
 }
 
-// 更新面包屑
 function updateBreadcrumb() {
   keyword.value = '';
   breadcrumb.value = [...currentPath.value];
 }
-
 
 function handleAdd(row) {
   if (!queryParams.value.appCode) {
     return;
   }
   const param = {appCode: queryParams.value.appCode, parentCode: row?.roleCode || '0'};
-  // 项级路径
   let parents = [{roleName: '顶级'}];
-  // 当前路径
   const current = currentPath.value;
   if (current.length > 0) {
-    const lastMenu = current[current.length - 1];
-    param.parentCode = lastMenu.roleCode;
+    const lastRole = current[current.length - 1];
+    param.parentCode = lastRole.roleCode;
     parents = [...parents, ...current];
   }
-  // 子路径
   if (row?.roleCode) {
     param.parentCode = row.roleCode;
     parents = [...parents, {roleName: row.roleName}];
@@ -236,9 +207,7 @@ function handleAdd(row) {
   proxy.$refs["editRef"].init(param);
 }
 
-
 function handleUpdate(row) {
-  // 为编辑的菜单添加完整的父菜单路径
   let parents = [{roleName: '顶级'}];
   if (currentPath.value.length > 0) {
     parents = [...parents, ...currentPath.value];
@@ -247,7 +216,6 @@ function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);
 }
 
-/** 删除按钮操作 */
 function handleDelete(row) {
   roleRemove({id: row.id}).then(res => {
     proxy.$modal.msgSuccess("删除成功");
@@ -255,7 +223,11 @@ function handleDelete(row) {
       navigateToLevel(currentPath.value.length - 1);
     }
     getList();
-  });
+  })
+}
+
+function handleMenuBind(row) {
+  proxy.$refs["menuBindRef"].init(row);
 }
 
 </script>
@@ -263,7 +235,7 @@ function handleDelete(row) {
 <style scoped lang="scss">
 .role-breadcrumb {
   font-size: 14px;
-  margin: 8px 0;;
+  margin: 8px 0;
 }
 
 .role-name {
@@ -287,10 +259,4 @@ function handleDelete(row) {
     text-decoration: underline;
   }
 }
-
-:deep(.el-tag--small) {
-  height: 12px;
-}
-
 </style>
-

@@ -3,8 +3,8 @@ package com.wkclz.iam.admin.service;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
-import com.wkclz.iam.admin.mapper.IamMenuMapper;
 import com.wkclz.iam.admin.bean.resp.MenuDetailResp;
+import com.wkclz.iam.admin.mapper.IamMenuMapper;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.mybatis.service.BaseService;
@@ -124,7 +124,6 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
 
     private List<IamMenuDto> buildMenuTree(List<IamMenu> menus) {
         List<IamMenuDto> tree = new ArrayList<>();
-
         Map<String, IamMenuDto> menuMap = menus.stream()
                 .map(IamMenuDto::copy)
                 .collect(Collectors.toMap(IamMenuDto::getMenuCode, t -> t));
@@ -138,6 +137,11 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
                 // 否则，放入父菜单的children列表
                 IamMenuDto parentNode = menuMap.get(parentCode);
                 if (parentNode != null) {
+                    List<IamMenuDto> children = parentNode.getChildren();
+                    if (children == null) {
+                        children = new ArrayList<>();
+                        parentNode.setChildren(children);
+                    }
                     parentNode.getChildren().add(menuDto);
                 }
             }
