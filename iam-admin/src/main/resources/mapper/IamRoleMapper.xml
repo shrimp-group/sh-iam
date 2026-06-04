@@ -10,6 +10,7 @@
             r1.parent_code,
             r1.role_code,
             r1.role_name,
+        r1.applicable,
             r1.sort,
             r1.create_time,
             r1.create_by,
@@ -17,10 +18,12 @@
             r1.update_by,
             r1.remark,
             r1.version,
-            COUNT( r2.id ) children_count
+        COUNT( DISTINCT r2.id ) children_count,
+        COUNT( DISTINCT ur.id ) user_bind_count
         FROM
             iam_role r1
             LEFT JOIN iam_role r2 ON r2.parent_code = r1.role_code AND r2.app_code = r1.app_code AND r2.deleted = 0
+        LEFT JOIN iam_user_role ur ON ur.role_code = r1.role_code AND ur.deleted = 0
         WHERE
             r1.deleted = 0
             AND r1.app_code = #{appCode}

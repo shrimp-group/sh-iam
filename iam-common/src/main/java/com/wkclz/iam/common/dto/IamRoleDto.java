@@ -20,6 +20,11 @@ public class IamRoleDto extends IamRole {
     private Integer childrenCount;
     private List<IamRoleDto> children;
 
+    /**
+     * 已绑定用户数量
+     */
+    private Integer userBindCount;
+
 
     /**
      * entity 转 Dto
