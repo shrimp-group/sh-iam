@@ -5,7 +5,7 @@ import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-
+import java.time.LocalDateTime;
 
 
 /**
@@ -42,6 +42,24 @@ public class IamUserRole extends BaseEntity {
     @FieldDesc(value = "角色编码")
     private String roleCode;
 
+    /**
+     * 有效开始
+     */
+    @FieldDesc(value = "有效开始", notNull = true)
+    private LocalDateTime startTime;
+
+    /**
+     * 有效结束
+     */
+    @FieldDesc(value = "有效结束", notNull = true)
+    private LocalDateTime endTime;
+
+    /**
+     * 当前有效状态
+     */
+    @FieldDesc(value = "当前有效状态", notNull = true)
+    private Integer enableStatus;
+
 
     public static IamUserRole copy(IamUserRole source, IamUserRole target) {
         if (target == null ) { target = new IamUserRole();}
@@ -51,6 +69,9 @@ public class IamUserRole extends BaseEntity {
         target.setAppCode(source.getAppCode());
         target.setUserCode(source.getUserCode());
         target.setRoleCode(source.getRoleCode());
+        target.setStartTime(source.getStartTime());
+        target.setEndTime(source.getEndTime());
+        target.setEnableStatus(source.getEnableStatus());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -69,6 +90,15 @@ public class IamUserRole extends BaseEntity {
         if (source.getAppCode() != null) { target.setAppCode(source.getAppCode()); }
         if (source.getUserCode() != null) { target.setUserCode(source.getUserCode()); }
         if (source.getRoleCode() != null) { target.setRoleCode(source.getRoleCode()); }
+        if (source.getStartTime() != null) {
+            target.setStartTime(source.getStartTime());
+        }
+        if (source.getEndTime() != null) {
+            target.setEndTime(source.getEndTime());
+        }
+        if (source.getEnableStatus() != null) {
+            target.setEnableStatus(source.getEnableStatus());
+        }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }
