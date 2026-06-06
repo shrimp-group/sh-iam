@@ -37,7 +37,37 @@
             im1.sort,
             im1.id
   </select>
-    
+
+    <select id="getAppMenu4Tree" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamMenuDto">
+        SELECT
+        `id`,
+        `app_code`,
+        `parent_code`,
+        `menu_code`,
+        `menu_name`,
+        `icon`,
+        `menu_type`,
+        `route_path`,
+        `component`,
+        `button_code`,
+        `hidden`,
+        `sort`,
+        `create_time`,
+        `create_by`,
+        `update_time`,
+        `update_by`,
+        `remark`,
+        `version`
+        FROM
+        iam_menu
+        WHERE
+        app_code = #{appCode}
+        ORDER BY
+        sort,
+        id
+    </select>
+
+
     <!-- 根据用户编码查询菜单列表 -->
     <select id="selectMenusByUserCode" parameterType="com.wkclz.iam.common.entity.IamMenu" resultType="com.wkclz.iam.common.entity.IamMenu">
         SELECT DISTINCT

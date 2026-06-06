@@ -67,8 +67,7 @@
           <el-table-column fixed="right" width="300">
             <template #header><table-setting v-model:columns="columns"/></template>
             <template #default="{row}">
-              <el-button link type="success" icon="Menu" @click="handleMenuBind(row)" v-if="row.applicable === 1">菜单</el-button>
-              <el-button link type="warning" icon="User" @click="handleRoleUser(row)">用户</el-button>
+              <el-button link type="success" icon="View" @click="handleDetail(row)">详情</el-button>
               <el-button link type="primary" icon="Plus" @click="handleAdd(row)">新增</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(row)">编辑</el-button>
               <el-popconfirm v-if="row.childrenCount === 0" :title="'确认删除:' + row.roleName + '?'" placement="top-end" @confirm="handleDelete(row)">
@@ -83,16 +82,14 @@
       </template>
     </layout-split>
     <edit ref="editRef" @change="getList"/>
-    <menu-bind ref="menuBindRef" />
-    <role-user ref="roleUserRef" @change="getList" />
+    <detail ref="detailRef" @change="getList" />
   </div>
 </template>
 
 <script setup name="IamRole">
 import {roleList, roleRemove} from "@/api/user/role";
 import Edit from "./components/edit"
-import MenuBind from "./components/menu-bind"
-import RoleUser from "./components/role-user"
+import Detail from "./components/detail"
 import AppOptions from "@/views/components/AppOptions"
 
 const { proxy } = getCurrentInstance();
@@ -229,12 +226,8 @@ function handleDelete(row) {
   })
 }
 
-function handleMenuBind(row) {
-  proxy.$refs["menuBindRef"].init(row);
-}
-
-function handleRoleUser(row) {
-  proxy.$refs["roleUserRef"].init(row);
+function handleDetail(row) {
+  proxy.$refs["detailRef"].init(row);
 }
 
 </script>

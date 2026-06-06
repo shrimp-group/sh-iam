@@ -62,7 +62,6 @@
             range-separator="至"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
-            value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 360px;"
           />
         </div>

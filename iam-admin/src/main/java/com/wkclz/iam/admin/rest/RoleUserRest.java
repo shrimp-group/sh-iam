@@ -29,6 +29,8 @@ public class RoleUserRest {
 
     @PostMapping(Route.ROLE_USER_BIND)
     public R<Void> roleUserBind(@Valid @RequestBody RoleUserBindReq req) {
+        Assert.notNull(req.getStartTime(), "startTime 不能为空!");
+        Assert.notNull(req.getEndTime(), "endTime 不能为空!");
         iamUserRoleService.batchBind(req);
         return R.ok();
     }

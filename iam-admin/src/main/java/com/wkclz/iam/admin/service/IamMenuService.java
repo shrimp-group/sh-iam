@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,9 +40,10 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         return mapper.getAppMenuList(entity.getAppCode());
     }
 
+
     public List<IamMenuDto> menuTree(IamMenu entity) {
         // 查询所有菜单
-        List<IamMenu> menus = selectByEntity(entity);
+        List<IamMenuDto> menus = mapper.getAppMenu4Tree(entity.getAppCode());
         // 构建菜单树
         return buildMenuTree(menus);
     }
@@ -122,11 +124,10 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         throw UserException.of(ResultCode.RECORD_DUPLICATE);
     }
 
-    private List<IamMenuDto> buildMenuTree(List<IamMenu> menus) {
+    private List<IamMenuDto> buildMenuTree(List<IamMenuDto> menus) {
         List<IamMenuDto> tree = new ArrayList<>();
         Map<String, IamMenuDto> menuMap = menus.stream()
-                .map(IamMenuDto::copy)
-                .collect(Collectors.toMap(IamMenuDto::getMenuCode, t -> t));
+                .collect(Collectors.toMap(IamMenuDto::getMenuCode, t -> t, (v1, v2) -> v1, LinkedHashMap::new));
 
         for (IamMenuDto menuDto : menuMap.values()) {
             String parentCode = menuDto.getParentCode();
