@@ -4,6 +4,8 @@ import com.wkclz.iam.common.entity.IamUserRole;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
  * Description Create by sh-generator
  * @author shrimp
@@ -14,8 +16,25 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class IamUserRoleDto extends IamUserRole {
 
+    /**
+     * 角色名称
+     */
+    private String roleName;
 
+    /**
+     * 父角色编码（用于角色树构建）
+     */
+    private String parentCode;
 
+    /**
+     * 绑定数量（用于角色树展示）
+     */
+    private Integer bindCount;
+
+    /**
+     * 子角色列表（用于角色树）
+     */
+    private List<IamUserRoleDto> children;
 
     /**
      * entity 转 Dto

@@ -1,75 +1,97 @@
 <template>
-  <el-dialog :title="'菜单详情 - ' + menuInfo?.menuName" v-model="open" width="90%" :close-on-click-modal="false">
-    <!-- 菜单基本信息（不可编辑） -->
-    <el-descriptions :column="3" border size="small" style="margin-bottom: 16px;">
-      <el-descriptions-item label="菜单名称">{{ menuInfo?.menuName }}</el-descriptions-item>
-      <el-descriptions-item label="菜单类型">
-        <dict-tag :options="MENU_TYPE" :value="menuInfo?.menuType" />
-      </el-descriptions-item>
-      <el-descriptions-item label="应用编码">{{ menuInfo?.appCode }}</el-descriptions-item>
-      <el-descriptions-item label="路由地址">{{ menuInfo?.routePath }}</el-descriptions-item>
-      <el-descriptions-item label="组件">{{ menuInfo?.component }}</el-descriptions-item>
-      <el-descriptions-item label="按钮编码">{{ menuInfo?.buttonCode }}</el-descriptions-item>
-    </el-descriptions>
+  <el-dialog :title="'菜单详情 - ' + menuInfo?.menuName" v-model="open" width="1200px">
+    <el-tabs v-model="activeTab">
+      <!-- 基本信息 -->
+      <el-tab-pane label="基本信息" name="basic">
+        <el-descriptions :column="3" border size="small">
+          <el-descriptions-item label="菜单名称">{{ menuInfo?.menuName }}</el-descriptions-item>
+          <el-descriptions-item label="菜单类型">
+            <dict-tag :options="MENU_TYPE" :value="menuInfo?.menuType" />
+          </el-descriptions-item>
+          <el-descriptions-item label="应用编码">{{ menuInfo?.appCode }}</el-descriptions-item>
+          <el-descriptions-item label="路由地址">{{ menuInfo?.routePath }}</el-descriptions-item>
+          <el-descriptions-item label="组件">{{ menuInfo?.component }}</el-descriptions-item>
+          <el-descriptions-item label="按钮编码">{{ menuInfo?.buttonCode }}</el-descriptions-item>
+        </el-descriptions>
+      </el-tab-pane>
 
-    <el-row :gutter="20">
-      <!-- 左边：全量 API（已绑定的绑定按钮禁用） -->
-      <el-col :span="12">
-        <div class="api-section">
-          <div class="section-header">
-            <span class="section-title">全部接口</span>
-            <el-input v-model="leftSearchKeyword" placeholder="输入接口地址或名称" clearable size="small" style="width: 200px"/>
-          </div>
-          <el-table v-loading="loading" :data="filteredAllApis">
-            <el-table-column label="方法" prop="apiMethod" width="80">
-              <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
-            </el-table-column>
-            <el-table-column label="URI" prop="apiUri" min-width="150" />
-            <el-table-column label="名称" prop="apiName" min-width="120" />
-            <el-table-column label="操作" width="80" fixed="right">
-              <template #default="{row}">
-                <el-button link type="primary" size="small" :disabled="isBound(row)" @click="handleBind(row)">绑定</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </el-col>
+      <!-- 接口授权 -->
+      <el-tab-pane label="接口授权" name="apiBind">
+        <el-row :gutter="20">
+          <!-- 左边：全量 API（已绑定的绑定按钮禁用） -->
+          <el-col :span="12">
+            <div class="api-section">
+              <div class="section-header">
+                <span class="section-title">全部接口</span>
+                <el-input v-model="leftSearchKeyword" placeholder="输入接口地址或名称" clearable size="small" style="width: 200px"/>
+              </div>
+              <el-table v-loading="loading" :data="filteredAllApis" max-height="500" min-height="200">
+                <el-table-column label="方法" prop="apiMethod" width="80">
+                  <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
+                </el-table-column>
+                <el-table-column label="URI" prop="apiUri" min-width="150" />
+                <el-table-column label="名称" prop="apiName" min-width="120" />
+                <el-table-column label="操作" width="80" fixed="right">
+                  <template #default="{row}">
+                    <el-button link type="primary" size="small" :disabled="isBound(row)" @click="handleBind(row)">绑定</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-col>
 
-      <!-- 右边：已绑定的 API -->
-      <el-col :span="12">
-        <div class="api-section">
-          <div class="section-header">
-            <span class="section-title">已绑定的接口</span>
-            <el-input v-model="rightSearchKeyword" placeholder="输入接口地址或名称" clearable size="small" style="width: 200px"/>
-          </div>
-          <el-table :data="filteredBoundApis">
-            <el-table-column label="方法" prop="apiMethod" width="80">
-              <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
-            </el-table-column>
-            <el-table-column label="URI" prop="apiUri" min-width="150" />
-            <el-table-column label="名称" prop="apiName" min-width="120" />
-            <el-table-column label="操作" width="80" fixed="right">
-              <template #default="{row}">
-                <el-button link type="danger" size="small" @click="handleUnbind(row)">解绑</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-      </el-col>
-    </el-row>
+          <!-- 右边：已绑定的 API -->
+          <el-col :span="12">
+            <div class="api-section">
+              <div class="section-header">
+                <span class="section-title">已绑定的接口</span>
+                <el-input v-model="rightSearchKeyword" placeholder="输入接口地址或名称" clearable size="small" style="width: 200px"/>
+              </div>
+              <el-table :data="filteredBoundApis" max-height="500" min-height="200">
+                <el-table-column label="方法" prop="apiMethod" width="80">
+                  <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
+                </el-table-column>
+                <el-table-column label="URI" prop="apiUri" min-width="150" />
+                <el-table-column label="名称" prop="apiName" min-width="120" />
+                <el-table-column label="操作" width="80" fixed="right">
+                  <template #default="{row}">
+                    <el-button link type="danger" size="small" @click="handleUnbind(row)">解绑</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
 
-    <!-- 已绑定角色 -->
-    <div style="margin-top: 16px;">
-      <div class="section-header" style="margin-bottom: 8px;">
-        <span class="section-title">已绑定角色</span>
-      </div>
-      <el-table :data="boundRoles" size="small" max-height="200">
-        <el-table-column label="角色名称" prop="roleName" min-width="150" />
-        <el-table-column label="是否可申请" prop="applicable" width="100">
-          <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.applicable" /></template>
-        </el-table-column>
-      </el-table>
-    </div>
+      <!-- 已绑角色 -->
+      <el-tab-pane label="已绑角色" name="boundRoles">
+        <el-table :data="boundRoles" size="small" max-height="500" min-height="200">
+          <el-table-column label="角色编码" prop="roleCode" min-width="150" />
+          <el-table-column label="角色名称" prop="roleName" min-width="150" />
+        </el-table>
+      </el-tab-pane>
+
+      <!-- 关联用户 -->
+      <el-tab-pane label="关联用户" name="boundUsers">
+        <el-table :data="boundUsers" size="small" max-height="500" min-height="200">
+          <el-table-column label="用户名" prop="username" min-width="100" />
+          <el-table-column label="昵称" prop="nickname" min-width="100" />
+          <el-table-column label="来源角色" prop="roleName" min-width="120" />
+          <el-table-column label="有效开始" prop="startTime" width="160">
+            <template #default="{row}">{{ parseTime(row.startTime) }}</template>
+          </el-table-column>
+          <el-table-column label="有效结束" prop="endTime" width="160">
+            <template #default="{row}">{{ parseTime(row.endTime) }}</template>
+          </el-table-column>
+          <el-table-column label="状态" prop="enableStatus" width="80">
+            <template #default="{row}">
+              <el-tag :type="row.enableStatus === 1 ? 'success' : 'danger'" size="small">{{ row.enableStatus === 1 ? '有效' : '无效' }}</el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+    </el-tabs>
 
     <template #footer>
       <div class="dialog-footer">
@@ -82,14 +104,16 @@
 <script setup name="IamMenuDetail">
 import { menuDetail } from "@/api/system/menu";
 import { menuApiBoundList, menuApiBind, menuApiUnbind } from "@/api/system/menu-api";
-import { roleMenuBoundRoles } from "@/api/system/role-menu";
+import { menuBoundRoles, menuBoundUsers } from "@/api/user/user-role";
 import { apiOptions } from "@/api/system/api";
+import { parseTime } from "@/utils/ruoyi";
 
 defineExpose({ init });
 const { proxy } = getCurrentInstance();
-const { API_METHOD, MENU_TYPE, BOOLEAN } = proxy.useDict("API_METHOD", "MENU_TYPE", "BOOLEAN");
+const { API_METHOD, MENU_TYPE } = proxy.useDict("API_METHOD", "MENU_TYPE");
 
 const open = ref(false);
+const activeTab = ref("basic");
 const menuInfo = ref(null);
 const loading = ref(false);
 
@@ -99,6 +123,8 @@ const allApis = ref([]);
 const boundApis = ref([]);
 // 已绑定的角色列表
 const boundRoles = ref([]);
+// 关联用户列表
+const boundUsers = ref([]);
 
 // 搜索关键词
 const leftSearchKeyword = ref("");
@@ -135,24 +161,28 @@ const filteredBoundApis = computed(() => {
 // 初始化
 function init(row) {
   open.value = true;
+  activeTab.value = "basic";
   leftSearchKeyword.value = "";
   rightSearchKeyword.value = "";
   allApis.value = [];
   boundApis.value = [];
   boundRoles.value = [];
+  boundUsers.value = [];
   // 加载菜单详情
   menuDetail({ id: row.id }).then(res => {
     menuInfo.value = res.data;
-    // 并行加载全量 API、已绑定 API 和已绑定角色
+    // 并行加载全量 API、已绑定 API、已绑定角色和关联用户
     loading.value = true;
     Promise.all([
       apiOptions({ appCode: menuInfo.value?.appCode }),
       menuApiBoundList({ menuCode: menuInfo.value?.menuCode }),
-      roleMenuBoundRoles({ menuCode: menuInfo.value?.menuCode })
-    ]).then(([allRes, boundRes, rolesRes]) => {
+      menuBoundRoles({ menuCode: menuInfo.value?.menuCode }),
+      menuBoundUsers({ menuCode: menuInfo.value?.menuCode })
+    ]).then(([allRes, boundRes, rolesRes, usersRes]) => {
       allApis.value = allRes.data || [];
       boundApis.value = boundRes.data || [];
       boundRoles.value = rolesRes.data || [];
+      boundUsers.value = usersRes.data || [];
     }).finally(() => {
       loading.value = false;
     });
@@ -209,10 +239,5 @@ function close() {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
-}
-
-.el-table {
-  min-height: 320px;
-  height: calc(100vh - 500px);
 }
 </style>

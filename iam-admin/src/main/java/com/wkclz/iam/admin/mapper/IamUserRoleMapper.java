@@ -1,8 +1,13 @@
 package com.wkclz.iam.admin.mapper;
 
 import com.wkclz.mybatis.mapper.BaseMapper;
+import com.wkclz.iam.admin.bean.resp.*;
+import com.wkclz.iam.common.dto.IamUserRoleDto;
 import com.wkclz.iam.common.entity.IamUserRole;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * Description Create by sh-generator
@@ -13,8 +18,45 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IamUserRoleMapper extends BaseMapper<IamUserRole> {
 
-    // 示例查询,可删除
-    Long example();
+    /**
+     * 查询用户角色列表
+     */
+    List<UserRoleResp> getUserRoleList(@Param("userCode") String userCode, @Param("roleCode") String roleCode);
+
+    /**
+     * 角色下用户列表查询
+     */
+    List<RoleUserResp> getRoleUserPage(@Param("roleCode") String roleCode);
+
+    /**
+     * 用户在某应用下的角色树查询（含 bindCount 标记）
+     */
+    List<IamUserRoleDto> getUserRoleTree(@Param("userCode") String userCode, @Param("appCode") String appCode);
+
+    /**
+     * 查询菜单绑定的角色列表
+     */
+    List<MenuRoleResp> getMenuBoundRoles(@Param("menuCode") String menuCode);
+
+    /**
+     * 查询菜单关联的用户列表（含来源角色）
+     */
+    List<MenuUserResp> getMenuBoundUsers(@Param("menuCode") String menuCode);
+
+    /**
+     * 查询用户菜单来源角色信息
+     */
+    List<UserMenuSourceResp> getUserMenuSourceList(@Param("userCode") String userCode, @Param("appCode") String appCode);
+
+    /**
+     * 批量启用已到有效期的绑定
+     */
+    int enableExpiredBindings();
+
+    /**
+     * 批量禁用已过有效期的绑定
+     */
+    int disableExpiredBindings();
 
 }
 

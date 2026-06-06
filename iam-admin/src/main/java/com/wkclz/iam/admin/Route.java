@@ -81,10 +81,14 @@ public interface Route {
     String USER_ROLE_BIND = "/user-role/bind";
     @ApiDesc("3. 用户角色-解绑")
     String USER_ROLE_UNBIND = "/user-role/unbind";
+    @ApiDesc("4. 用户角色-角色树")
+    String USER_ROLE_ROLE_TREE = "/user-role/role-tree";
+    @ApiDesc("5. 用户角色-菜单来源")
+    String USER_MENU_SOURCE_LIST = "/user-role/menu-source";
 
     // 角色用户关联
-    @ApiDesc("1. 角色用户-列表")
-    String ROLE_USER_LIST = "/role-user/list";
+    @ApiDesc("1. 角色用户-分页")
+    String ROLE_USER_PAGE = "/role-user/page";
     @ApiDesc("2. 角色用户-绑定")
     String ROLE_USER_BIND = "/role-user/bind";
     @ApiDesc("3. 角色用户-解绑")
@@ -105,6 +109,10 @@ public interface Route {
     String MENU_REMOVE = "/menu/remove";
     @ApiDesc("7. 菜单管理-详情页")
     String MENU_DETAIL = "/menu/detail";
+    @ApiDesc("8. 菜单管理-绑定角色")
+    String MENU_BOUND_ROLES = "/menu/bound-roles";
+    @ApiDesc("9. 菜单管理-绑定用户")
+    String MENU_BOUND_USERS = "/menu/bound-users";
 
     // 角色菜单关联
     @ApiDesc("1. 角色菜单-列表")

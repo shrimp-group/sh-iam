@@ -1,7 +1,7 @@
 <template>
   <el-dialog :title="title" v-model="open" width="1080px">
-    <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
-
+    <!-- 新增模式：仅显示基本信息表单 -->
+    <el-form v-if="!form.id" ref="editRef" :model="form" :rules="rules" label-width="80px">
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="用户编码" prop="userCode">
@@ -36,14 +36,63 @@
             </el-radio-group>
             <form-tip html="是：正常使用；否：此用户不可再使用；"/>
           </el-form-item>
-          <el-form-item v-if="!form.id" label="密码" prop="password">
+          <el-form-item label="密码" prop="password">
             <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
             <form-tip text="用户初始密码，长度8-20个字符"/>
           </el-form-item>
         </el-col>
       </el-row>
-
     </el-form>
+
+    <!-- 编辑模式：标签页布局 -->
+    <el-tabs v-else v-model="activeTab">
+      <el-tab-pane label="基本信息" name="basic">
+        <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="用户编码" prop="userCode">
+                <el-input v-model="form.userCode" disabled />
+              </el-form-item>
+              <el-form-item label="用户名" prop="username">
+                <el-input v-model="form.username" placeholder="请输入用户名" />
+                <form-tip text="用户登录名，长度3-20个字符"/>
+              </el-form-item>
+              <el-form-item label="姓名" prop="nickname">
+                <el-input v-model="form.nickname" placeholder="请输入姓名" />
+                <form-tip text="用户的姓名，用于前端展示"/>
+              </el-form-item>
+              <el-form-item label="邮箱" prop="email">
+                <el-input v-model="form.email" placeholder="请输入邮箱" />
+                <form-tip text="用户的邮箱地址，一般为公司邮箱"/>
+              </el-form-item>
+              <el-form-item label="手机号" prop="phone">
+                <el-input v-model="form.phone" placeholder="请输入手机号" />
+                <form-tip text="用户的手机号码，用于找回密码等"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="头像" prop="avatar">
+                <el-input v-model="form.avatar" placeholder="请输入头像" />
+                <form-tip html="用户的头像图片路径，支持相对路径或完整URL<br>例如：/assets/avatar.png 或 https://example.com/avatar.png"/>
+              </el-form-item>
+              <el-form-item label="启用状态" prop="userStatus">
+                <el-radio-group v-model="form.userStatus">
+                  <el-radio-button v-for="item in BOOLEAN" :key="item.value" :label="item.label" :value="item.value" />
+                </el-radio-group>
+                <form-tip html="是：正常使用；否：此用户不可再使用；"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </el-tab-pane>
+      <el-tab-pane label="角色管理" name="role">
+        <user-role :userCode="form.userCode" />
+      </el-tab-pane>
+      <el-tab-pane label="菜单来源" name="menuSource">
+        <user-menu-source :userCode="form.userCode" />
+      </el-tab-pane>
+    </el-tabs>
+
     <template #footer>
       <div class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -55,6 +104,8 @@
 
 <script setup name="IamUserEdit">
 import {userInfo, userCreate, userUpdate} from "@/api/user/user";
+import UserRole from "./user-role";
+import UserMenuSource from "./user-menu-source";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);
@@ -63,6 +114,7 @@ const { BOOLEAN } = proxy.useDict("BOOLEAN");
 const open = ref(false);
 const title = ref("");
 const form = ref({});
+const activeTab = ref("basic");
 const rules = ref({
   username: [
     { required: true, message: "用户名不能为空", trigger: "blur" },
@@ -107,6 +159,7 @@ function cancel() {
 // 新增/修改按钮操作
 function init(row) {
   reset();
+  activeTab.value = "basic";
   if (!row || !row.id) {
     open.value = true;
     title.value = "添加";
@@ -122,6 +175,11 @@ function init(row) {
 
 /** 提交按钮 */
 function submitForm() {
+  // 如果不在基本信息标签页，直接关闭
+  if (form.value.id && activeTab.value !== 'basic') {
+    open.value = false;
+    return;
+  }
   proxy.$refs["editRef"].validate(valid => {
     if (valid) {
       if (form.value.id) {
@@ -141,4 +199,3 @@ function submitForm() {
   });
 }
 </script>
-

@@ -32,13 +32,14 @@ iam-sso-starter → iam-sso → iam-common
 
 ### 框架依赖（来自 sh-parent BOM）
 
-| 依赖 | 用途 |
-|------|------|
-| `sh-web` | Web 基础能力 (IpHelper, RequestHelper, R 响应封装) |
-| `sh-mybatis` | MyBatis 封装 (BaseService, PageQuery, BaseMapper) |
-| `sh-redis` | Redis 封装 (RedisIdGenerator, RedisTemplate) |
-| `sh-bom` | 统一版本管理 (guava 33.5.0-jre, fastjson2, jjwt 等) |
-| `micro-dict` | 字典服务 |
+| 依赖           | 用途                                                    |
+|--------------|-------------------------------------------------------|
+| `sh-web`     | Web 基础能力 (IpHelper, RequestHelper, R 响应封装)            |
+| `sh-mybatis` | MyBatis 封装 (BaseService, PageQuery, BaseMapper)       |
+| `sh-redis`   | Redis 封装 (RedisIdGenerator, RedisTemplate, RedisLock) |
+| `sh-xxljob`  | XXL-Job 定时任务 (XxlJobConfig, @XxlJob 注解)               |
+| `sh-bom`     | 统一版本管理 (guava 33.5.0-jre, fastjson2, jjwt 等)          |
+| `micro-dict` | 字典服务                                                  |
 
 ---
 
@@ -80,13 +81,32 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
-| 包 | 类 | 说明 |
-|----|-----|------|
-| `rest` | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, ... | 17 个 REST 控制器 |
-| `service` | IamUserService, IamRoleService, IamMenuService, ... | 17 个 Service |
-| `mapper` | IamUserMapper, IamRoleMapper, ... | 17 个 Mapper + XML |
-| `init` | RestfulScan | 启动时扫描 @Router 注解 → 同步 API 到数据库 |
-| 根包 | IamAdminAutoConfig, Route | 自动配置 + 路由常量接口 (前缀 `/iam-admin`) |
+| 包         | 类                                                                                           | 说明                                     |
+|-----------|---------------------------------------------------------------------------------------------|----------------------------------------|
+| `rest`    | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, ...                          | 17 个 REST 控制器                          |
+| `service` | IamUserService, IamRoleService, IamMenuService, IamUserMenuService, IamUserRoleService, ... | 17+ Service                            |
+| `mapper`  | IamUserMapper, IamRoleMapper, ...                                                           | 17 个 Mapper + XML                      |
+| `job`     | UserRoleExpireJobHandler                                                                    | 用户角色有效期定时任务 (XXL-Job + @Scheduled 双触发) |
+| `init`    | RestfulScan                                                                                 | 启动时扫描 @Router 注解 → 同步 API 到数据库         |
+| 根包        | IamAdminAutoConfig, Route                                                                   | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)        |
+
+### iam-admin-ui 前端关键组件 (`src/views/`)
+
+| 路径                                          | 组件                   | 说明                                 |
+|---------------------------------------------|----------------------|------------------------------------|
+| `user/user/index.vue`                       | IamUser              | 用户管理主页面                            |
+| `user/user/components/edit.vue`             | IamUserEdit          | 用户新增/编辑弹窗                          |
+| `user/user/components/reset-password.vue`   | IamUserResetPassword | 重置密码弹窗                             |
+| `user/user/components/user-role.vue`        | IamUserRole          | 用户角色绑定 Tab 面板 (应用选择+角色树+绑定详情+添加角色) |
+| `user/user/components/user-menu-source.vue` | IamUserMenuSource    | 用户菜单来源 Tab 面板 (只读, 展示菜单通过哪些角色获得)   |
+| `user/role/index.vue`                       | IamRole              | 角色管理主页面                            |
+| `user/role/components/edit.vue`             | IamRoleEdit          | 角色新增/编辑弹窗                          |
+| `user/role/components/menu-bind.vue`        | RoleMenuBind         | 角色菜单绑定弹窗                           |
+| `system/menu/`                              | -                    | 菜单管理                               |
+| `system/api/`                               | -                    | API 管理                             |
+| `system/app/`                               | -                    | 应用管理                               |
+| `system/ak/`                                | -                    | 访问密钥管理                             |
+| `components/AppOptions/`                    | AppSelect            | 应用选择公共组件                           |
 
 ---
 
@@ -106,7 +126,7 @@ iam_user (用户)
   ├── iam_user_auth [userCode]              ── 认证方式 (PASSWORD/LDAP)
   │     └── iam_user_auth_password [userCode]  ── 密码凭据
   ├── iam_user_password_his [userCode]      ── 密码变更历史
-  └── iam_user_role [userCode]              ── 用户-角色关联
+  └── iam_user_role [userCode]              ── 用户-角色关联 (含有效期 startTime/endTime, enableStatus)
 
 iam_role (角色)
   ├── iam_role_menu [roleCode]    ── 角色-菜单关联
@@ -249,6 +269,13 @@ iam_request_log ── 请求日志 (独立)
 | `iam.sso.private-key` | RSA 私钥 (密码解密) | - |
 | `iam.sso.public-key` | RSA 公钥 (密码加密) | - |
 
+### iam-admin 定时任务配置 (`iam.job.*`)
+
+| 配置                                 | 说明                         | 默认值             |
+|------------------------------------|----------------------------|-----------------|
+| `iam.job.user-role-expire.enabled` | Spring @Scheduled 触发开关     | false           |
+| `iam.job.user-role-expire.cron`    | Spring @Scheduled cron 表达式 | `0 */5 * * * ?` |
+
 ---
 
 ## 扩展点
@@ -320,28 +347,28 @@ iam_request_log ── 请求日志 (独立)
 
 ### 管理后台模块 (iam-admin)
 
-| Story ID     | 故事名称            | 优先级 | 文档                                                              |
-|--------------|-----------------|-----|-----------------------------------------------------------------|
-| STORY-025    | 用户 CRUD 管理      | P0  | [STORY-025](docs/stories/STORY-025-user-crud.md)                |
-| STORY-026    | 用户认证方式管理        | P1  | [STORY-026](docs/stories/STORY-026-user-auth-management.md)     |
-| STORY-027    | 角色 CRUD 管理      | P0  | [STORY-027](docs/stories/STORY-027-role-crud.md)                |
-| STORY-028    | 菜单 CRUD 与树形管理   | P0  | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md)           |
-| STORY-029    | 应用 CRUD 管理      | P0  | [STORY-029](docs/stories/STORY-029-app-crud.md)                 |
-| STORY-030    | API 路由 CRUD 管理  | P0  | [STORY-030](docs/stories/STORY-030-api-crud.md)                 |
-| STORY-030-01 | API 详情页与菜单绑定数   | P1  | API 详情弹窗展示已绑定菜单全路径，API 列表增加 menuBindCount 字段和 menuBindStatus 过滤 |
-| STORY-031    | API 自动扫描同步      | P1  | [STORY-031](docs/stories/STORY-031-api-auto-scan.md)            |
-| STORY-032    | 访问密钥 CRUD 管理    | P1  | [STORY-032](docs/stories/STORY-032-access-key-crud.md)          |
-| STORY-033    | AK-API 关联管理     | P1  | [STORY-033](docs/stories/STORY-033-ak-api-binding.md)           |
-| STORY-034    | 角色-菜单关联管理       | P0  | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)        |
-| STORY-035    | 角色-用户与用户-角色关联管理 | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md)        |
-| STORY-036    | 菜单-API 关联管理     | P0  | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)         |
-| STORY-036-01 | 菜单详情页与穿梭框绑定     | P1  | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列     |
-| STORY-037    | 数据权限维度管理        | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)      |
-| STORY-038    | 角色-数据权限关联管理     | P1  | [STORY-038](docs/stories/STORY-038-role-data-binding.md)        |
-| STORY-039    | 登录日志查询          | P1  | [STORY-039](docs/stories/STORY-039-login-log-query.md)          |
-| STORY-040    | 请求日志查询          | P1  | [STORY-040](docs/stories/STORY-040-request-log-query.md)        |
-| STORY-041    | 当前用户菜单查询        | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)          |
-| STORY-042    | Admin 自动配置与路由常量 | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)        |
+| Story ID     | 故事名称            | 优先级 | 文档                                                                                                                                                   |
+|--------------|-----------------|-----|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| STORY-025    | 用户 CRUD 管理      | P0  | [STORY-025](docs/stories/STORY-025-user-crud.md)                                                                                                     |
+| STORY-026    | 用户认证方式管理        | P1  | [STORY-026](docs/stories/STORY-026-user-auth-management.md)                                                                                          |
+| STORY-027    | 角色 CRUD 管理      | P0  | [STORY-027](docs/stories/STORY-027-role-crud.md)                                                                                                     |
+| STORY-028    | 菜单 CRUD 与树形管理   | P0  | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md)                                                                                                |
+| STORY-029    | 应用 CRUD 管理      | P0  | [STORY-029](docs/stories/STORY-029-app-crud.md)                                                                                                      |
+| STORY-030    | API 路由 CRUD 管理  | P0  | [STORY-030](docs/stories/STORY-030-api-crud.md)                                                                                                      |
+| STORY-030-01 | API 详情页与菜单绑定数   | P1  | API 详情弹窗展示已绑定菜单全路径，API 列表增加 menuBindCount 字段和 menuBindStatus 过滤                                                                                      |
+| STORY-031    | API 自动扫描同步      | P1  | [STORY-031](docs/stories/STORY-031-api-auto-scan.md)                                                                                                 |
+| STORY-032    | 访问密钥 CRUD 管理    | P1  | [STORY-032](docs/stories/STORY-032-access-key-crud.md)                                                                                               |
+| STORY-033    | AK-API 关联管理     | P1  | [STORY-033](docs/stories/STORY-033-ak-api-binding.md)                                                                                                |
+| STORY-034    | 角色-菜单关联管理       | P0  | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)                                                                                             |
+| STORY-035    | 角色-用户与用户-角色关联管理 | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md)                                                                                             |
+| STORY-036    | 菜单-API 关联管理     | P0  | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)                                                                                              |
+| STORY-036-01 | 菜单详情页与穿梭框绑定     | P1  | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列，已绑定角色（roleCode+roleName），关联用户（username/nickname/roleName/startTime/endTime/enableStatus） |
+| STORY-037    | 数据权限维度管理        | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)                                                                                           |
+| STORY-038    | 角色-数据权限关联管理     | P1  | [STORY-038](docs/stories/STORY-038-role-data-binding.md)                                                                                             |
+| STORY-039    | 登录日志查询          | P1  | [STORY-039](docs/stories/STORY-039-login-log-query.md)                                                                                               |
+| STORY-040    | 请求日志查询          | P1  | [STORY-040](docs/stories/STORY-040-request-log-query.md)                                                                                             |
+| STORY-041    | 当前用户菜单查询        | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)                                                                                               |
+| STORY-042    | Admin 自动配置与路由常量 | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                             |
 
 ### 故事依赖关系概览
 

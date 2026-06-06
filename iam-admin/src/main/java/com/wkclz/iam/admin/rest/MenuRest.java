@@ -5,7 +5,10 @@ import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamMenuService;
+import com.wkclz.iam.admin.service.IamUserMenuService;
 import com.wkclz.iam.admin.bean.resp.MenuDetailResp;
+import com.wkclz.iam.admin.bean.resp.MenuRoleResp;
+import com.wkclz.iam.admin.bean.resp.MenuUserResp;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +24,9 @@ public class MenuRest {
 
     @Autowired
     protected IamMenuService iamMenuService;
+
+    @Autowired
+    private IamUserMenuService iamUserMenuService;
 
     @GetMapping(Route.MENU_LIST)
     public R menuList(IamMenu entity) {
@@ -69,6 +75,20 @@ public class MenuRest {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         MenuDetailResp detail = iamMenuService.getMenuDetail(entity.getId());
         return R.ok(detail);
+    }
+
+    @GetMapping(Route.MENU_BOUND_ROLES)
+    public R<List<MenuRoleResp>> menuBoundRoles(@RequestParam String menuCode) {
+        Assert.notNull(menuCode, "menuCode 不能为空!");
+        List<MenuRoleResp> list = iamUserMenuService.getMenuBoundRoles(menuCode);
+        return R.ok(list);
+    }
+
+    @GetMapping(Route.MENU_BOUND_USERS)
+    public R<List<MenuUserResp>> menuBoundUsers(@RequestParam String menuCode) {
+        Assert.notNull(menuCode, "menuCode 不能为空!");
+        List<MenuUserResp> list = iamUserMenuService.getMenuBoundUsers(menuCode);
+        return R.ok(list);
     }
 
     private void paramCheck(IamMenu entity) {
