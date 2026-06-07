@@ -31,7 +31,7 @@
           </el-form-item>
           <el-form-item label="元数据脚本" prop="dimensionScript">
             <monaco-editor v-model="form.dimensionScript" language="sql" height="200px"/>
-            <form-tip text="当元数据数组为空时，会执行此脚本获取元数据（优先级低于元数据数组）"/>
+            <form-tip html="当元数据数组为空时，会执行此脚本获取元数据（优先级低于元数据数组）<br>返回值需要有 label,value"/>
           </el-form-item>
         </el-col>
       </el-row>
