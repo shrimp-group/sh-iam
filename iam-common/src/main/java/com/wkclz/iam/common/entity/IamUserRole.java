@@ -21,7 +21,7 @@ public class IamUserRole extends BaseEntity {
     /**
      * 租户编码
      */
-    @FieldDesc(value = "租户编码")
+    @FieldDesc(value = "租户编码", notNull = true)
     private String tenantCode;
 
     /**
