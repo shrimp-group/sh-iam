@@ -73,6 +73,8 @@ public interface Route {
     String ROLE_UPDATE = "/role/update";
     @ApiDesc("5. 角色管理-删除")
     String ROLE_REMOVE = "/role/remove";
+    @ApiDesc("6. 角色管理-树")
+    String ROLE_TREE = "/role/tree";
 
     // 用户角色关联
     @ApiDesc("1. 用户角色-列表")

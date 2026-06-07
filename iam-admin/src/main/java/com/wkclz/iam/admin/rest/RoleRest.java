@@ -61,6 +61,13 @@ public class RoleRest {
         return R.ok(entity);
     }
 
+    @GetMapping(Route.ROLE_TREE)
+    public R roleTree(IamRole entity) {
+        Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
+        List<IamRoleDto> tree = iamRoleService.roleTree(entity);
+        return R.ok(tree);
+    }
+
     private void paramCheck(IamRole entity) {
         if (entity.getId() != null) {
             Assert.notNull(entity.getVersion(), "version 不能为空");

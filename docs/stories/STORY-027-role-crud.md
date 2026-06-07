@@ -19,8 +19,9 @@
 3. `POST /iam-admin/role/create` — 创建角色
 4. `POST /iam-admin/role/update` — 更新角色
 5. `POST /iam-admin/role/remove` — 删除角色
-6. 删除前检查是否有子角色（parentCode = 当前 roleCode），有则拒绝删除
-7. 参数校验：appCode、roleName 必填；更新时 version 必填
+6. `GET /iam-admin/role/tree` — 按应用查询角色树（appCode 必填，返回树形结构）
+7. 删除前检查是否有子角色（parentCode = 当前 roleCode），有则拒绝删除
+8. 参数校验：appCode、roleName 必填；更新时 version 必填
 
 ## 技术实现要点
 
@@ -28,6 +29,7 @@
 - parentCode 支持角色继承树，顶级角色 parentCode 为空或 "0"
 - tenantCode 提供多租户隔离能力
 - 删除保护：检查子角色存在性
+- 角色树：通过 getAppRole4Tree 查询纯角色数据（不含聚合统计），在 Service 层通过 roleCode/parentCode 构建树形结构
 
 ## 依赖故事
 
@@ -35,8 +37,11 @@
 
 ## 涉及文件
 
-| 文件 | 路径 |
-|------|------|
-| RoleRest | iam-admin/src/main/java/com/wkclz/iam/admin/rest/RoleRest.java |
-| IamRoleService | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamRoleService.java |
-| IamRoleMapper | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamRoleMapper.java |
+| 文件                | 路径                                                                      |
+|-------------------|-------------------------------------------------------------------------|
+| RoleRest          | iam-admin/src/main/java/com/wkclz/iam/admin/rest/RoleRest.java          |
+| IamRoleService    | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamRoleService.java |
+| IamRoleMapper     | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamRoleMapper.java   |
+| IamRoleMapper.xml | iam-admin/src/main/resources/mapper/IamRoleMapper.xml                   |
+| Route             | iam-admin/src/main/java/com/wkclz/iam/admin/Route.java                  |
+| role.js           | iam-admin-ui/src/api/user/role.js                                       |

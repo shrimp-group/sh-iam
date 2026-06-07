@@ -81,32 +81,32 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
-| 包         | 类                                                                                           | 说明                                     |
-|-----------|---------------------------------------------------------------------------------------------|----------------------------------------|
-| `rest`    | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, ...                          | 17 个 REST 控制器                          |
-| `service` | IamUserService, IamRoleService, IamMenuService, IamUserMenuService, IamUserRoleService, ... | 17+ Service                            |
-| `mapper`  | IamUserMapper, IamRoleMapper, ...                                                           | 17 个 Mapper + XML                      |
-| `job`     | UserRoleExpireJobHandler                                                                    | 用户角色有效期定时任务 (XXL-Job + @Scheduled 双触发) |
-| `init`    | RestfulScan                                                                                 | 启动时扫描 @Router 注解 → 同步 API 到数据库         |
-| 根包        | IamAdminAutoConfig, Route                                                                   | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)        |
+| 包         | 类                                                                                                   | 说明                                     |
+|-----------|-----------------------------------------------------------------------------------------------------|----------------------------------------|
+| `rest`    | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, ...                                  | 17 个 REST 控制器 (RoleRest 含角色列表/树/CRUD)  |
+| `service` | IamUserService, IamRoleService(含角色树构建), IamMenuService, IamUserMenuService, IamUserRoleService, ... | 17+ Service                            |
+| `mapper`  | IamUserMapper, IamRoleMapper, ...                                                                   | 17 个 Mapper + XML                      |
+| `job`     | UserRoleExpireJobHandler                                                                            | 用户角色有效期定时任务 (XXL-Job + @Scheduled 双触发) |
+| `init`    | RestfulScan                                                                                         | 启动时扫描 @Router 注解 → 同步 API 到数据库         |
+| 根包        | IamAdminAutoConfig, Route                                                                           | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)        |
 
 ### iam-admin-ui 前端关键组件 (`src/views/`)
 
-| 路径                                          | 组件                   | 说明                                 |
-|---------------------------------------------|----------------------|------------------------------------|
-| `user/user/index.vue`                       | IamUser              | 用户管理主页面                            |
-| `user/user/components/edit.vue`             | IamUserEdit          | 用户新增/编辑弹窗                          |
-| `user/user/components/reset-password.vue`   | IamUserResetPassword | 重置密码弹窗                             |
-| `user/user/components/user-role.vue`        | IamUserRole          | 用户角色绑定 Tab 面板 (应用选择+角色树+绑定详情+添加角色) |
-| `user/user/components/user-menu-source.vue` | IamUserMenuSource    | 用户菜单来源 Tab 面板 (只读, 展示菜单通过哪些角色获得)   |
-| `user/role/index.vue`                       | IamRole              | 角色管理主页面                            |
-| `user/role/components/edit.vue`             | IamRoleEdit          | 角色新增/编辑弹窗                          |
-| `user/role/components/menu-bind.vue`        | RoleMenuBind         | 角色菜单绑定弹窗                           |
-| `system/menu/`                              | -                    | 菜单管理                               |
-| `system/api/`                               | -                    | API 管理                             |
-| `system/app/`                               | -                    | 应用管理                               |
-| `system/ak/`                                | -                    | 访问密钥管理                             |
-| `components/AppOptions/`                    | AppSelect            | 应用选择公共组件                           |
+| 路径                                          | 组件                   | 说明                                             |
+|---------------------------------------------|----------------------|------------------------------------------------|
+| `user/user/index.vue`                       | IamUser              | 用户管理主页面                                        |
+| `user/user/components/edit.vue`             | IamUserEdit          | 用户新增/编辑弹窗                                      |
+| `user/user/components/reset-password.vue`   | IamUserResetPassword | 重置密码弹窗                                         |
+| `user/user/components/user-role.vue`        | IamUserRole          | 用户角色绑定 Tab 面板 (应用选择+角色树+绑定详情+添加角色)             |
+| `user/user/components/user-menu-source.vue` | IamUserMenuSource    | 用户菜单来源 Tab 面板 (只读, 展示菜单通过哪些角色获得)               |
+| `user/role/index.vue`                       | IamRole              | 角色管理主页面（列表视图+树形视图 Tab 切换，树形视图使用 el-table 树形模式） |
+| `user/role/components/edit.vue`             | IamRoleEdit          | 角色新增/编辑弹窗                                      |
+| `user/role/components/menu-bind.vue`        | RoleMenuBind         | 角色菜单绑定弹窗                                       |
+| `system/menu/`                              | -                    | 菜单管理 (列表视图+el-table树形视图双Tab)                   |
+| `system/api/`                               | -                    | API 管理                                         |
+| `system/app/`                               | -                    | 应用管理                                           |
+| `system/ak/`                                | -                    | 访问密钥管理                                         |
+| `components/AppOptions/`                    | AppSelect            | 应用选择公共组件                                       |
 
 ---
 

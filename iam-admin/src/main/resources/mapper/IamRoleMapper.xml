@@ -34,6 +34,32 @@
             r1.id
 
   </select>
-    
+
+    <select id="getAppRole4Tree" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamRoleDto">
+        SELECT
+        `id`,
+        `tenant_code`,
+        `app_code`,
+        `parent_code`,
+        `role_code`,
+        `role_name`,
+        `applicable`,
+        `sort`,
+        `create_time`,
+        `create_by`,
+        `update_time`,
+        `update_by`,
+        `remark`,
+        `version`
+        FROM
+        iam_role
+        WHERE
+        deleted = 0
+        AND app_code = #{appCode}
+        ORDER BY
+        sort,
+        id
+    </select>
+
 </mapper>
 

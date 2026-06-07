@@ -24,3 +24,8 @@ export const roleUpdate = (data) => {
 export const roleRemove = (data) => {
   return request({url: '/iam-admin/role/remove', method: 'post', data})
 }
+
+// 6. 角色管理-树
+export const roleTree = (params) => {
+  return request({url: '/iam-admin/role/tree', method: 'get', params})
+}

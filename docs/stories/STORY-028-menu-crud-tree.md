@@ -1,12 +1,12 @@
 # STORY-028 — 菜单 CRUD 与树形管理
 
-| 属性 | 值 |
-|------|-----|
-| Story ID | STORY-028 |
-| 所属 Epic | 管理后台 - 菜单管理 |
-| 所属模块 | iam-admin |
-| 优先级 | P0 |
-| 状态 | 待开发 |
+| 属性       | 值              |
+|----------|----------------|
+| Story ID | STORY-028      |
+| 所属 Epic  | 管理后台 - 菜单管理    |
+| 所属模块     | iam-admin      |
+| 优先级      | P0             |
+| 状态       | 已完成（前端树形视图已实现） |
 
 ## 用户故事
 
@@ -39,8 +39,20 @@
 
 ## 涉及文件
 
-| 文件 | 路径 |
-|------|------|
-| MenuRest | iam-admin/src/main/java/com/wkclz/iam/admin/rest/MenuRest.java |
+| 文件             | 路径                                                                      |
+|----------------|-------------------------------------------------------------------------|
+| MenuRest       | iam-admin/src/main/java/com/wkclz/iam/admin/rest/MenuRest.java          |
 | IamMenuService | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamMenuService.java |
-| IamMenuMapper | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamMenuMapper.java |
+| IamMenuMapper  | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamMenuMapper.java   |
+| 菜单管理前端页面       | iam-admin-ui/src/views/system/menu/index.vue                            |
+
+## 前端树形视图实现说明
+
+菜单管理页面 (`index.vue`) 采用列表视图+树形视图双 Tab 设计：
+
+- **列表视图**（默认）：面包屑导航 + 扁平列表逐层浏览，保持原有功能不变
+- **树形视图**：调用 `menuTree` API 获取树形数据，el-tree 展示完整菜单层级
+    - 工具栏：搜索框（前端实时过滤，匹配节点及祖先保留）+ 一键展开/折叠
+    - 自定义节点模板：图标 + 菜单名称 + 类型标签 + 操作按钮（详情/新增/编辑/删除）
+    - 懒加载：切换到树形 Tab 时才请求数据，切换应用时自动刷新
+    - 祖先路径构建：通过 el-tree 的 node.parent 回溯，为编辑弹窗提供 parents 参数
