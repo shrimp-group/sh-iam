@@ -30,8 +30,9 @@
         ur.id ASC
     </select>
 
-    <!-- 角色下用户列表查询，JOIN iam_user 获取用户信息 -->
-    <select id="getRoleUserPage" resultType="com.wkclz.iam.admin.bean.resp.RoleUserResp">
+    <!-- 角色下用户分页查询，JOIN iam_user 获取用户信息，支持用户名精确匹配、姓名模糊搜索 -->
+    <select id="getRoleUserPage" parameterType="com.wkclz.iam.admin.bean.req.RoleUserPageReq"
+            resultType="com.wkclz.iam.admin.bean.resp.RoleUserResp">
         SELECT
         ur.id,
         u.user_code,
@@ -51,6 +52,8 @@
         ur.deleted = 0
         AND u.deleted = 0
         AND ur.role_code = #{roleCode}
+        <if test="username != null">AND u.username = #{username}</if>
+        <if test="nickname != null">AND u.nickname LIKE CONCAT('%', #{nickname}, '%')</if>
         ORDER BY
         ur.sort ASC,
         ur.id ASC
@@ -140,6 +143,8 @@
         m.id,
         m.menu_code,
         m.menu_name,
+        m.parent_code,
+        m.menu_type,
         m.sort,
         r.role_code,
         r.role_name,
@@ -158,9 +163,7 @@
         WHERE
         ur.deleted = 0
         AND ur.user_code = #{userCode}
-        <if test="appCode != null and appCode != ''">
             AND ur.app_code = #{appCode}
-        </if>
         ORDER BY
         m.sort ASC,
         m.id ASC

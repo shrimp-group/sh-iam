@@ -21,7 +21,8 @@
     - `GET /iam-admin/user-role/role-tree` — 查询用户在某应用下的角色树（含绑定数量标记 bindCount）
     - `GET /iam-admin/user-role/menu-source` — 查询用户菜单来源角色信息（含有效期）
 2. **角色-用户视角**（RoleUserRest）：
-    - `GET /iam-admin/role-user/page` — 按 roleCode 查询角色下的用户列表（含有效期、enableStatus）
+    - `GET /iam-admin/role-user/page` — 按 roleCode 分页查询角色下的用户列表（含有效期、enableStatus、createTime），支持
+      username 精确匹配、nickname 模糊搜索，分页参数 current/size
     - `POST /iam-admin/role-user/bind` — 批量绑定用户到角色（含有效期）
     - `POST /iam-admin/role-user/unbind` — 批量解绑（按 ID 列表删除）
 3. **菜单视角**（MenuRest）：
@@ -57,25 +58,26 @@
 
 ## 涉及文件
 
-| 文件                       | 路径                                                                            |
-|--------------------------|-------------------------------------------------------------------------------|
-| UserRoleRest             | iam-admin/src/main/java/com/wkclz/iam/admin/rest/UserRoleRest.java            |
-| RoleUserRest             | iam-admin/src/main/java/com/wkclz/iam/admin/rest/RoleUserRest.java            |
-| MenuRest                 | iam-admin/src/main/java/com/wkclz/iam/admin/rest/MenuRest.java                |
-| IamUserRoleService       | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamUserRoleService.java   |
-| IamUserMenuService       | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamUserMenuService.java   |
-| IamUserRoleMapper        | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamUserRoleMapper.java     |
-| IamUserRoleMapper.xml    | iam-admin/src/main/resources/mapper/IamUserRoleMapper.xml                     |
-| UserRoleExpireJobHandler | iam-admin/src/main/java/com/wkclz/iam/admin/job/UserRoleExpireJobHandler.java |
-| UserRoleBindReq          | iam-admin/src/main/java/com/wkclz/iam/admin/bean/req/UserRoleBindReq.java     |
-| RoleUserBindReq          | iam-admin/src/main/java/com/wkclz/iam/admin/bean/req/RoleUserBindReq.java     |
-| RoleUserUnbindReq        | iam-admin/src/main/java/com/wkclz/iam/admin/bean/req/RoleUserUnbindReq.java   |
-| UserRoleResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/UserRoleResp.java       |
-| RoleUserResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/RoleUserResp.java       |
-| MenuRoleResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/MenuRoleResp.java       |
-| MenuUserResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/MenuUserResp.java       |
-| UserMenuSourceResp       | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/UserMenuSourceResp.java |
-| IamUserRoleDto           | iam-common/src/main/java/com/wkclz/iam/common/dto/IamUserRoleDto.java         |
-| role-user.vue            | iam-admin-ui/src/views/user/role/components/role-user.vue                     |
-| role/index.vue           | iam-admin-ui/src/views/user/role/index.vue (新增"用户"按钮及 role-user 组件引用)         |
-| role-user.js             | iam-admin-ui/src/api/user/role-user.js                                        |
+| 文件                       | 路径                                                                                                    |
+|--------------------------|-------------------------------------------------------------------------------------------------------|
+| UserRoleRest             | iam-admin/src/main/java/com/wkclz/iam/admin/rest/UserRoleRest.java                                    |
+| RoleUserRest             | iam-admin/src/main/java/com/wkclz/iam/admin/rest/RoleUserRest.java                                    |
+| MenuRest                 | iam-admin/src/main/java/com/wkclz/iam/admin/rest/MenuRest.java                                        |
+| IamUserRoleService       | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamUserRoleService.java                           |
+| IamUserMenuService       | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamUserMenuService.java                           |
+| IamUserRoleMapper        | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamUserRoleMapper.java                             |
+| IamUserRoleMapper.xml    | iam-admin/src/main/resources/mapper/IamUserRoleMapper.xml                                             |
+| UserRoleExpireJobHandler | iam-admin/src/main/java/com/wkclz/iam/admin/job/UserRoleExpireJobHandler.java                         |
+| UserRoleBindReq          | iam-admin/src/main/java/com/wkclz/iam/admin/bean/req/UserRoleBindReq.java                             |
+| RoleUserBindReq          | iam-admin/src/main/java/com/wkclz/iam/admin/bean/req/RoleUserBindReq.java                             |
+| RoleUserUnbindReq        | iam-admin/src/main/java/com/wkclz/iam/admin/bean/req/RoleUserUnbindReq.java                           |
+| UserRoleResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/UserRoleResp.java                               |
+| RoleUserResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/RoleUserResp.java                               |
+| MenuRoleResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/MenuRoleResp.java                               |
+| MenuUserResp             | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/MenuUserResp.java                               |
+| UserMenuSourceResp       | iam-admin/src/main/java/com/wkclz/iam/admin/bean/resp/UserMenuSourceResp.java                         |
+| IamUserRoleDto           | iam-common/src/main/java/com/wkclz/iam/common/dto/IamUserRoleDto.java                                 |
+| role-user.vue            | iam-admin-ui/src/views/user/role/components/role-user.vue                                             |
+| role/index.vue           | iam-admin-ui/src/views/user/role/index.vue (新增"用户"按钮及 role-user 组件引用)                                 |
+| role-user.js             | iam-admin-ui/src/api/user/role-user.js                                                                |
+| user-menu-source.vue     | iam-admin-ui/src/views/user/user/components/user-menu-source.vue (树形表格展示菜单层级, 来源角色用 popover 展示有效时间范围) |

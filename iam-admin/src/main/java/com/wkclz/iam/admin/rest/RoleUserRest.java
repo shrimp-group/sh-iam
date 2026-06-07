@@ -1,8 +1,10 @@
 package com.wkclz.iam.admin.rest;
 
+import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.bean.req.RoleUserBindReq;
+import com.wkclz.iam.admin.bean.req.RoleUserPageReq;
 import com.wkclz.iam.admin.bean.req.RoleUserUnbindReq;
 import com.wkclz.iam.admin.bean.resp.RoleUserResp;
 import com.wkclz.iam.admin.service.IamUserRoleService;
@@ -10,8 +12,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(Route.PREFIX)
@@ -21,10 +21,9 @@ public class RoleUserRest {
     protected IamUserRoleService iamUserRoleService;
 
     @GetMapping(Route.ROLE_USER_PAGE)
-    public R<List<RoleUserResp>> roleUserPage(@RequestParam String roleCode) {
-        Assert.notNull(roleCode, "roleCode 不能为空!");
-        List<RoleUserResp> list = iamUserRoleService.getRoleUserPage(roleCode);
-        return R.ok(list);
+    public R<PageData<RoleUserResp>> roleUserPage(RoleUserPageReq req) {
+        PageData<RoleUserResp> page = iamUserRoleService.getRoleUserPage(req);
+        return R.ok(page);
     }
 
     @PostMapping(Route.ROLE_USER_BIND)

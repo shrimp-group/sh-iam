@@ -33,4 +33,7 @@ public class RoleUserResp extends EntityResp {
     @Schema(description = "当前有效状态")
     private Integer enableStatus;
 
+    @Schema(description = "绑定时间")
+    private LocalDateTime createTime;
+
 }

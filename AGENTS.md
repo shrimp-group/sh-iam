@@ -92,21 +92,22 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-admin-ui 前端关键组件 (`src/views/`)
 
-| 路径                                          | 组件                   | 说明                                             |
-|---------------------------------------------|----------------------|------------------------------------------------|
-| `user/user/index.vue`                       | IamUser              | 用户管理主页面                                        |
-| `user/user/components/edit.vue`             | IamUserEdit          | 用户新增/编辑弹窗                                      |
-| `user/user/components/reset-password.vue`   | IamUserResetPassword | 重置密码弹窗                                         |
-| `user/user/components/user-role.vue`        | IamUserRole          | 用户角色绑定 Tab 面板 (应用选择+角色树+绑定详情+添加角色)             |
-| `user/user/components/user-menu-source.vue` | IamUserMenuSource    | 用户菜单来源 Tab 面板 (只读, 展示菜单通过哪些角色获得)               |
-| `user/role/index.vue`                       | IamRole              | 角色管理主页面（列表视图+树形视图 Tab 切换，树形视图使用 el-table 树形模式） |
-| `user/role/components/edit.vue`             | IamRoleEdit          | 角色新增/编辑弹窗                                      |
-| `user/role/components/menu-bind.vue`        | RoleMenuBind         | 角色菜单绑定弹窗                                       |
-| `system/menu/`                              | -                    | 菜单管理 (列表视图+el-table树形视图双Tab)                   |
-| `system/api/`                               | -                    | API 管理                                         |
-| `system/app/`                               | -                    | 应用管理                                           |
-| `system/ak/`                                | -                    | 访问密钥管理                                         |
-| `components/AppOptions/`                    | AppSelect            | 应用选择公共组件                                       |
+| 路径                                          | 组件                   | 说明                                                 |
+|---------------------------------------------|----------------------|----------------------------------------------------|
+| `user/user/index.vue`                       | IamUser              | 用户管理主页面                                            |
+| `user/user/components/edit.vue`             | IamUserEdit          | 用户新增/编辑弹窗（仅基本信息表单）                                 |
+| `user/user/components/detail.vue`           | IamUserDetail        | 用户详情弹窗（基本信息只读+角色管理+菜单来源Tab）                        |
+| `user/user/components/reset-password.vue`   | IamUserResetPassword | 重置密码弹窗                                             |
+| `user/user/components/user-role.vue`        | IamUserRole          | 用户角色绑定 Tab 面板 (应用选择+角色树+绑定角色弹窗+popover绑定详情)        |
+| `user/user/components/user-menu-source.vue` | IamUserMenuSource    | 用户菜单来源 Tab 面板 (树形表格展示菜单层级, 来源角色用 popover 展示有效时间范围) |
+| `user/role/index.vue`                       | IamRole              | 角色管理主页面（列表视图+树形视图 Tab 切换，树形视图使用 el-table 树形模式）     |
+| `user/role/components/edit.vue`             | IamRoleEdit          | 角色新增/编辑弹窗                                          |
+| `user/role/components/menu-bind.vue`        | RoleMenuBind         | 角色菜单绑定弹窗                                           |
+| `system/menu/`                              | -                    | 菜单管理 (列表视图+el-table树形视图双Tab)                       |
+| `system/api/`                               | -                    | API 管理                                             |
+| `system/app/`                               | -                    | 应用管理                                               |
+| `system/ak/`                                | -                    | 访问密钥管理                                             |
+| `components/AppOptions/`                    | AppSelect            | 应用选择公共组件                                           |
 
 ---
 
@@ -360,7 +361,7 @@ iam_request_log ── 请求日志 (独立)
 | STORY-032    | 访问密钥 CRUD 管理    | P1  | [STORY-032](docs/stories/STORY-032-access-key-crud.md)                                                                                               |
 | STORY-033    | AK-API 关联管理     | P1  | [STORY-033](docs/stories/STORY-033-ak-api-binding.md)                                                                                                |
 | STORY-034    | 角色-菜单关联管理       | P0  | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)                                                                                             |
-| STORY-035    | 角色-用户与用户-角色关联管理 | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md)                                                                                             |
+| STORY-035    | 角色-用户与用户-角色关联管理 | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md) — 角色下用户查询已改为分页，支持 username 精确匹配、nickname 模糊搜索，返回 PageData<RoleUserResp>（含 createTime）       |
 | STORY-036    | 菜单-API 关联管理     | P0  | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)                                                                                              |
 | STORY-036-01 | 菜单详情页与穿梭框绑定     | P1  | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列，已绑定角色（roleCode+roleName），关联用户（username/nickname/roleName/startTime/endTime/enableStatus） |
 | STORY-037    | 数据权限维度管理        | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)                                                                                           |

@@ -1,8 +1,12 @@
 package com.wkclz.iam.admin.service;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.bean.req.RoleUserBindReq;
+import com.wkclz.iam.admin.bean.req.RoleUserPageReq;
 import com.wkclz.iam.admin.bean.req.UserRoleBindReq;
 import com.wkclz.iam.admin.bean.resp.RoleUserResp;
 import com.wkclz.iam.admin.bean.resp.UserMenuSourceResp;
@@ -11,6 +15,7 @@ import com.wkclz.iam.admin.mapper.IamUserRoleMapper;
 import com.wkclz.iam.common.dto.IamUserRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamUserRole;
+import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,11 +137,18 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
     }
 
     /**
-     * 角色下用户分页查询
+     * 角色下用户分页查询（支持用户名精确匹配、姓名模糊搜索）
      */
-    public List<RoleUserResp> getRoleUserPage(String roleCode) {
-        log.info("角色下用户分页查询, roleCode={}", roleCode);
-        return mapper.getRoleUserPage(roleCode);
+    public PageData<RoleUserResp> getRoleUserPage(RoleUserPageReq req) {
+        log.info("角色下用户分页查询, request={}", req);
+        PageHelper.startPage(req.getCurrent().intValue(), req.getSize().intValue());
+        try {
+            List<RoleUserResp> list = mapper.getRoleUserPage(req);
+            Page<RoleUserResp> page = (Page<RoleUserResp>) list;
+            return PageData.of(page.getResult(), page.getTotal());
+        } finally {
+            PageHelper.clearPage();
+        }
     }
 
     /**

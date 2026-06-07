@@ -2,12 +2,12 @@
   <div class="user-role-container">
     <layout-split>
       <template #left>
-        <app-options @select="selectApp"/>
+        <app-options @select="selectApp" height="660px"/>
       </template>
       <template #right>
         <!-- 操作栏 -->
         <div class="top-bar">
-          <el-button type="primary" plain icon="Plus" @click="handleBind" :disabled="!currentAppCode">添加角色</el-button>
+          <el-button type="primary" plain icon="Plus" @click="handleBind" :disabled="!currentAppCode">绑定角色</el-button>
         </div>
 
         <!-- 角色树 -->
@@ -22,54 +22,52 @@
           <template #default="{ node, data }">
             <span class="custom-tree-node">
               <span>{{ data.roleName }}</span>
-              <el-tag
+              <el-popover
                 v-if="data.bindCount > 0"
-                size="small"
-                type="warning"
-                class="bind-count-tag"
-                @click.stop="handleNodeBadgeClick(data.roleCode)"
+                placement="right"
+                :width="620"
+                trigger="click"
+                @before-enter="loadBindDetails(data.roleCode)"
               >
-                {{ data.bindCount }}
-              </el-tag>
+                <template #reference>
+                  <el-tag size="small" type="warning" class="bind-count-tag" @click.stop>
+                    {{ data.bindCount }}
+                  </el-tag>
+                </template>
+                <el-table v-loading="popoverLoading" :data="bindDetails" size="small" height="auto">
+                  <el-table-column label="绑定时间" prop="createTime" width="160">
+                    <template #default="{ row }">{{ parseTime(row.createTime) }}</template>
+                  </el-table-column>
+                  <el-table-column label="有效开始" prop="startTime" width="160">
+                    <template #default="{ row }">{{ parseTime(row.startTime) }}</template>
+                  </el-table-column>
+                  <el-table-column label="有效结束" prop="endTime" width="160">
+                    <template #default="{ row }">{{ parseTime(row.endTime) }}</template>
+                  </el-table-column>
+                  <el-table-column label="状态" prop="enableStatus" width="70">
+                    <template #default="{ row }">
+                      <el-tag :type="row.enableStatus === 1 ? 'success' : 'danger'" size="small">
+                        {{ row.enableStatus === 1 ? '有效' : '无效' }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="60" fixed="right">
+                    <template #default="{ row }">
+                      <el-popconfirm title="确认移除该绑定?" @confirm="handleUnbind(row.id)">
+                        <template #reference>
+                          <el-button link type="danger" size="small">移除</el-button>
+                        </template>
+                      </el-popconfirm>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </el-popover>
             </span>
           </template>
         </el-tree>
 
-        <!-- 绑定详情抽屉 -->
-        <el-drawer
-          v-model="drawerVisible"
-          title="绑定详情"
-          size="400px"
-          :destroy-on-close="true"
-        >
-          <el-table v-loading="drawerLoading" :data="bindDetails" size="small" max-height="400" min-height="100">
-            <el-table-column label="有效开始时间" prop="startTime" min-width="140">
-              <template #default="{ row }">{{ parseTime(row.startTime) }}</template>
-            </el-table-column>
-            <el-table-column label="有效结束时间" prop="endTime" min-width="140">
-              <template #default="{ row }">{{ parseTime(row.endTime) }}</template>
-            </el-table-column>
-            <el-table-column label="状态" prop="enableStatus" width="80">
-              <template #default="{ row }">
-                <el-tag :type="row.enableStatus === 1 ? 'success' : 'danger'" size="small">
-                  {{ row.enableStatus === 1 ? '有效' : '无效' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="70" fixed="right">
-              <template #default="{ row }">
-                <el-popconfirm title="确认移除该绑定?" @confirm="handleUnbind(row.id)">
-                  <template #reference>
-                    <el-button link type="danger" size="small">移除</el-button>
-                  </template>
-                </el-popconfirm>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-drawer>
-
-        <!-- 添加角色弹窗 -->
-        <el-dialog title="添加角色" v-model="bindDialogVisible" width="500px" :close-on-click-modal="false" append-to-body>
+        <!-- 绑定角色弹窗 -->
+        <el-dialog title="绑定角色" v-model="bindDialogVisible" width="500px" :close-on-click-modal="false" append-to-body>
           <el-form ref="bindFormRef" :model="bindForm" :rules="bindRules" label-width="100px">
             <el-form-item label="选择角色" prop="roleCode">
               <el-tree-select
@@ -82,15 +80,11 @@
                 style="width: 100%"
               />
             </el-form-item>
-            <el-form-item label="有效时间" prop="dateRange">
-              <el-date-picker
-                v-model="bindForm.dateRange"
-                type="datetimerange"
-                range-separator="至"
-                start-placeholder="开始时间"
-                end-placeholder="结束时间"
-                style="width: 100%"
-              />
+            <el-form-item label="开始时间" prop="startTime">
+              <el-date-picker v-model="bindForm.startTime" type="datetime" placeholder="请选择开始时间" style="width: 100%" />
+            </el-form-item>
+            <el-form-item label="结束时间" prop="endTime">
+              <el-date-picker v-model="bindForm.endTime" type="datetime" placeholder="请选择结束时间" style="width: 100%" />
             </el-form-item>
           </el-form>
           <template #footer>
@@ -124,22 +118,22 @@ const currentAppCode = ref('');
 const treeLoading = ref(false);
 const roleTreeData = ref([]);
 
-// 绑定详情抽屉
-const drawerVisible = ref(false);
-const drawerLoading = ref(false);
+// 绑定详情
+const popoverLoading = ref(false)
 const bindDetails = ref([]);
-const currentRoleCode = ref('');
 
-// 添加角色弹窗
+// 绑定角色弹窗
 const bindDialogVisible = ref(false);
 const bindLoading = ref(false);
 const bindForm = ref({
   roleCode: '',
-  dateRange: null
+  startTime: null,
+  endTime: null
 });
 const bindRules = ref({
   roleCode: [{ required: true, message: '请选择角色', trigger: 'change' }],
-  dateRange: [{ required: true, message: '请选择有效时间', trigger: 'change' }]
+  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
 });
 
 // 监听 userCode 变化重新加载
@@ -170,27 +164,25 @@ function loadRoleTree() {
   });
 }
 
-/** 点击绑定数量徽标 */
-function handleNodeBadgeClick(roleCode) {
-  currentRoleCode.value = roleCode;
-  drawerVisible.value = true;
-  loadBindDetails(roleCode);
-}
-
 /** 加载绑定详情 */
 function loadBindDetails(roleCode) {
-  drawerLoading.value = true;
+  popoverLoading.value = true
   userRoleList({ userCode: props.userCode, roleCode: roleCode }).then(res => {
-    bindDetails.value = res.data || [];
+    bindDetails.value = res.data || []
   }).finally(() => {
-    drawerLoading.value = false;
-  });
+    popoverLoading.value = false
+  })
 }
 
-/** 打开添加角色弹窗 */
+/** 打开绑定角色弹窗 */
 function handleBind() {
-  bindForm.value = { roleCode: '', dateRange: null };
-  bindDialogVisible.value = true;
+  // 设置有效期默认值：当前时间 ~ 一年后当天 23:59:59
+  const now = new Date()
+  const oneYearLater = new Date(now)
+  oneYearLater.setFullYear(oneYearLater.getFullYear() + 1)
+  oneYearLater.setHours(23, 59, 59, 0)
+  bindForm.value = { roleCode: '', startTime: now, endTime: oneYearLater }
+  bindDialogVisible.value = true
 }
 
 /** 确认绑定角色 */
@@ -200,28 +192,29 @@ function handleBindConfirm() {
       const data = {
         userCode: props.userCode,
         roleCode: bindForm.value.roleCode,
-        startTime: bindForm.value.dateRange?.[0],
-        endTime: bindForm.value.dateRange?.[1]
-      };
-      bindLoading.value = true;
+        startTime: bindForm.value.startTime,
+        endTime: bindForm.value.endTime
+      }
+      bindLoading.value = true
       userRoleBind(data).then(() => {
-        proxy.$modal.msgSuccess("绑定成功");
-        bindDialogVisible.value = false;
-        loadRoleTree();
+        proxy.$modal.msgSuccess("绑定成功")
+        bindDialogVisible.value = false
+        loadRoleTree()
       }).finally(() => {
-        bindLoading.value = false;
-      });
+        bindLoading.value = false
+      })
     }
-  });
+  })
 }
 
 /** 解绑角色 */
 function handleUnbind(id) {
   userRoleUnbind({ id: id }).then(() => {
-    proxy.$modal.msgSuccess("移除成功");
-    loadBindDetails(currentRoleCode.value);
-    loadRoleTree();
-  });
+    proxy.$modal.msgSuccess("移除成功")
+    // 刷新绑定详情和角色树
+    bindDetails.value = bindDetails.value.filter(item => item.id !== id)
+    loadRoleTree()
+  })
 }
 </script>
 

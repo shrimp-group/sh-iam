@@ -21,6 +21,12 @@ public class UserMenuSourceResp extends EntityResp {
     @Schema(description = "菜单名称")
     private String menuName;
 
+    @Schema(description = "父级菜单编码")
+    private String parentCode;
+
+    @Schema(description = "菜单类型")
+    private String menuType;
+
     @Schema(description = "来源角色编码")
     private String roleCode;
 

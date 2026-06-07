@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.mapper;
 
+import com.wkclz.iam.admin.bean.req.RoleUserPageReq;
 import com.wkclz.mybatis.mapper.BaseMapper;
 import com.wkclz.iam.admin.bean.resp.*;
 import com.wkclz.iam.common.dto.IamUserRoleDto;
@@ -24,9 +25,9 @@ public interface IamUserRoleMapper extends BaseMapper<IamUserRole> {
     List<UserRoleResp> getUserRoleList(@Param("userCode") String userCode, @Param("roleCode") String roleCode);
 
     /**
-     * 角色下用户列表查询
+     * 角色下用户分页查询（支持用户名精确匹配、姓名模糊搜索）
      */
-    List<RoleUserResp> getRoleUserPage(@Param("roleCode") String roleCode);
+    List<RoleUserResp> getRoleUserPage(RoleUserPageReq req);
 
     /**
      * 用户在某应用下的角色树查询（含 bindCount 标记）
