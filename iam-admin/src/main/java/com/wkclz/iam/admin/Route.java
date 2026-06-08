@@ -205,5 +205,34 @@ public interface Route {
     @ApiDesc("4. 菜单-API-已绑定列表")
     String MENU_API_BOUND_LIST = "/menu-api/bound-list";
 
+    // API字段权限
+    @ApiDesc("1. API字段权限-分页")
+    String API_FIELD_PAGE = "/api-field/page";
+    @ApiDesc("2. API字段权限-详情")
+    String API_FIELD_INFO = "/api-field/info";
+    @ApiDesc("3. API字段权限-创建")
+    String API_FIELD_CREATE = "/api-field/create";
+    @ApiDesc("4. API字段权限-修改")
+    String API_FIELD_UPDATE = "/api-field/update";
+    @ApiDesc("5. API字段权限-删除")
+    String API_FIELD_REMOVE = "/api-field/remove";
+    @ApiDesc("6. API字段权限-按API查询")
+    String API_FIELD_LIST_BY_API = "/api-field/list-by-api";
+
+    // 实体字段分析
+    @ApiDesc("1. 实体字段-字段树")
+    String ENTITY_FIELD_TREE = "/entity-field/tree";
+    @ApiDesc("2. 实体字段-类列表")
+    String ENTITY_FIELD_CLASSES = "/entity-field/classes";
+
+    // 菜单字段关系
+    @ApiDesc("1. 菜单字段-列表")
+    String MENU_FIELD_LIST = "/menu-field/list";
+    @ApiDesc("2. 菜单字段-绑定")
+    String MENU_FIELD_BIND = "/menu-field/bind";
+    @ApiDesc("3. 菜单字段-批量保存")
+    String MENU_FIELD_SAVE = "/menu-field/save";
+    @ApiDesc("4. 菜单字段-解绑")
+    String MENU_FIELD_UNBIND = "/menu-field/unbind";
 
 }

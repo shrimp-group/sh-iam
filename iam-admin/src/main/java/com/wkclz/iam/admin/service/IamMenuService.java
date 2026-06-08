@@ -36,6 +36,9 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
     @Autowired
     private RedisIdGenerator redisIdGenerator;
 
+    @Autowired
+    private IamMenuFieldService iamMenuFieldService;
+
     public List<IamMenuDto> menuList(IamMenu entity) {
         return mapper.getAppMenuList(entity.getAppCode());
     }
@@ -49,9 +52,19 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
     }
 
     public IamMenu create(IamMenu entity) {
+        // FIELDS 类型校验：parentCode 必须指向 MENU 类型
+        if ("FIELDS".equals(entity.getMenuType()) && !"0".equals(entity.getParentCode())) {
+            IamMenu parentParam = new IamMenu();
+            parentParam.setMenuCode(entity.getParentCode());
+            IamMenu parentMenu = selectOneByEntity(parentParam);
+            if (parentMenu == null || !"MENU".equals(parentMenu.getMenuType())) {
+                throw ValidationException.of("FIELDS 类型菜单的父级必须是 MENU 类型");
+            }
+        }
         duplicateCheck(entity);
         entity.setMenuCode(redisIdGenerator.generateIdWithPrefix("menu_"));
         mapper.insert(entity);
+        log.info("菜单创建成功, menuCode={}, menuType={}", entity.getMenuCode(), entity.getMenuType());
         return entity;
     }
 
@@ -81,6 +94,11 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         long childrenMenuCount = mapper.selectCountByEntity(param);
         if (childrenMenuCount > 0) {
             throw ValidationException.of("请先删除子菜单");
+        }
+        // 如果删除的是 FIELDS 类型菜单，清理字段绑定
+        if ("FIELDS".equals(oldEntity.getMenuType())) {
+            iamMenuFieldService.deleteByMenuCode(oldEntity.getMenuCode());
+            log.info("已清理字段组菜单的字段绑定, menuCode={}", oldEntity.getMenuCode());
         }
         deleteById(oldEntity);
         return oldEntity;

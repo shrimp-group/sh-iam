@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.admin.mapper.IamMenuFieldMapper">
+
+    <!-- 根据字段编码逻辑删除关联记录 -->
+    <update id="deleteByFieldCode">
+        UPDATE iam_menu_field
+        SET deleted = DATE_FORMAT(NOW(6), '%Y%m%d%H%i%s%m'),
+        version = version + 1
+        WHERE field_code = #{fieldCode}
+        AND deleted = 0
+    </update>
+
+    <!-- 根据菜单编码逻辑删除关联记录 -->
+    <update id="deleteByMenuCode">
+        UPDATE iam_menu_field
+        SET deleted = DATE_FORMAT(NOW(6), '%Y%m%d%H%i%s%m'),
+        version = version + 1
+        WHERE menu_code = #{menuCode}
+        AND deleted = 0
+    </update>
+
+    <!-- 查询字段组已绑定的字段列表（含字段详情和API信息） -->
+    <select id="listByMenuCode" resultType="com.wkclz.iam.admin.bean.resp.MenuFieldResp">
+        SELECT
+        mf.id,
+        mf.app_code,
+        mf.menu_code,
+        mf.field_code,
+        af.field_name,
+        af.json_path,
+        af.action,
+        af.mask_rule,
+        af.api_code,
+        a.api_method,
+        a.api_uri,
+        a.api_name
+        FROM
+        iam_menu_field mf
+        LEFT JOIN iam_api_field af ON af.field_code = mf.field_code AND af.deleted = 0
+        LEFT JOIN iam_api a ON a.api_code = af.api_code AND a.deleted = 0
+        WHERE
+        mf.deleted = 0
+        AND mf.menu_code = #{menuCode}
+        ORDER BY
+        mf.id ASC
+    </select>
+
+</mapper>
