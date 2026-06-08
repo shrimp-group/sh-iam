@@ -8,7 +8,6 @@ import lombok.EqualsAndHashCode;
 
 /**
  * Description Create by sh-generator
- *
  * @author shrimp
  * @table iam_api_field (API字段权限) 重新生成代码会覆盖
  */
@@ -56,13 +55,13 @@ public class IamApiField extends BaseEntity {
     /**
      * 脱敏规则(keepHead,keepTail)
      */
-    @FieldDesc(value = "脱敏规则(keepHead,keepTail)", notNull = true)
+    @FieldDesc(value = "脱敏规则(keepHead,keepTail)")
     private String maskRule;
 
     /**
      * 描述说明
      */
-    @FieldDesc(value = "描述说明", notNull = true)
+    @FieldDesc(value = "描述说明")
     private String description;
 
 

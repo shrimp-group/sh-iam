@@ -8,7 +8,6 @@ import lombok.EqualsAndHashCode;
 
 /**
  * Description Create by sh-generator
- *
  * @author shrimp
  * @table iam_menu_field (菜单字段关系) 重新生成代码会覆盖
  */
