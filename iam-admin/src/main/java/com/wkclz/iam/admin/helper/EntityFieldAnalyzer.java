@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.helper;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.bean.resp.EntityFieldNode;
@@ -47,12 +48,6 @@ public class EntityFieldAnalyzer {
     );
 
     /**
-     * 需要扫描的实体类包路径
-     */
-    private static final String ENTITY_PACKAGE = "com.wkclz.iam.common.entity";
-    private static final String DTO_PACKAGE = "com.wkclz.iam.common.dto";
-
-    /**
      * 解析实体类生成字段树
      *
      * @param className 全限定类名
@@ -74,22 +69,7 @@ public class EntityFieldAnalyzer {
         return nodes;
     }
 
-    /**
-     * 获取可用实体类列表
-     * 扫描 iam-common 的 entity 和 dto 包
-     */
-    public List<Map<String, String>> getEntityClasses() {
-        log.info("查询可用实体类列表");
-        List<Map<String, String>> result = new ArrayList<>();
 
-        // 扫描 entity 包
-        scanPackageClasses(ENTITY_PACKAGE, result);
-        // 扫描 dto 包
-        scanPackageClasses(DTO_PACKAGE, result);
-
-        log.info("可用实体类列表查询完成, 共{}个类", result.size());
-        return result;
-    }
 
     // --- 私有辅助方法 ---
 
@@ -189,6 +169,122 @@ public class EntityFieldAnalyzer {
     }
 
     /**
+     * 解析 RestInfo.returnGenericInfo JSON，递归提取最内层业务实体类
+     * 解包 R<T>、PageData<T>、List<T>、Set<T> 等包装类型
+     *
+     * @param returnGenericInfo JSON 格式的泛型信息
+     * @return {className, simpleName} 或 null
+     */
+    public Map<String, String> parseReturnGenericInfo(String returnGenericInfo) {
+        if (returnGenericInfo == null || returnGenericInfo.isEmpty()) {
+            return null;
+        }
+
+        log.info("解析返回值泛型信息: {}", returnGenericInfo);
+
+        try {
+            JSONObject genericInfo = JSONObject.parseObject(returnGenericInfo);
+            String entityClassName = extractEntityClassName(genericInfo);
+
+            if (entityClassName != null) {
+                // 验证类是否可加载
+                Class<?> clazz = Class.forName(entityClassName);
+                Map<String, String> result = new LinkedHashMap<>();
+                result.put("className", entityClassName);
+                result.put("simpleName", clazz.getSimpleName());
+                log.info("解析到实体类: {}", entityClassName);
+                return result;
+            }
+        } catch (ClassNotFoundException e) {
+            log.warn("实体类未找到: {}", returnGenericInfo);
+        } catch (Exception e) {
+            log.error("解析泛型信息异常: {}", returnGenericInfo, e);
+        }
+
+        return null;
+    }
+
+    /**
+     * 从 GenericTypeInfo JSON 中递归提取最内层业务实体类名
+     * 包装类型: com.wkclz.core.base.R, com.wkclz.core.base.PageData,
+     * java.util.List, java.util.Set, java.util.ArrayList 等
+     */
+    private String extractEntityClassName(JSONObject genericInfo) {
+        if (genericInfo == null) return null;
+
+        String rawType = genericInfo.getString("rawType");
+        com.alibaba.fastjson2.JSONArray typeArgs = genericInfo.getJSONArray("typeArgs");
+
+        // 如果没有类型参数，当前就是叶子类型
+        if (typeArgs == null || typeArgs.isEmpty()) {
+            // 判断是否为业务实体类（在 iam-common 包下）
+            if (isBusinessEntityClass(rawType)) {
+                return rawType;
+            }
+            return null;
+        }
+
+        // 判断当前是否为包装类型，需要解包
+        if (isWrapperType(rawType)) {
+            // 递归解析所有类型参数，找到第一个业务实体类
+            for (int i = 0; i < typeArgs.size(); i++) {
+                JSONObject arg = typeArgs.getJSONObject(i);
+                String result = extractEntityClassName(arg);
+                if (result != null) return result;
+            }
+        }
+
+        // 非包装类型，当前 rawType 可能就是业务实体类
+        if (isBusinessEntityClass(rawType)) {
+            return rawType;
+        }
+
+        // 尝试递归解析类型参数
+        for (int i = 0; i < typeArgs.size(); i++) {
+            JSONObject arg = typeArgs.getJSONObject(i);
+            String result = extractEntityClassName(arg);
+            if (result != null) return result;
+        }
+
+        return null;
+    }
+
+    /**
+     * 判断是否为包装类型（需要解包继续查找）
+     */
+    private boolean isWrapperType(String rawType) {
+        return "com.wkclz.core.base.R".equals(rawType)
+                || "com.wkclz.core.base.PageData".equals(rawType)
+                || "java.util.List".equals(rawType)
+                || "java.util.Set".equals(rawType)
+                || "java.util.ArrayList".equals(rawType)
+                || "java.util.HashSet".equals(rawType)
+                || "java.util.LinkedHashMap".equals(rawType)
+                || "java.util.HashMap".equals(rawType)
+                || "java.lang.Object".equals(rawType);
+    }
+
+    /**
+     * 判断是否为业务实体类（在 iam-common 包下）
+     */
+    private boolean isBusinessEntityClass(String className) {
+        return className != null
+                && (className.startsWith("com.wkclz.iam.common.entity")
+                || className.startsWith("com.wkclz.iam.common.dto"));
+    }
+
+    /**
+     * 分析 R 类的字段结构，用于 R 未指定泛型时展示给前端
+     * R 类字段: code, msg, data, requestTime, responseTime, costTime
+     *
+     * @return R 类字段树
+     */
+    public List<EntityFieldNode> analyzeRStructure() {
+        log.info("分析R类结构");
+        return buildFieldNodes(com.wkclz.core.base.R.class, "$", false);
+    }
+
+    /**
      * 获取 List/Set 的泛型元素类型
      */
     private Class<?> getListGenericType(Field field) {
@@ -216,50 +312,5 @@ public class EntityFieldAnalyzer {
         return parentPath + "." + fieldName;
     }
 
-    /**
-     * 扫描指定包下的类，添加到结果列表
-     */
-    private void scanPackageClasses(String packageName, List<Map<String, String>> result) {
-        String packagePath = packageName.replace('.', '/');
-        java.net.URL classpathUrl = getClass().getClassLoader().getResource(packagePath);
-        if (classpathUrl == null) {
-            log.warn("包路径未找到: {}", packageName);
-            return;
-        }
-
-        // 仅处理 file 协议（本地目录），jar 包内扫描需要不同逻辑
-        if (!"file".equals(classpathUrl.getProtocol())) {
-            log.warn("仅支持本地目录扫描, 跳过: {}", classpathUrl);
-            return;
-        }
-
-        java.io.File dir = new java.io.File(classpathUrl.getFile());
-        if (!dir.exists() || !dir.isDirectory()) {
-            log.warn("目录不存在: {}", dir.getAbsolutePath());
-            return;
-        }
-
-        java.io.File[] classFiles = dir.listFiles((dir1, name) -> name.endsWith(".class"));
-        if (classFiles == null) {
-            return;
-        }
-
-        for (java.io.File classFile : classFiles) {
-            String fileName = classFile.getName();
-            String simpleName = fileName.replace(".class", "");
-            String fullClassName = packageName + "." + simpleName;
-
-            // 验证类是否可加载
-            try {
-                Class.forName(fullClassName);
-                Map<String, String> item = new LinkedHashMap<>();
-                item.put("className", fullClassName);
-                item.put("simpleName", simpleName);
-                result.add(item);
-            } catch (ClassNotFoundException e) {
-                log.warn("类加载失败, 跳过: {}", fullClassName);
-            }
-        }
-    }
 
 }

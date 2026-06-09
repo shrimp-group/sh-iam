@@ -220,10 +220,8 @@ public interface Route {
     String API_FIELD_LIST_BY_API = "/api-field/list-by-api";
 
     // 实体字段分析
-    @ApiDesc("1. 实体字段-字段树")
-    String ENTITY_FIELD_TREE = "/entity-field/tree";
-    @ApiDesc("2. 实体字段-类列表")
-    String ENTITY_FIELD_CLASSES = "/entity-field/classes";
+    @ApiDesc("1. 实体字段-根据API定位")
+    String ENTITY_FIELD_RESOLVE = "/entity-field/resolve";
 
     // 菜单字段关系
     @ApiDesc("1. 菜单字段-列表")
