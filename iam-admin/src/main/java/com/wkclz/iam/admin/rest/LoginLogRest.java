@@ -23,7 +23,7 @@ public class LoginLogRest {
     protected IamLoginLogService iamLoginLogService;
 
     @GetMapping(Route.LOGIN_LOG_PAGE)
-    public R loginLogPage(IamLoginLog entity) {
+    public R<PageData<IamLoginLog>> loginLogPage(IamLoginLog entity) {
         Assert.notNull(entity.getTimeFrom(), "timeFrom 不能为空");
         Assert.notNull(entity.getTimeTo(), "timeTo 不能为空");
         LocalDateTime timeFrom = entity.getTimeFrom();
@@ -37,7 +37,7 @@ public class LoginLogRest {
     }
 
     @GetMapping(Route.LOGIN_LOG_INFO)
-    public R loginLogInfo(IamLoginLog entity) {
+    public R<IamLoginLog> loginLogInfo(IamLoginLog entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamLoginLog loginLog = iamLoginLogService.selectById(entity.getId());
         return R.ok(loginLog);

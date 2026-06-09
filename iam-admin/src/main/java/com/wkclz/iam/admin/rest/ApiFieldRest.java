@@ -24,41 +24,41 @@ public class ApiFieldRest {
     private IamApiFieldService iamApiFieldService;
 
     @GetMapping(Route.API_FIELD_PAGE)
-    public R apiFieldPage(IamApiFieldDto entity) {
+    public R<PageData<IamApiFieldDto>> apiFieldPage(IamApiFieldDto entity) {
         PageData<IamApiFieldDto> page = iamApiFieldService.getApiFieldPage(entity);
         return R.ok(page);
     }
 
     @GetMapping(Route.API_FIELD_INFO)
-    public R apiFieldInfo(IamApiField entity) {
+    public R<IamApiField> apiFieldInfo(IamApiField entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamApiField apiField = iamApiFieldService.selectById(entity.getId());
         return R.ok(apiField);
     }
 
     @GetMapping(Route.API_FIELD_LIST_BY_API)
-    public R apiFieldListByApi(IamApiField entity) {
+    public R<List<IamApiField>> apiFieldListByApi(IamApiField entity) {
         Assert.notNull(entity.getApiCode(), "apiCode 不能为空");
         List<IamApiField> list = iamApiFieldService.listByApi(entity.getApiCode());
         return R.ok(list);
     }
 
     @PostMapping(Route.API_FIELD_CREATE)
-    public R apiFieldCreate(@RequestBody IamApiField entity) {
+    public R<IamApiField> apiFieldCreate(@RequestBody IamApiField entity) {
         paramCheck(entity);
         entity = iamApiFieldService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.API_FIELD_UPDATE)
-    public R apiFieldUpdate(@RequestBody IamApiField entity) {
+    public R<IamApiField> apiFieldUpdate(@RequestBody IamApiField entity) {
         paramCheck(entity);
         entity = iamApiFieldService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.API_FIELD_REMOVE)
-    public R apiFieldRemove(@RequestBody IamApiField entity) {
+    public R<IamApiField> apiFieldRemove(@RequestBody IamApiField entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamApiFieldService.remove(entity);
         return R.ok(entity);

@@ -18,34 +18,34 @@ public class AccessKeyRest {
     protected IamAccessKeyService iamAccessKeyService;
 
     @GetMapping(Route.ACCESS_KEY_PAGE)
-    public R accessKeyPage(IamAccessKey entity) {
+    public R<PageData<IamAccessKey>> accessKeyPage(IamAccessKey entity) {
         PageData<IamAccessKey> page = iamAccessKeyService.getAccessKeyPage(entity);
         return R.ok(page);
     }
 
     @GetMapping(Route.ACCESS_KEY_INFO)
-    public R accessKeyInfo(IamAccessKey entity) {
+    public R<IamAccessKey> accessKeyInfo(IamAccessKey entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamAccessKey accessKey = iamAccessKeyService.selectById(entity.getId());
         return R.ok(accessKey);
     }
 
     @PostMapping(Route.ACCESS_KEY_CREATE)
-    public R accessKeyCreate(@RequestBody IamAccessKey entity) {
+    public R<IamAccessKey> accessKeyCreate(@RequestBody IamAccessKey entity) {
         paramCheck(entity);
         entity = iamAccessKeyService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.ACCESS_KEY_UPDATE)
-    public R accessKeyUpdate(@RequestBody IamAccessKey entity) {
+    public R<IamAccessKey> accessKeyUpdate(@RequestBody IamAccessKey entity) {
         paramCheck(entity);
         entity = iamAccessKeyService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.ACCESS_KEY_REMOVE)
-    public R accessKeyRemove(@RequestBody IamAccessKey entity) {
+    public R<IamAccessKey> accessKeyRemove(@RequestBody IamAccessKey entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamAccessKeyService.remove(entity);
         return R.ok(entity);

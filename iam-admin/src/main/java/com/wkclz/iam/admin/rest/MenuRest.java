@@ -29,49 +29,49 @@ public class MenuRest {
     private IamUserMenuService iamUserMenuService;
 
     @GetMapping(Route.MENU_LIST)
-    public R menuList(IamMenu entity) {
+    public R<List<IamMenuDto>> menuList(IamMenu entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
         List<IamMenuDto> tree = iamMenuService.menuList(entity);
         return R.ok(tree);
     }
 
     @GetMapping(Route.MENU_TREE)
-    public R menuTree(IamMenu entity) {
+    public R<List<IamMenuDto>> menuTree(IamMenu entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
         List<IamMenuDto> tree = iamMenuService.menuTree(entity);
         return R.ok(tree);
     }
 
     @GetMapping(Route.MENU_INFO)
-    public R menuInfo(IamMenu entity) {
+    public R<IamMenu> menuInfo(IamMenu entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamMenu menu = iamMenuService.selectById(entity.getId());
         return R.ok(menu);
     }
 
     @PostMapping(Route.MENU_CREATE)
-    public R menuCreate(@RequestBody IamMenu entity) {
+    public R<IamMenu> menuCreate(@RequestBody IamMenu entity) {
         paramCheck(entity);
         entity = iamMenuService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.MENU_UPDATE)
-    public R menuUpdate(@RequestBody IamMenu entity) {
+    public R<IamMenu> menuUpdate(@RequestBody IamMenu entity) {
         paramCheck(entity);
         entity = iamMenuService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.MENU_REMOVE)
-    public R menuRemove(@RequestBody IamMenu entity) {
+    public R<IamMenu> menuRemove(@RequestBody IamMenu entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamMenuService.remove(entity);
         return R.ok(entity);
     }
 
     @GetMapping(Route.MENU_DETAIL)
-    public R menuDetail(IamMenu entity) {
+    public R<MenuDetailResp> menuDetail(IamMenu entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         MenuDetailResp detail = iamMenuService.getMenuDetail(entity.getId());
         return R.ok(detail);

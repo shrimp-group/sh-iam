@@ -5,6 +5,7 @@ import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sdk.model.ChangePasswordRequest;
+import com.wkclz.iam.sdk.model.UserFieldPermissionResp;
 import com.wkclz.iam.sdk.model.UserSession;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.entity.VueRouterMenu;
@@ -33,7 +34,7 @@ public class UserInfoRest {
     private SsoResourceService ssoResourceService;
 
     @GetMapping(Route.USER_INFO)
-    public R publicSsoLogin(HttpServletRequest request) {
+    public R<UserSession> publicSsoLogin(HttpServletRequest request) {
         UserSession userSession = SessionHelper.getUserSession(request);
         return R.ok(userSession);
     }
@@ -49,7 +50,7 @@ public class UserInfoRest {
     }
 
     @GetMapping(Route.USER_MENU_TREE_RUOYI)
-    public R userMenuTreeRuoyi(HttpServletRequest request) {
+    public R<List<VueRouterMenu>> userMenuTreeRuoyi(HttpServletRequest request) {
         R<List<IamMenuDto>> listR = userMenuTree(request);
         List<IamMenuDto> menus = listR.getData();
 
@@ -62,9 +63,16 @@ public class UserInfoRest {
     }
 
     @PostMapping(Route.USER_CHANGE_PASSWORD)
-    public R changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+    public R<Void> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
         iamLoginService.changePassword(changePasswordRequest);
         return R.ok();
+    }
+
+    @GetMapping(Route.USER_FIELD_PERMISSIONS)
+    public R<List<UserFieldPermissionResp>> userFieldPermissions(HttpServletRequest request) {
+        UserSession userSession = SessionHelper.getUserSession(request);
+        List<UserFieldPermissionResp> permissions = ssoResourceService.getUserFieldPermissions(userSession.getUserCode());
+        return R.ok(permissions);
     }
 
 

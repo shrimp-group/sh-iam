@@ -3,6 +3,7 @@ package com.wkclz.iam.admin.rest;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.bean.req.UserRoleBindReq;
+import com.wkclz.iam.admin.bean.resp.UserMenuSourceResp;
 import com.wkclz.iam.admin.bean.resp.UserRoleResp;
 import com.wkclz.iam.admin.service.IamUserRoleService;
 import com.wkclz.iam.common.dto.IamUserRoleDto;
@@ -49,12 +50,11 @@ public class UserRoleRest {
     }
 
     @GetMapping(Route.USER_MENU_SOURCE_LIST)
-    public R<List<com.wkclz.iam.admin.bean.resp.UserMenuSourceResp>> userMenuSourceList(
+    public R<List<UserMenuSourceResp>> userMenuSourceList(
             @RequestParam String userCode,
             @RequestParam(required = false) String appCode) {
         Assert.notNull(userCode, "userCode 不能为空!");
-        List<com.wkclz.iam.admin.bean.resp.UserMenuSourceResp> list =
-                iamUserRoleService.getUserMenuSourceList(userCode, appCode);
+        List<UserMenuSourceResp> list = iamUserRoleService.getUserMenuSourceList(userCode, appCode);
         return R.ok(list);
     }
 

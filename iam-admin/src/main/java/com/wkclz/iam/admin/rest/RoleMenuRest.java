@@ -19,21 +19,21 @@ public class RoleMenuRest {
     protected IamRoleMenuService iamRoleMenuService;
 
     @GetMapping(Route.ROLE_MENU_LIST)
-    public R roleMenuList(String roleCode) {
+    public R<List<String>> roleMenuList(String roleCode) {
         Assert.notNull(roleCode, "roleCode 不能为空!");
         List<String> menuCodes = iamRoleMenuService.getBoundMenuCodes(roleCode);
         return R.ok(menuCodes);
     }
 
     @PostMapping(Route.ROLE_MENU_SAVE)
-    public R roleMenuSave(@RequestBody RoleMenuSaveReq req) {
+    public R<Void> roleMenuSave(@RequestBody RoleMenuSaveReq req) {
         Assert.notNull(req.getRoleCode(), "roleCode 不能为空!");
         iamRoleMenuService.saveRoleMenus(req.getRoleCode(), req.getMenuCodes());
         return R.ok();
     }
 
     @GetMapping(Route.ROLE_MENU_BOUND_ROLES)
-    public R roleMenuBoundRoles(String menuCode) {
+    public R<List<RoleBoundResp>> roleMenuBoundRoles(String menuCode) {
         Assert.notNull(menuCode, "menuCode 不能为空!");
         List<RoleBoundResp> list = iamRoleMenuService.getBoundRoles(menuCode);
         return R.ok(list);

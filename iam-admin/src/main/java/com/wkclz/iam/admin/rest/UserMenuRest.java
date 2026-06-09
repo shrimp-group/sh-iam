@@ -22,7 +22,7 @@ public class UserMenuRest {
     private IamUserMenuService iamUserMenuService;
 
     @GetMapping(Route.USER_MENU_LIST)
-    public R userMenuList(IamMenu entity) {
+    public R<List<IamMenuDto>> userMenuList(IamMenu entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空");
         entity.setUserCode(SessionHelper.getUserCode());
         List<IamMenuDto> menus = iamUserMenuService.userMenuList(entity);
@@ -30,7 +30,7 @@ public class UserMenuRest {
     }
 
     @GetMapping(Route.USER_MENU_TREE)
-    public R userMenuTree(IamMenu entity) {
+    public R<List<IamMenuDto>> userMenuTree(IamMenu entity) {
         Assert.notNull(entity.getMenuCode(), "appCode 不能为空");
         entity.setUserCode(SessionHelper.getUserCode());
         List<IamMenuDto> menus = iamUserMenuService.userMenuTree(entity);

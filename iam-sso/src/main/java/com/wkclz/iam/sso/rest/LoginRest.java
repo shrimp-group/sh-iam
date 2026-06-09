@@ -20,7 +20,7 @@ public class LoginRest {
     private IamLoginService iamLoginService;
 
     @PostMapping(Route.PUBLIC_SSO_LOGIN)
-    public R publicSsoLogin(HttpServletRequest request, @RequestBody LoginRequest loginRequest) {
+    public R<LoginResponse> publicSsoLogin(HttpServletRequest request, @RequestBody LoginRequest loginRequest) {
         Assert.notNull(loginRequest.getUsername(), "用户名不能为空!");
         Assert.notNull(loginRequest.getPassword(), "密码不能为空!");
         LoginResponse response = iamLoginService.loginByUsernameAndPassword(request, loginRequest);
@@ -28,7 +28,7 @@ public class LoginRest {
     }
 
     @GetMapping(Route.PUBLIC_SSO_LOGOUT)
-    public R publicSsoLogout(HttpServletRequest request) {
+    public R<Void> publicSsoLogout(HttpServletRequest request) {
         iamLoginService.logout(request);
         return R.ok();
     }

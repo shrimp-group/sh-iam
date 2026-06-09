@@ -19,20 +19,20 @@ public class UserRest {
     protected IamUserService iamUserService;
 
     @GetMapping(Route.USER_PAGE)
-    public R userPage(IamUser entity) {
+    public R<PageData<IamUser>> userPage(IamUser entity) {
         PageData<IamUser> page = iamUserService.userPage(entity);
         return R.ok(page);
     }
 
     @GetMapping(Route.USER_INFO)
-    public R userInfo(IamUser entity) {
+    public R<IamUser> userInfo(IamUser entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamUser user = iamUserService.selectById(entity.getId());
         return R.ok(user);
     }
 
     @PostMapping(Route.USER_CREATE)
-    public R userCreate(@RequestBody IamUserDto dto) {
+    public R<IamUserDto> userCreate(@RequestBody IamUserDto dto) {
         paramCheck(dto);
         Assert.notNull(dto.getPassword(), "密码不能为空");
         dto = iamUserService.customCreate(dto);
@@ -41,14 +41,14 @@ public class UserRest {
     }
 
     @PostMapping(Route.USER_UPDATE)
-    public R userUpdate(@RequestBody IamUser entity) {
+    public R<IamUser> userUpdate(@RequestBody IamUser entity) {
         paramCheck(entity);
         entity = iamUserService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.USER_REMOVE)
-    public R userRemove(@RequestBody IamUser entity) {
+    public R<IamUser> userRemove(@RequestBody IamUser entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamUserService.remove(entity);
         return R.ok(entity);

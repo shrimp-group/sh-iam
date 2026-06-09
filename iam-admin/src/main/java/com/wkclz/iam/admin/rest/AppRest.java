@@ -20,41 +20,41 @@ public class AppRest {
     protected IamAppService iamAppService;
 
     @GetMapping(Route.APP_PAGE)
-    public R appPage(IamApp entity) {
+    public R<PageData<IamApp>> appPage(IamApp entity) {
         PageData<IamApp> page = iamAppService.getAppPage(entity);
         return R.ok(page);
     }
 
     @GetMapping(Route.APP_INFO)
-    public R appInfo(IamApp entity) {
+    public R<IamApp> appInfo(IamApp entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamApp app = iamAppService.selectById(entity.getId());
         return R.ok(app);
     }
 
     @PostMapping(Route.APP_CREATE)
-    public R appCreate(@RequestBody IamApp entity) {
+    public R<IamApp> appCreate(@RequestBody IamApp entity) {
         paramCheck(entity);
         entity = iamAppService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.APP_UPDATE)
-    public R appUpdate(@RequestBody IamApp entity) {
+    public R<IamApp> appUpdate(@RequestBody IamApp entity) {
         paramCheck(entity);
         entity = iamAppService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.APP_REMOVE)
-    public R appRemove(@RequestBody IamApp entity) {
+    public R<IamApp> appRemove(@RequestBody IamApp entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamAppService.remove(entity);
         return R.ok(entity);
     }
 
     @GetMapping(Route.APP_OPTIONS)
-    public R appOptions() {
+    public R<List<IamApp>> appOptions() {
         List<IamApp> options = iamAppService.getAppOptions();
         return R.ok(options);
     }

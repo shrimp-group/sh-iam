@@ -19,7 +19,7 @@ public class RoleDataRest {
     protected IamRoleDataService iamRoleDataService;
 
     @GetMapping(Route.ROLE_DATA_LIST)
-    public R roleDataList(IamRoleData entity) {
+    public R<List<IamRoleData>> roleDataList(IamRoleData entity) {
         Assert.notNull(entity.getRoleCode(), "roleCode 不能为空!");
         Assert.notNull(entity.getRoleCode(), "dimensionCode 不能为空!");
         List<IamRoleData> list = iamRoleDataService.getRoleDataList(entity.getRoleCode(), entity.getDimensionCode());
@@ -27,14 +27,14 @@ public class RoleDataRest {
     }
 
     @PostMapping(Route.ROLE_DATA_BIND)
-    public R roleDataBind(@RequestBody IamRoleData entity) {
+    public R<IamRoleData> roleDataBind(@RequestBody IamRoleData entity) {
         paramCheck(entity);
         entity = iamRoleDataService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.ROLE_DATA_UNBIND)
-    public R roleDataUnbind(@RequestBody IamRoleData entity) {
+    public R<IamRoleData> roleDataUnbind(@RequestBody IamRoleData entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamRoleDataService.remove(entity);
         return R.ok(entity);

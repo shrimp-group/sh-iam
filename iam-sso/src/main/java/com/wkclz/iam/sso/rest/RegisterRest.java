@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RegisterRest {
 
     @PostMapping(Route.PUBLIC_SSO_REGISTER)
-    public R publicSsoRegister(@RequestBody RegisterRequest registerRequest) {
+    public R<Void> publicSsoRegister(@RequestBody RegisterRequest registerRequest) {
         return R.ok();
     }
 

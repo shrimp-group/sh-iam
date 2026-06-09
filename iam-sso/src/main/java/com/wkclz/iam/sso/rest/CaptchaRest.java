@@ -20,7 +20,7 @@ public class CaptchaRest {
     private RedisTemplate<String, String> redisTemplate;
 
     @GetMapping(Route.PUBLIC_CAPTCHA_CHART)
-    public R getCaptcha() {
+    public R<PictureCaptchaResponse> getCaptcha() {
         PictureCaptchaResponse captcha = CaptchaHelper.getCaptcha();
         String captchaId = captcha.getCaptchaId();
         String captchaCode = captcha.getCaptchaCode();

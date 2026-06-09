@@ -27,7 +27,7 @@ public class MenuFieldRest {
      * 查询字段组已绑定的字段列表
      */
     @GetMapping(Route.MENU_FIELD_LIST)
-    public R menuFieldList(String menuCode) {
+    public R<List<MenuFieldResp>> menuFieldList(String menuCode) {
         Assert.notNull(menuCode, "menuCode 不能为空");
         List<MenuFieldResp> list = iamMenuFieldService.listByMenuCode(menuCode);
         return R.ok(list);
@@ -37,7 +37,7 @@ public class MenuFieldRest {
      * 绑定字段到字段组
      */
     @PostMapping(Route.MENU_FIELD_BIND)
-    public R menuFieldBind(@RequestBody MenuFieldBindReq req) {
+    public R<Void> menuFieldBind(@RequestBody MenuFieldBindReq req) {
         Assert.notNull(req.getAppCode(), "appCode 不能为空");
         Assert.notNull(req.getMenuCode(), "menuCode 不能为空");
         Assert.notNull(req.getFieldCode(), "fieldCode 不能为空");
@@ -49,7 +49,7 @@ public class MenuFieldRest {
      * 批量保存字段组的字段绑定
      */
     @PostMapping(Route.MENU_FIELD_SAVE)
-    public R menuFieldSave(@RequestBody MenuFieldSaveReq req) {
+    public R<Void> menuFieldSave(@RequestBody MenuFieldSaveReq req) {
         Assert.notNull(req.getAppCode(), "appCode 不能为空");
         Assert.notNull(req.getMenuCode(), "menuCode 不能为空");
         iamMenuFieldService.save(req.getMenuCode(), req.getAppCode(), req.getFieldCodes());
@@ -60,7 +60,7 @@ public class MenuFieldRest {
      * 解绑字段
      */
     @PostMapping(Route.MENU_FIELD_UNBIND)
-    public R menuFieldUnbind(@RequestBody IamMenuField entity) {
+    public R<Void> menuFieldUnbind(@RequestBody IamMenuField entity) {
         Assert.notNull(entity.getId(), "id 不能为空");
         iamMenuFieldService.unbind(entity.getId());
         return R.ok();

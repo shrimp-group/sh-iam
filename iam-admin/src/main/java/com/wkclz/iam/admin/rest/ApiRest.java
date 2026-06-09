@@ -25,65 +25,65 @@ public class ApiRest {
     protected IamApiService iamApiService;
 
     @GetMapping(Route.API_PAGE)
-    public R apiPage(IamApiDto entity) {
+    public R<PageData<IamApiDto>> apiPage(IamApiDto entity) {
         PageData<IamApiDto> page = iamApiService.getApiPage(entity);
         return R.ok(page);
     }
 
     @GetMapping(Route.API_INFO)
-    public R apiInfo(IamApi entity) {
+    public R<IamApi> apiInfo(IamApi entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamApi api = iamApiService.selectById(entity.getId());
         return R.ok(api);
     }
 
     @GetMapping(Route.API_DETAIL)
-    public R apiDetail(IamApi entity) {
+    public R<ApiDetailResp> apiDetail(IamApi entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         ApiDetailResp detail = iamApiService.getApiDetail(entity.getId());
         return R.ok(detail);
     }
 
     @PostMapping(Route.API_CREATE)
-    public R apiCreate(@RequestBody IamApi entity) {
+    public R<IamApi> apiCreate(@RequestBody IamApi entity) {
         paramCheck(entity);
         entity = iamApiService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.API_UPDATE)
-    public R apiUpdate(@RequestBody IamApi entity) {
+    public R<IamApi> apiUpdate(@RequestBody IamApi entity) {
         paramCheck(entity);
         entity = iamApiService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.API_REMOVE)
-    public R apiRemove(@RequestBody IamApi entity) {
+    public R<IamApi> apiRemove(@RequestBody IamApi entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamApiService.remove(entity);
         return R.ok(entity);
     }
 
     @GetMapping(Route.API_OPTIONS)
-    public R apiOptions(IamApi entity) {
+    public R<List<IamApi>> apiOptions(IamApi entity) {
         List<IamApi> list = iamApiService.getApiOptions(entity);
         return R.ok(list);
     }
 
     @PostMapping(Route.API_SYNC)
-    public R apiSync() {
+    public R<Void> apiSync() {
         restfulScan.run(null);
         return R.ok();
     }
 
     @GetMapping(Route.API_COPY)
-    public R apiCopy(IamApi entity) {
+    public R<List<IamApi>> apiCopy(IamApi entity) {
         List<IamApi> list = iamApiService.getApis4Copy(entity);
         return R.ok(list);
     }
     @PostMapping(Route.API_PASTE)
-    public R apiPaste(@RequestBody List<IamApi> entity) {
+    public R<Integer> apiPaste(@RequestBody List<IamApi> entity) {
         Integer count = iamApiService.apiPaste(entity);
         return R.ok(count);
     }

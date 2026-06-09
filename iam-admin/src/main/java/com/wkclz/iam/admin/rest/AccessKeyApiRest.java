@@ -20,21 +20,21 @@ public class AccessKeyApiRest {
     protected IamAccessKeyApiService iamAccessKeyApiService;
 
     @GetMapping(Route.ACCESS_KEY_API_LIST)
-    public R accessKeyApiList(IamAccessKeyApi entity) {
+    public R<List<IamApi>> accessKeyApiList(IamAccessKeyApi entity) {
         Assert.notNull(entity.getAppId(), "appId 不能为空!");
         List<IamApi> apis = iamAccessKeyApiService.getAccessKeyList(entity.getAppId());
         return R.ok(apis);
     }
 
     @PostMapping(Route.ACCESS_KEY_API_BIND)
-    public R accessKeyApiBind(@RequestBody IamAccessKeyApi entity) {
+    public R<IamAccessKeyApi> accessKeyApiBind(@RequestBody IamAccessKeyApi entity) {
         paramCheck(entity);
         entity = iamAccessKeyApiService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.ACCESS_KEY_API_UNBIND)
-    public R accessKeyApiUnbind(@RequestBody IamAccessKeyApi entity) {
+    public R<IamAccessKeyApi> accessKeyApiUnbind(@RequestBody IamAccessKeyApi entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamAccessKeyApiService.remove(entity);
         return R.ok(entity);

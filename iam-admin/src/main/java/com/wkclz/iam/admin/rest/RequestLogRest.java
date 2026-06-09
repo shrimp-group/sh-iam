@@ -24,7 +24,7 @@ public class RequestLogRest {
     protected IamRequestLogService iamRequestLogService;
 
     @GetMapping(Route.REQUEST_LOG_PAGE)
-    public R requestLogPage(IamRequestLog entity) {
+    public R<PageData<IamRequestLog>> requestLogPage(IamRequestLog entity) {
         Assert.notNull(entity.getTimeFrom(), "timeFrom 不能为空");
         Assert.notNull(entity.getTimeTo(), "timeTo 不能为空");
         LocalDateTime timeFrom = entity.getTimeFrom();
@@ -38,7 +38,7 @@ public class RequestLogRest {
     }
 
     @GetMapping(Route.REQUEST_LOG_INFO)
-    public R requestLogInfo(IamRequestLog entity) {
+    public R<IamRequestLog> requestLogInfo(IamRequestLog entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamRequestLog requestLog = iamRequestLogService.selectById(entity.getId());
         return R.ok(requestLog);

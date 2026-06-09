@@ -20,28 +20,28 @@ public class MenuApiRest {
     protected IamMenuApiService iamMenuApiService;
 
     @GetMapping(Route.MENU_API_LIST)
-    public R menuApiList(IamMenuApi entity) {
+    public R<List<IamMenuApi>> menuApiList(IamMenuApi entity) {
         Assert.notNull(entity.getMenuCode(), "menuCode 不能为空!");
         List<IamMenuApi> list = iamMenuApiService.getMenuList(entity.getMenuCode());
         return R.ok(list);
     }
 
     @GetMapping(Route.MENU_API_BOUND_LIST)
-    public R menuApiBoundList(IamMenuApi entity) {
+    public R<List<ApiBoundResp>> menuApiBoundList(IamMenuApi entity) {
         Assert.notNull(entity.getMenuCode(), "menuCode 不能为空!");
         List<ApiBoundResp> list = iamMenuApiService.getBoundApis(entity.getMenuCode());
         return R.ok(list);
     }
 
     @PostMapping(Route.MENU_API_BIND)
-    public R menuApiBind(@RequestBody IamMenuApi entity) {
+    public R<IamMenuApi> menuApiBind(@RequestBody IamMenuApi entity) {
         paramCheck(entity);
         entity = iamMenuApiService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.MENU_API_UNBIND)
-    public R menuApiUnbind(@RequestBody IamMenuApi entity) {
+    public R<IamMenuApi> menuApiUnbind(@RequestBody IamMenuApi entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamMenuApiService.remove(entity);
         return R.ok(entity);

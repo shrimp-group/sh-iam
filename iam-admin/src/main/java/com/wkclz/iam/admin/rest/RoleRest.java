@@ -20,35 +20,35 @@ public class RoleRest {
     protected IamRoleService iamRoleService;
 
     @GetMapping(Route.ROLE_LIST)
-    public R roleList(IamRole entity) {
+    public R<List<IamRoleDto>> roleList(IamRole entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
         List<IamRoleDto> iamRoles = iamRoleService.roleList(entity);
         return R.ok(iamRoles);
     }
 
     @GetMapping(Route.ROLE_INFO)
-    public R roleInfo(IamRole entity) {
+    public R<IamRole> roleInfo(IamRole entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamRole role = iamRoleService.selectById(entity.getId());
         return R.ok(role);
     }
 
     @PostMapping(Route.ROLE_CREATE)
-    public R roleCreate(@RequestBody IamRole entity) {
+    public R<IamRole> roleCreate(@RequestBody IamRole entity) {
         paramCheck(entity);
         entity = iamRoleService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.ROLE_UPDATE)
-    public R roleUpdate(@RequestBody IamRole entity) {
+    public R<IamRole> roleUpdate(@RequestBody IamRole entity) {
         paramCheck(entity);
         entity = iamRoleService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.ROLE_REMOVE)
-    public R roleRemove(@RequestBody IamRole entity) {
+    public R<IamRole> roleRemove(@RequestBody IamRole entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         // 检查角色下是否有子角色
         IamRole param = new IamRole();
@@ -62,7 +62,7 @@ public class RoleRest {
     }
 
     @GetMapping(Route.ROLE_TREE)
-    public R roleTree(IamRole entity) {
+    public R<List<IamRoleDto>> roleTree(IamRole entity) {
         Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
         List<IamRoleDto> tree = iamRoleService.roleTree(entity);
         return R.ok(tree);

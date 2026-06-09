@@ -21,41 +21,41 @@ public class DataDimensionRest {
     protected IamDataDimensionService iamDataDimensionService;
 
     @GetMapping(Route.DATA_DIM_PAGE)
-    public R dataDimPage(IamDataDimension entity) {
+    public R<PageData<IamDataDimension>> dataDimPage(IamDataDimension entity) {
         PageData<IamDataDimension> page = iamDataDimensionService.getDataDimensionPage(entity);
         return R.ok(page);
     }
 
     @GetMapping(Route.DATA_DIM_INFO)
-    public R dataDimInfo(IamDataDimension entity) {
+    public R<IamDataDimension> dataDimInfo(IamDataDimension entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         IamDataDimension api = iamDataDimensionService.selectById(entity.getId());
         return R.ok(api);
     }
 
     @PostMapping(Route.DATA_DIM_CREATE)
-    public R dataDimCreate(@RequestBody IamDataDimension entity) {
+    public R<IamDataDimension> dataDimCreate(@RequestBody IamDataDimension entity) {
         paramCheck(entity);
         entity = iamDataDimensionService.create(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.DATA_DIM_UPDATE)
-    public R dataDimUpdate(@RequestBody IamDataDimension entity) {
+    public R<IamDataDimension> dataDimUpdate(@RequestBody IamDataDimension entity) {
         paramCheck(entity);
         entity = iamDataDimensionService.update(entity);
         return R.ok(entity);
     }
 
     @PostMapping(Route.DATA_DIM_REMOVE)
-    public R dataDimRemove(@RequestBody IamDataDimension entity) {
+    public R<IamDataDimension> dataDimRemove(@RequestBody IamDataDimension entity) {
         Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
         entity = iamDataDimensionService.remove(entity);
         return R.ok(entity);
     }
 
     @GetMapping(Route.DATA_DIM_OPTIONS)
-    public R dataDimOption() {
+    public R<List<IamDataDimension>> dataDimOption() {
         List<IamDataDimension> iamDataDimensions = iamDataDimensionService.selectAll();
         return R.ok(iamDataDimensions);
     }
