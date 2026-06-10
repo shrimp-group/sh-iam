@@ -33,7 +33,7 @@ public class EntityFieldRest {
 
     /**
      * 根据 API 自动定位返回值实体类并返回字段树
-     * 1. 优先通过 RestHelper 的 returnGenericInfo 解析实体类
+     * 1. 优先通过 returnGenericInfo 构建完整返回值字段树（含 R/PageData 包装层）
      * 2. 若 R 未指定泛型，则分析 R 类本身的结构返回给前端
      */
     @GetMapping(Route.ENTITY_FIELD_RESOLVE)
@@ -49,15 +49,14 @@ public class EntityFieldRest {
             return R.ok(result);
         }
 
-        // 尝试通过 returnGenericInfo 解析实体类
+        // 有泛型信息时，构建完整返回值字段树
         if (matched.getReturnGenericInfo() != null && !matched.getReturnGenericInfo().isEmpty()) {
-            Map<String, String> entityClass = entityFieldAnalyzer.parseReturnGenericInfo(matched.getReturnGenericInfo());
-            if (entityClass != null) {
-                // 解析成功，返回实体类字段树
-                String className = entityClass.get("className");
-                List<EntityFieldNode> tree = entityFieldAnalyzer.analyze(className);
+            List<EntityFieldNode> tree = entityFieldAnalyzer.buildReturnFieldTree(matched.getReturnGenericInfo());
+            if (!tree.isEmpty()) {
+                // 提取实体类信息
+                Map<String, String> entityClass = entityFieldAnalyzer.parseReturnGenericInfo(matched.getReturnGenericInfo());
                 Map<String, Object> result = new LinkedHashMap<>();
-                result.put("entityClass", entityClass);
+                result.put("entityClass", entityClass != null ? entityClass : Map.of("className", "com.wkclz.core.base.R", "simpleName", "R"));
                 result.put("fieldTree", tree);
                 return R.ok(result);
             }

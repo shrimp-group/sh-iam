@@ -44,7 +44,7 @@ public class EntityFieldAnalyzer {
             "id", "sort", "createTime", "createBy", "updateTime", "updateBy",
             "remark", "version", "createByName", "updateByName",
             "userCode", "tenantCode", "orderBy", "ids", "keyword",
-            "timeFrom", "timeTo", "current", "size", "offset", "total", "count", "debug"
+            "timeFrom", "timeTo", "debug"
     );
 
     /**
@@ -69,9 +69,217 @@ public class EntityFieldAnalyzer {
         return nodes;
     }
 
+    /**
+     * 基于返回值泛型信息构建完整字段树
+     * 从 R 类根节点 $ 开始，逐层展开 R → data → PageData → records[*] → 实体字段
+     *
+     * @param returnGenericInfo RestHelper 提供的返回值泛型信息 JSON
+     * @return 完整字段树
+     */
+    public List<EntityFieldNode> buildReturnFieldTree(String returnGenericInfo) {
+        if (returnGenericInfo == null || returnGenericInfo.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        log.info("基于返回值泛型信息构建完整字段树: {}", returnGenericInfo);
+
+        try {
+            JSONObject genericInfo = JSONObject.parseObject(returnGenericInfo);
+            // 从 R 类根节点 $ 开始构建树
+            return buildFieldTreeFromGeneric(com.wkclz.core.base.R.class, "$", genericInfo);
+        } catch (Exception e) {
+            log.error("构建返回值字段树异常: {}", returnGenericInfo, e);
+            return Collections.emptyList();
+        }
+    }
 
 
     // --- 私有辅助方法 ---
+
+    /**
+     * 基于泛型信息递归构建字段树
+     * 与 buildFieldNodes 不同，此方法利用 returnGenericInfo 中的泛型参数来确定 R.data 和 PageData.records 的实际类型
+     *
+     * @param clazz       当前类
+     * @param parentPath  父级 JSONPath
+     * @param genericInfo 当前类的泛型信息（可为 null）
+     */
+    private List<EntityFieldNode> buildFieldTreeFromGeneric(Class<?> clazz, String parentPath, JSONObject genericInfo) {
+        List<EntityFieldNode> nodes = new ArrayList<>();
+        List<Field> fields = getAllFields(clazz);
+
+        // 获取当前类的泛型参数映射（rawType → typeArgs）
+        com.alibaba.fastjson2.JSONArray typeArgs = genericInfo != null ? genericInfo.getJSONArray("typeArgs") : null;
+
+        for (Field field : fields) {
+            String fieldName = field.getName();
+
+            // R 和 PageData 的字段不过滤系统字段，仅业务实体类过滤
+            if (!isRClass(clazz) && !isPageDataClass(clazz) && SYSTEM_FIELD_NAMES.contains(fieldName)) {
+                continue;
+            }
+
+            Class<?> fieldType = field.getType();
+
+            EntityFieldNode node = new EntityFieldNode();
+            node.setFieldName(fieldName);
+
+            // 读取 @FieldDesc 注解
+            FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
+            node.setFieldDesc(fieldDesc != null ? fieldDesc.value() : fieldName);
+            node.setFieldType(fieldType.getSimpleName());
+
+            String jsonPath = parentPath + "." + fieldName;
+            node.setJsonPath(jsonPath);
+
+            // 特殊处理 R.data 字段：使用泛型参数确定实际类型
+            if ("data".equals(fieldName) && isRClass(clazz) && typeArgs != null && !typeArgs.isEmpty()) {
+                JSONObject dataTypeArg = typeArgs.getJSONObject(0);
+                handleDataField(node, jsonPath, dataTypeArg);
+                nodes.add(node);
+                continue;
+            }
+
+            // 特殊处理 PageData.records 字段：使用泛型参数确定元素类型
+            if ("records".equals(fieldName) && isPageDataClass(clazz) && typeArgs != null && !typeArgs.isEmpty()) {
+                JSONObject recordsTypeArg = typeArgs.getJSONObject(0);
+                handleRecordsField(node, jsonPath, recordsTypeArg);
+                nodes.add(node);
+                continue;
+            }
+
+            // List/Set 字段
+            if (List.class.isAssignableFrom(fieldType) || Set.class.isAssignableFrom(fieldType)) {
+                node.setIsList(true);
+                // 尝试通过字段泛型获取元素类型
+                Class<?> genericType = getListGenericType(field);
+                if (genericType != null && !isSimpleType(genericType)) {
+                    String childPath = jsonPath + "[*]";
+                    node.setChildren(buildFieldTreeFromGeneric(genericType, childPath, null));
+                }
+                nodes.add(node);
+                continue;
+            }
+
+            // 简单类型 → 叶子节点
+            if (isSimpleType(fieldType)) {
+                node.setIsList(false);
+            } else {
+                // 复杂对象 → 递归解析子字段
+                node.setIsList(false);
+                node.setChildren(buildFieldTreeFromGeneric(fieldType, jsonPath, null));
+            }
+
+            nodes.add(node);
+        }
+
+        return nodes;
+    }
+
+    /**
+     * 处理 R.data 字段，根据泛型参数确定实际类型
+     */
+    private void handleDataField(EntityFieldNode node, String jsonPath, JSONObject dataTypeArg) {
+        String rawType = dataTypeArg.getString("rawType");
+        com.alibaba.fastjson2.JSONArray typeArgs = dataTypeArg.getJSONArray("typeArgs");
+
+        if (rawType == null) {
+            node.setIsList(false);
+            return;
+        }
+
+        try {
+            Class<?> dataClass = Class.forName(rawType);
+
+            // PageData<T> → 展开 PageData 字段，records 使用泛型参数
+            if (isPageDataClass(dataClass)) {
+                node.setIsList(false);
+                node.setFieldType("PageData");
+                node.setChildren(buildFieldTreeFromGeneric(dataClass, jsonPath, dataTypeArg));
+                return;
+            }
+
+            // List<T> / Set<T> → data 为数组
+            if (List.class.isAssignableFrom(dataClass) || Set.class.isAssignableFrom(dataClass)) {
+                node.setIsList(true);
+                node.setFieldType("List");
+                if (typeArgs != null && !typeArgs.isEmpty()) {
+                    JSONObject elementTypeArg = typeArgs.getJSONObject(0);
+                    String elementRawType = elementTypeArg.getString("rawType");
+                    if (elementRawType != null) {
+                        try {
+                            Class<?> elementClass = Class.forName(elementRawType);
+                            if (!isSimpleType(elementClass)) {
+                                String childPath = jsonPath + "[*]";
+                                node.setChildren(buildFieldTreeFromGeneric(elementClass, childPath, elementTypeArg));
+                            }
+                        } catch (ClassNotFoundException e) {
+                            log.warn("List元素类型未找到: {}", elementRawType);
+                        }
+                    }
+                }
+                return;
+            }
+
+            // 业务实体类 → 直接展开
+            if (!isSimpleType(dataClass)) {
+                node.setIsList(false);
+                node.setChildren(buildFieldTreeFromGeneric(dataClass, jsonPath, dataTypeArg));
+                return;
+            }
+
+            // 简单类型
+            node.setIsList(false);
+            node.setFieldType(dataClass.getSimpleName());
+
+        } catch (ClassNotFoundException e) {
+            log.warn("data字段类型未找到: {}", rawType);
+            node.setIsList(false);
+        }
+    }
+
+    /**
+     * 处理 PageData.records 字段，根据泛型参数确定元素类型
+     */
+    private void handleRecordsField(EntityFieldNode node, String jsonPath, JSONObject recordsTypeArg) {
+        String rawType = recordsTypeArg.getString("rawType");
+        node.setIsList(true);
+
+        if (rawType == null) {
+            return;
+        }
+
+        try {
+            Class<?> elementClass = Class.forName(rawType);
+            if (!isSimpleType(elementClass)) {
+                String childPath = jsonPath + "[*]";
+                node.setChildren(buildFieldTreeFromGeneric(elementClass, childPath, recordsTypeArg));
+            }
+        } catch (ClassNotFoundException e) {
+            log.warn("records元素类型未找到: {}", rawType);
+        }
+    }
+
+    /**
+     * 判断是否为 R 类
+     */
+    private boolean isRClass(Class<?> clazz) {
+        return clazz == com.wkclz.core.base.R.class;
+    }
+
+    /**
+     * 判断是否为 PageData 类
+     */
+    private boolean isPageDataClass(Class<?> clazz) {
+        return clazz == com.wkclz.core.base.PageData.class;
+    }
+
+    /**
+     * 判断是否为 PageData 类（通过类全限定名）
+     */
+    private boolean isPageDataClass(String className) {
+        return "com.wkclz.core.base.PageData".equals(className);
+    }
 
     /**
      * 递归构建字段节点列表
@@ -210,7 +418,9 @@ public class EntityFieldAnalyzer {
      * java.util.List, java.util.Set, java.util.ArrayList 等
      */
     private String extractEntityClassName(JSONObject genericInfo) {
-        if (genericInfo == null) return null;
+        if (genericInfo == null) {
+            return null;
+        }
 
         String rawType = genericInfo.getString("rawType");
         com.alibaba.fastjson2.JSONArray typeArgs = genericInfo.getJSONArray("typeArgs");
@@ -230,7 +440,9 @@ public class EntityFieldAnalyzer {
             for (int i = 0; i < typeArgs.size(); i++) {
                 JSONObject arg = typeArgs.getJSONObject(i);
                 String result = extractEntityClassName(arg);
-                if (result != null) return result;
+                if (result != null) {
+                    return result;
+                }
             }
         }
 
@@ -243,7 +455,9 @@ public class EntityFieldAnalyzer {
         for (int i = 0; i < typeArgs.size(); i++) {
             JSONObject arg = typeArgs.getJSONObject(i);
             String result = extractEntityClassName(arg);
-            if (result != null) return result;
+            if (result != null) {
+                return result;
+            }
         }
 
         return null;
