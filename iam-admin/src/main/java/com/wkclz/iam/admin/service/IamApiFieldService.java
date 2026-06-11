@@ -1,16 +1,13 @@
 package com.wkclz.iam.admin.service;
 
-import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamApiFieldMapper;
 import com.wkclz.iam.admin.mapper.IamApiMapper;
 import com.wkclz.iam.admin.mapper.IamMenuFieldMapper;
-import com.wkclz.iam.common.dto.IamApiFieldDto;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.iam.common.entity.IamApiField;
-import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
@@ -38,12 +35,6 @@ public class IamApiFieldService extends BaseService<IamApiField, IamApiFieldMapp
     @Autowired
     private IamMenuFieldMapper iamMenuFieldMapper;
 
-    /**
-     * 分页查询API字段权限列表
-     */
-    public PageData<IamApiFieldDto> getApiFieldPage(IamApiFieldDto entity) {
-        return PageQuery.page(entity, mapper::getApiFieldList);
-    }
 
     /**
      * 按 API 编码查询字段权限列表

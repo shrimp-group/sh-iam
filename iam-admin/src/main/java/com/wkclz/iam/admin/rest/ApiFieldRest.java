@@ -1,11 +1,9 @@
 package com.wkclz.iam.admin.rest;
 
-import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.service.IamApiFieldService;
-import com.wkclz.iam.common.dto.IamApiFieldDto;
 import com.wkclz.iam.common.entity.IamApiField;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -23,18 +21,6 @@ public class ApiFieldRest {
     @Autowired
     private IamApiFieldService iamApiFieldService;
 
-    @GetMapping(Route.API_FIELD_PAGE)
-    public R<PageData<IamApiFieldDto>> apiFieldPage(IamApiFieldDto entity) {
-        PageData<IamApiFieldDto> page = iamApiFieldService.getApiFieldPage(entity);
-        return R.ok(page);
-    }
-
-    @GetMapping(Route.API_FIELD_INFO)
-    public R<IamApiField> apiFieldInfo(IamApiField entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        IamApiField apiField = iamApiFieldService.selectById(entity.getId());
-        return R.ok(apiField);
-    }
 
     @GetMapping(Route.API_FIELD_LIST_BY_API)
     public R<List<IamApiField>> apiFieldListByApi(IamApiField entity) {

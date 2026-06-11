@@ -29,6 +29,12 @@ public class IamMenuField extends BaseEntity {
     private String menuCode;
 
     /**
+     * 接口编码
+     */
+    @FieldDesc(value = "接口编码", notNull = true)
+    private String apiCode;
+
+    /**
      * API字段权限编码
      */
     @FieldDesc(value = "API字段权限编码", notNull = true)
@@ -45,6 +51,7 @@ public class IamMenuField extends BaseEntity {
         target.setId(source.getId());
         target.setAppCode(source.getAppCode());
         target.setMenuCode(source.getMenuCode());
+        target.setApiCode(source.getApiCode());
         target.setFieldCode(source.getFieldCode());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
@@ -71,6 +78,9 @@ public class IamMenuField extends BaseEntity {
         }
         if (source.getMenuCode() != null) {
             target.setMenuCode(source.getMenuCode());
+        }
+        if (source.getApiCode() != null) {
+            target.setApiCode(source.getApiCode());
         }
         if (source.getFieldCode() != null) {
             target.setFieldCode(source.getFieldCode());

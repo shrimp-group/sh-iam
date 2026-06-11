@@ -206,18 +206,14 @@ public interface Route {
     String MENU_API_BOUND_LIST = "/menu-api/bound-list";
 
     // API字段权限
-    @ApiDesc("1. API字段权限-分页")
-    String API_FIELD_PAGE = "/api-field/page";
-    @ApiDesc("2. API字段权限-详情")
-    String API_FIELD_INFO = "/api-field/info";
-    @ApiDesc("3. API字段权限-创建")
-    String API_FIELD_CREATE = "/api-field/create";
-    @ApiDesc("4. API字段权限-修改")
-    String API_FIELD_UPDATE = "/api-field/update";
-    @ApiDesc("5. API字段权限-删除")
-    String API_FIELD_REMOVE = "/api-field/remove";
-    @ApiDesc("6. API字段权限-按API查询")
+    @ApiDesc("1. API字段权限-按API查询")
     String API_FIELD_LIST_BY_API = "/api-field/list-by-api";
+    @ApiDesc("2. API字段权限-创建")
+    String API_FIELD_CREATE = "/api-field/create";
+    @ApiDesc("3. API字段权限-修改")
+    String API_FIELD_UPDATE = "/api-field/update";
+    @ApiDesc("4. API字段权限-删除")
+    String API_FIELD_REMOVE = "/api-field/remove";
 
     // 实体字段分析
     @ApiDesc("1. 实体字段-根据API定位")

@@ -1,11 +1,8 @@
 package com.wkclz.iam.admin.mapper;
 
-import com.wkclz.iam.common.dto.IamApiFieldDto;
 import com.wkclz.iam.common.entity.IamApiField;
 import com.wkclz.mybatis.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-
-import java.util.List;
 
 /**
  * @author shrimp
@@ -13,10 +10,5 @@ import java.util.List;
  */
 @Mapper
 public interface IamApiFieldMapper extends BaseMapper<IamApiField> {
-
-    /**
-     * 分页查询API字段权限列表（关联查询API信息）
-     */
-    List<IamApiFieldDto> getApiFieldList(IamApiFieldDto entity);
 
 }
