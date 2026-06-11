@@ -9,9 +9,9 @@
             <dict-tag :options="MENU_TYPE" :value="menuInfo?.menuType" />
           </el-descriptions-item>
           <el-descriptions-item label="应用编码">{{ menuInfo?.appCode }}</el-descriptions-item>
-          <el-descriptions-item label="路由地址">{{ menuInfo?.routePath }}</el-descriptions-item>
-          <el-descriptions-item label="组件">{{ menuInfo?.component }}</el-descriptions-item>
-          <el-descriptions-item label="按钮编码">{{ menuInfo?.buttonCode }}</el-descriptions-item>
+          <el-descriptions-item label="路由地址">{{ menuInfo?.routePath || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="组件">{{ menuInfo?.component || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="按钮编码">{{ menuInfo?.buttonCode || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-tab-pane>
 
@@ -64,6 +64,67 @@
         </el-row>
       </el-tab-pane>
 
+      <!-- 字段绑定管理（仅 FIELDS 类型菜单显示） -->
+      <el-tab-pane v-if="menuInfo?.menuType === 'FIELDS'" label="字段绑定" name="fieldBind">
+        <el-row :gutter="20">
+          <!-- 左边：可选的 API 字段 -->
+          <el-col :span="12">
+            <div class="api-section">
+              <div class="section-header">
+                <span class="section-title">可选字段</span>
+                <el-input v-model="fieldSearchKeyword" placeholder="搜索字段名称" clearable size="small" style="width: 180px"/>
+              </div>
+              <el-table v-loading="fieldLoading" :data="filteredAvailableFields" max-height="500" min-height="200">
+                <el-table-column label="字段名称" prop="fieldName" min-width="120" />
+                <el-table-column label="JSON路径" prop="jsonPath" min-width="150" />
+                <el-table-column label="权限动作" prop="action" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="actionTagType(row.action)" size="small">{{ actionLabel(row.action) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="80" fixed="right">
+                  <template #default="{row}">
+                    <el-button link type="primary" size="small" :disabled="isFieldBound(row)" @click="handleFieldBind(row)">
+                      {{ isFieldBound(row) ? '已绑定' : '绑定' }}
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-col>
+
+          <!-- 右边：已绑定的字段 -->
+          <el-col :span="12">
+            <div class="api-section">
+              <div class="section-header">
+                <span class="section-title">已绑定的字段</span>
+              </div>
+              <el-table :data="boundFields" max-height="500" min-height="200">
+                <el-table-column label="字段名称" prop="fieldName" min-width="120" />
+                <el-table-column label="JSON路径" prop="jsonPath" min-width="150" />
+                <el-table-column label="权限动作" prop="action" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="actionTagType(row.action)" size="small">{{ actionLabel(row.action) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="来源接口" min-width="120">
+                  <template #default="{ row }">
+                    <span v-if="row.apiMethod || row.apiUri">{{ row.apiMethod }} {{ row.apiUri }}</span>
+                    <span v-else>-</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="80" fixed="right">
+                  <template #default="{row}">
+                    <el-button link type="danger" size="small" @click="handleFieldUnbind(row)">解绑</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-empty v-if="boundFields.length === 0" description="暂无绑定的字段" :image-size="40" />
+            </div>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
+
       <!-- 已绑角色 -->
       <el-tab-pane label="已绑角色" name="boundRoles">
         <el-table :data="boundRoles" size="small" max-height="500" min-height="200">
@@ -106,6 +167,7 @@ import { menuDetail } from "@/api/system/menu";
 import { menuApiBoundList, menuApiBind, menuApiUnbind } from "@/api/system/menu-api";
 import { menuBoundRoles, menuBoundUsers } from "@/api/user/user-role";
 import { apiOptions } from "@/api/system/api";
+import { menuFieldList, menuFieldBind, menuFieldUnbind, apiFieldListByApi } from "@/api/system/api-field";
 import { parseTime } from "@/utils/ruoyi";
 
 defineExpose({ init });
@@ -126,19 +188,40 @@ const boundRoles = ref([]);
 // 关联用户列表
 const boundUsers = ref([]);
 
+// 字段绑定相关
+const fieldLoading = ref(false);
+const availableFields = ref([]);
+const boundFields = ref([]);
+const fieldSearchKeyword = ref("");
+
 // 搜索关键词
 const leftSearchKeyword = ref("");
 const rightSearchKeyword = ref("");
+
+// 权限动作标签映射
+const actionMap = {
+  HIDDEN: { label: '隐藏', type: 'danger' },
+  MASK: { label: '脱敏', type: 'warning' },
+  READ_ONLY: { label: '只读', type: 'info' }
+}
+
+function actionLabel(action) {
+  return actionMap[action]?.label || action
+}
+
+function actionTagType(action) {
+  return actionMap[action]?.type || 'info'
+}
 
 // 已绑定的 apiCode 集合（用于快速判断绑定状态）
 const boundApiCodeSet = computed(() => {
   return new Set(boundApis.value.map(api => api.apiCode));
 });
 
-// 判断 API 是否已绑定
-function isBound(api) {
-  return boundApiCodeSet.value.has(api.apiCode);
-}
+// 已绑定的字段 fieldCode 集合
+const boundFieldCodeSet = computed(() => {
+  return new Set(boundFields.value.map(f => f.fieldCode || f.id));
+});
 
 // 过滤后的全量 API 列表
 const filteredAllApis = computed(() => {
@@ -158,33 +241,110 @@ const filteredBoundApis = computed(() => {
   return boundApis.value.filter(api => (api.apiUri && api.apiUri.toLowerCase().includes(keyword)) || (api.apiName && api.apiName.toLowerCase().includes(keyword)));
 });
 
+// 过滤后的可选字段列表
+const filteredAvailableFields = computed(() => {
+  if (!fieldSearchKeyword.value) return availableFields.value
+  const keyword = fieldSearchKeyword.value.toLowerCase()
+  return availableFields.value.filter(f =>
+    (f.fieldName && f.fieldName.toLowerCase().includes(keyword)) ||
+    (f.jsonPath && f.jsonPath.toLowerCase().includes(keyword))
+  )
+})
+
+// 判断 API 是否已绑定
+function isBound(api) {
+  return boundApiCodeSet.value.has(api.apiCode);
+}
+
+// 判断字段是否已绑定
+function isFieldBound(field) {
+  return boundFieldCodeSet.value.has(field.fieldCode || field.id);
+}
+
 // 初始化
 function init(row) {
   open.value = true;
   activeTab.value = "basic";
   leftSearchKeyword.value = "";
   rightSearchKeyword.value = "";
+  fieldSearchKeyword.value = "";
   allApis.value = [];
   boundApis.value = [];
   boundRoles.value = [];
   boundUsers.value = [];
+  availableFields.value = [];
+  boundFields.value = [];
   // 加载菜单详情
   menuDetail({ id: row.id }).then(res => {
     menuInfo.value = res.data;
     // 并行加载全量 API、已绑定 API、已绑定角色和关联用户
     loading.value = true;
-    Promise.all([
+    const promises = [
       apiOptions({ appCode: menuInfo.value?.appCode }),
       menuApiBoundList({ menuCode: menuInfo.value?.menuCode }),
       menuBoundRoles({ menuCode: menuInfo.value?.menuCode }),
       menuBoundUsers({ menuCode: menuInfo.value?.menuCode })
-    ]).then(([allRes, boundRes, rolesRes, usersRes]) => {
+    ];
+    // FIELDS 类型菜单额外加载字段绑定数据
+    if (menuInfo.value?.menuType === 'FIELDS') {
+      promises.push(loadMenuFields());
+    }
+    Promise.all(promises).then(([allRes, boundRes, rolesRes, usersRes]) => {
       allApis.value = allRes.data || [];
       boundApis.value = boundRes.data || [];
       boundRoles.value = rolesRes.data || [];
       boundUsers.value = usersRes.data || [];
     }).finally(() => {
       loading.value = false;
+    });
+  });
+}
+
+// 加载菜单字段绑定数据
+function loadMenuFields() {
+  fieldLoading.value = true;
+  const menuCode = menuInfo.value?.menuCode;
+  const appCode = menuInfo.value?.appCode;
+  // 加载已绑定的字段和该应用下所有 API 的字段
+  Promise.all([
+    menuFieldList({ menuCode }),
+    loadAppApiFields(appCode)
+  ]).then(([boundRes, allFieldsRes]) => {
+    boundFields.value = boundRes.data || [];
+    availableFields.value = allFieldsRes;
+  }).finally(() => {
+    fieldLoading.value = false;
+  });
+}
+
+// 加载应用下所有 API 的字段（去重）
+function loadAppApiFields(appCode) {
+  return apiOptions({ appCode }).then(res => {
+    const apis = res.data || [];
+    if (apis.length === 0) return [];
+    // 并行查询每个 API 的字段
+    const fieldPromises = apis.map(api =>
+      apiFieldListByApi({ apiCode: api.apiCode }).then(fieldRes => {
+        const fields = fieldRes.data || [];
+        // 为每个字段附加 API 信息
+        return fields.map(f => ({
+          ...f,
+          apiMethod: api.apiMethod,
+          apiUri: api.apiUri,
+          apiName: api.apiName
+        }));
+      })
+    );
+    return Promise.all(fieldPromises).then(results => {
+      // 合并并去重（按 fieldCode 去重）
+      const allFields = results.flat();
+      const seen = new Set();
+      return allFields.filter(f => {
+        const key = f.fieldCode || f.jsonPath;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     });
   });
 }
@@ -211,6 +371,28 @@ function handleUnbind(api) {
     proxy.$modal.msgSuccess("解绑成功");
     // 前端本地更新：从已绑定列表移除
     boundApis.value = boundApis.value.filter(item => item.apiCode !== api.apiCode);
+  });
+}
+
+// 绑定字段
+function handleFieldBind(field) {
+  const data = {
+    appCode: menuInfo.value?.appCode,
+    menuCode: menuInfo.value?.menuCode,
+    fieldCode: field.fieldCode,
+  };
+  menuFieldBind(data).then(res => {
+    proxy.$modal.msgSuccess("绑定成功");
+    boundFields.value.push({ ...field, menuFieldId: res.data?.id });
+  });
+}
+
+// 解绑字段
+function handleFieldUnbind(field) {
+  const data = { id: field.menuFieldId || field.id };
+  menuFieldUnbind(data).then(() => {
+    proxy.$modal.msgSuccess("解绑成功");
+    boundFields.value = boundFields.value.filter(f => (f.fieldCode || f.id) !== (field.fieldCode || field.id));
   });
 }
 

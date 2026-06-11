@@ -20,14 +20,20 @@
 4. `POST /iam-admin/menu/create` — 创建菜单
 5. `POST /iam-admin/menu/update` — 更新菜单
 6. `POST /iam-admin/menu/remove` — 删除菜单
-7. 支持两种菜单类型：MENU（菜单）和 BUTTON（按钮）
+7. 支持三种菜单类型：MENU（菜单）、BUTTON（按钮）和 FIELDS（字段组）
 8. 一级路由（parentCode="0"）的 routePath 必须以 `/` 开头
-9. 参数校验：appCode、menuName、menuType 必填；更新时 version 必填
+9. FIELDS 类型与 BUTTON 同级，parentCode 必须指向 MENU 类型
+10. FIELDS 类型不需要 routePath 和 component 字段，buttonCode 可选填（作为权限标识符）
+11. 删除 FIELDS 类型菜单时级联清理 iam_menu_field 绑定记录
+12. 参数校验：appCode、menuName、menuType 必填；更新时 version 必填
 
 ## 技术实现要点
 
-- 菜单支持两级类型：MENU（页面级）和 BUTTON（按钮级）
+- 菜单支持三种类型：MENU（页面级）、BUTTON（按钮级）和 FIELDS（字段组级）
 - BUTTON 类型通过 buttonCode 实现细粒度权限控制
+- FIELDS 类型与 BUTTON 同级，parentCode 必须指向 MENU 类型，用于字段级权限控制
+- FIELDS 类型不需要 routePath 和 component，buttonCode 可选填
+- 删除 FIELDS 类型菜单时级联清理 iam_menu_field 绑定记录
 - parentCode 支持菜单树形结构，与前端路由嵌套对应
 - routePath + component 定义前端路由映射
 - hidden 控制菜单是否在前端导航中显示
@@ -39,12 +45,13 @@
 
 ## 涉及文件
 
-| 文件             | 路径                                                                      |
-|----------------|-------------------------------------------------------------------------|
-| MenuRest       | iam-admin/src/main/java/com/wkclz/iam/admin/rest/MenuRest.java          |
-| IamMenuService | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamMenuService.java |
-| IamMenuMapper  | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamMenuMapper.java   |
-| 菜单管理前端页面       | iam-admin-ui/src/views/system/menu/index.vue                            |
+| 文件                  | 路径                                                                           |
+|---------------------|------------------------------------------------------------------------------|
+| MenuRest            | iam-admin/src/main/java/com/wkclz/iam/admin/rest/MenuRest.java               |
+| IamMenuService      | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamMenuService.java      |
+| IamMenuFieldService | iam-admin/src/main/java/com/wkclz/iam/admin/service/IamMenuFieldService.java |
+| IamMenuMapper       | iam-admin/src/main/java/com/wkclz/iam/admin/mapper/IamMenuMapper.java        |
+| 菜单管理前端页面            | iam-admin-ui/src/views/system/menu/index.vue                                 |
 
 ## 前端树形视图实现说明
 
