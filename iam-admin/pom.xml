@@ -20,11 +20,6 @@
             <version>${revision}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.wkclz.framework</groupId>
-            <artifactId>sh-xxljob</artifactId>
-        </dependency>
-
     </dependencies>
 
 

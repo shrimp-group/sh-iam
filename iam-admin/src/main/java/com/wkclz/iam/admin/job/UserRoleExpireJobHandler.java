@@ -2,8 +2,6 @@ package com.wkclz.iam.admin.job;
 
 import com.wkclz.iam.admin.service.IamUserRoleService;
 import com.wkclz.redis.helper.RedisLock;
-import com.xxl.job.core.context.XxlJobHelper;
-import com.xxl.job.core.handler.annotation.XxlJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +36,7 @@ public class UserRoleExpireJobHandler {
     /**
      * XXL-Job 触发入口
      */
+    /*
     @XxlJob("userRoleExpireJob")
     public void userRoleExpireJob() {
         XxlJobHelper.log("开始执行用户角色有效期刷新任务...");
@@ -46,6 +45,7 @@ public class UserRoleExpireJobHandler {
         log.info("XXL-Job 触发: 用户角色有效期刷新任务完成");
         XxlJobHelper.log("用户角色有效期刷新任务执行完成");
     }
+    */
 
     /**
      * Spring @Scheduled 触发入口
