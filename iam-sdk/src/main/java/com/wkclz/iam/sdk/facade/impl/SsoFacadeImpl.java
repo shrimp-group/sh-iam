@@ -3,9 +3,12 @@ package com.wkclz.iam.sdk.facade.impl;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.iam.sdk.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.bean.req.LogoutReq;
+import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.facade.SsoFacade;
 import com.wkclz.iam.sdk.helper.AkSignHelper;
@@ -25,6 +28,24 @@ public class SsoFacadeImpl implements SsoFacade {
 
     @Resource
     private IamSdkConfig config;
+
+    @Override
+    public LoginResp login(SessionCreateReq req) {
+        String serverUrl = config.getServerUrl();
+        if (StringUtils.isBlank(serverUrl)) {
+            log.error("iam.sdk.server-url 未配置，无法远程登录，请配置 SSO 服务端地址");
+            throw new RuntimeException("iam.sdk.server-url 未配置，无法远程登录，请配置 SSO 服务端地址");
+        }
+        log.info("远程创建会话，authIdentifier: {}", req.getAuthIdentifier());
+        String responseBody = postDataWithResponse("/login", req);
+        JSONObject jsonObject = JSON.parseObject(responseBody);
+        Object data = jsonObject.get("data");
+        if (data == null) {
+            log.error("远程登录响应异常，无 data 字段，response: {}", responseBody);
+            throw new RuntimeException("远程登录响应异常，无 data 字段");
+        }
+        return JSON.parseObject(data.toString(), LoginResp.class);
+    }
 
     @Override
     public void saveLog(RequestLog log) {
@@ -87,6 +108,46 @@ public class SsoFacadeImpl implements SsoFacade {
                 throw new RuntimeException("请求" + uri + "异常:" + status);
             }
         } catch (Exception e) {
+            throw new RuntimeException("请求" + uri + "异常:" + e.getMessage());
+        }
+    }
+
+    private String postDataWithResponse(String uri, Object data) {
+        if (StringUtils.isBlank(uri)) {
+            throw new RuntimeException("uri 不能为空");
+        }
+        if (data == null) {
+            throw new RuntimeException("data 不能为空");
+        }
+        String serverUrl = config.getServerUrl();
+        if (StringUtils.isBlank(serverUrl)) {
+            throw new RuntimeException("server-url 不能为空");
+        }
+        String appId = config.getAppId();
+        if (StringUtils.isBlank(appId)) {
+            throw new RuntimeException("app-id 不能为空");
+        }
+
+        String url = serverUrl + URI_PREFIX + uri;
+        String sign = AkSignHelper.sign(config.getAppId(), config.getAppSecret());
+
+        HttpRequest post = HttpUtil.createPost(url);
+        post.header("app-id", appId);
+        post.header("sign", sign);
+
+        try {
+            post.body(JSONObject.toJSONString(data));
+            HttpResponse execute = post.execute();
+            int status = execute.getStatus();
+            if (status != 200) {
+                log.error("请求{}异常，HTTP状态码: {}", uri, status);
+                throw new RuntimeException("请求" + uri + "异常:" + status);
+            }
+            return execute.body();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("请求{}异常: {}", uri, e.getMessage());
             throw new RuntimeException("请求" + uri + "异常:" + e.getMessage());
         }
     }
