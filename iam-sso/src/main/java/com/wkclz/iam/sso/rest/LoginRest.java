@@ -1,37 +1,39 @@
 package com.wkclz.iam.sso.rest;
 
 import com.wkclz.core.base.R;
-import com.wkclz.iam.sdk.model.LoginRequest;
-import com.wkclz.iam.sdk.model.LoginResponse;
+import com.wkclz.iam.sdk.bean.req.LoginReq;
+import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.service.IamLoginService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(Route.PREFIX)
+@Validated
+@Tag(name = "SSO登录", description = "SSO登录认证接口")
 public class LoginRest {
 
-
-    // 假设存在这些服务类
     @Autowired
     private IamLoginService iamLoginService;
 
     @PostMapping(Route.PUBLIC_SSO_LOGIN)
-    public R<LoginResponse> publicSsoLogin(HttpServletRequest request, @RequestBody LoginRequest loginRequest) {
-        Assert.notNull(loginRequest.getUsername(), "用户名不能为空!");
-        Assert.notNull(loginRequest.getPassword(), "密码不能为空!");
-        LoginResponse response = iamLoginService.loginByUsernameAndPassword(request, loginRequest);
+    @Operation(summary = "用户登录")
+    public R<LoginResp> publicSsoLogin(HttpServletRequest request, @Valid @RequestBody LoginReq loginReq) {
+        LoginResp response = iamLoginService.loginByUsernameAndPassword(request, loginReq);
         return R.ok(response);
     }
 
     @GetMapping(Route.PUBLIC_SSO_LOGOUT)
+    @Operation(summary = "用户登出")
     public R<Void> publicSsoLogout(HttpServletRequest request) {
         iamLoginService.logout(request);
         return R.ok();
     }
-
 
 }

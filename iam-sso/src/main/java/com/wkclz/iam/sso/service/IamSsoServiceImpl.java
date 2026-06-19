@@ -1,7 +1,7 @@
 package com.wkclz.iam.sso.service;
 
 import com.alibaba.fastjson2.JSON;
-import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.iam.sdk.service.IamSsoService;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.tool.tools.Md5Tool;

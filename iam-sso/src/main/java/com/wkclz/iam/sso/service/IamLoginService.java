@@ -9,15 +9,15 @@ import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.helper.PasswordHelper;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
-import com.wkclz.iam.sdk.enums.AuthType;
-import com.wkclz.iam.sdk.enums.LoginStatus;
+import com.wkclz.iam.sdk.bean.enums.AuthType;
+import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.helper.CaptchaHelper;
 import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.iam.sdk.model.ChangePasswordRequest;
-import com.wkclz.iam.sdk.model.LoginRequest;
-import com.wkclz.iam.sdk.model.LoginResponse;
-import com.wkclz.iam.sdk.model.UserJwt;
-import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
+import com.wkclz.iam.sdk.bean.req.LoginReq;
+import com.wkclz.iam.sdk.bean.resp.LoginResp;
+import com.wkclz.iam.sdk.bean.UserJwt;
+import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
@@ -71,15 +71,15 @@ public class IamLoginService {
      * 7. 登录成功
      */
 
-    public LoginResponse loginByUsernameAndPassword(HttpServletRequest request, LoginRequest loginRequest) {
-        LoginResponse response = new LoginResponse();
+    public LoginResp loginByUsernameAndPassword(HttpServletRequest request, LoginReq loginReq) {
+        LoginResp response = new LoginResp();
 
-        String username = loginRequest.getUsername();
-        String captchaCode = loginRequest.getCaptchaCode();
-        String captchaId = loginRequest.getCaptchaId();
+        String username = loginReq.getUsername();
+        String captchaCode = loginReq.getCaptchaCode();
+        String captchaId = loginReq.getCaptchaId();
 
         // 密码解密
-        String password = loginRequest.getPassword();
+        String password = loginReq.getPassword();
         String privateKey = iamSsoConfig.getPrivateKey();
         if (StringUtils.isNotBlank(privateKey) && password.length() > 32) {
             password = RsaTool.decryptByPrivateKey(password, privateKey);
@@ -96,7 +96,7 @@ public class IamLoginService {
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             response.setLoginStatus(LoginStatus.NEED_CAPTCHA.getCode());
             response.setLoginMessage(LoginStatus.NEED_CAPTCHA.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
             return response;
         }
 
@@ -109,14 +109,14 @@ public class IamLoginService {
             if (StringUtils.isBlank(redisCaptchaCode)) {
                 response.setLoginStatus(LoginStatus.CAPTCHA_TIMEOUT.getCode());
                 response.setLoginMessage(LoginStatus.CAPTCHA_TIMEOUT.getMessage());
-                loginLog(loginRequest, auth, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
+                loginLog(loginReq, auth, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
                 return response;
             }
             // 验证码错误
             if (!captchaCode.equalsIgnoreCase(redisCaptchaCode)) {
                 response.setLoginStatus(LoginStatus.INVALID_CAPTCHA.getCode());
                 response.setLoginMessage(LoginStatus.INVALID_CAPTCHA.getMessage());
-                loginLog(loginRequest, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
+                loginLog(loginReq, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
                 return response;
             }
         }
@@ -126,7 +126,7 @@ public class IamLoginService {
         if (auth ==  null) {
             response.setLoginStatus(LoginStatus.USER_NOT_FOUND.getCode());
             response.setLoginMessage("用户不存在, 或密码错误!");
-            loginLog(loginRequest, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
             return response;
         }
 
@@ -134,7 +134,7 @@ public class IamLoginService {
         if (auth.getAuthStatus().equals(0)) {
             response.setLoginStatus(LoginStatus.EXPIRED_ACCOUNT.getCode());
             response.setLoginMessage(LoginStatus.EXPIRED_ACCOUNT.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
             return response;
         }
 
@@ -142,7 +142,7 @@ public class IamLoginService {
         if (auth.getUserStatus().equals(3)) {
             response.setLoginStatus(LoginStatus.ACCOUNT_LOCKED.getCode());
             response.setLoginMessage(LoginStatus.ACCOUNT_LOCKED.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
             return response;
         }
 
@@ -150,7 +150,7 @@ public class IamLoginService {
         if (auth.getUserStatus().equals(2)) {
             response.setLoginStatus(LoginStatus.ACCOUNT_DISABLED.getCode());
             response.setLoginMessage(LoginStatus.ACCOUNT_DISABLED.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
             return response;
         }
 
@@ -158,7 +158,7 @@ public class IamLoginService {
         if (!PasswordHelper.validatePassword(password, auth.getSalt(), auth.getPassword())) {
             response.setLoginStatus(LoginStatus.INVALID_CREDENTIALS.getCode());
             response.setLoginMessage(LoginStatus.INVALID_CREDENTIALS.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
             return response;
         }
 
@@ -171,7 +171,7 @@ public class IamLoginService {
         if (passwordExpireAt < System.currentTimeMillis()) {
             response.setLoginStatus(LoginStatus.EXPIRED_PASSWORD.getCode());
             response.setLoginMessage(LoginStatus.EXPIRED_PASSWORD.getMessage());
-            loginLog(loginRequest, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
+            loginLog(loginReq, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
             return response;
         }
 
@@ -223,7 +223,7 @@ public class IamLoginService {
         response.setLoginStatus(LoginStatus.SUCCESS.getCode());
         response.setLoginMessage(LoginStatus.SUCCESS.getMessage());
         response.setToken(jwtToken);
-        loginLog(loginRequest, auth, LoginStatus.SUCCESS, AuthType.PASSWORD);
+        loginLog(loginReq, auth, LoginStatus.SUCCESS, AuthType.PASSWORD);
 
         // 登录成功，需要更新的信息
         IamUserAuth userAuth = new IamUserAuth();
@@ -257,7 +257,7 @@ public class IamLoginService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public void changePassword(ChangePasswordRequest request) {
+    public void changePassword(ChangePasswordReq request) {
         Assert.notNull(request.getOldPassword(), "旧密码不能为空");
         Assert.notNull(request.getNewPassword(), "新密码不能为空");
 
@@ -313,16 +313,14 @@ public class IamLoginService {
     }
 
 
-
-
-    private void loginLog(LoginRequest loginRequest, IamUserAuthDto auth, LoginStatus loginStatus, AuthType loginType) {
+    private void loginLog(LoginReq loginReq, IamUserAuthDto auth, LoginStatus loginStatus, AuthType loginType) {
         IamLoginLog log = new IamLoginLog();
-        log.setAuthIdentifier(loginRequest.getUsername());
+        log.setAuthIdentifier(loginReq.getUsername());
         log.setAuthType(loginType.name());
         log.setLoginStatus(loginStatus.getCode());
         log.setMessage(loginStatus.getMessage());
-        log.setCreateBy(loginRequest.getUsername());
-        log.setUpdateBy(loginRequest.getUsername());
+        log.setCreateBy(loginReq.getUsername());
+        log.setUpdateBy(loginReq.getUsername());
 
         if (auth != null) {
             log.setUserCode(auth.getUserCode());
