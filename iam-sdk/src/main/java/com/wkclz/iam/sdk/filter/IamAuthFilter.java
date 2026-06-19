@@ -40,7 +40,7 @@ public class IamAuthFilter extends OncePerRequestFilter {
         }
         // 1. 从请求头中获取token
         String token = SessionHelper.getToken(request);
-        
+
         // 2. 验证token是否存在
         if (!StringUtils.hasText(token)) {
             ResponseHelper.responseError(response, HttpStatus.UNAUTHORIZED, "token 不存在!");
@@ -56,9 +56,13 @@ public class IamAuthFilter extends OncePerRequestFilter {
         try {
             // 4. 解析JWT获取用户信息
             UserJwt userJwt = JwtUtil.parseToken(token, iamSdkConfig.getJwtSecretKey());
-            
+
             // 5. 从Redis中获取用户会话信息 【从 cas 中获取】
             UserSession userSession = iamSsoService.tokenCheck(token, userJwt.getUsername());
+            if (userSession == null) {
+                ResponseHelper.responseError(response, HttpStatus.UNAUTHORIZED, "无效的token!");
+                return;
+            }
 
             // 6. 将用户信息存入请求上下文，方便后续使用
             SessionHelper.cacheUserInfo(request, userJwt, userSession);
