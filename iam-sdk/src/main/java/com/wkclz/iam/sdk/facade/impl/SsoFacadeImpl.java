@@ -4,15 +4,22 @@ import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSONObject;
+import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.iam.sdk.bean.req.LogoutReq;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.facade.SsoFacade;
 import com.wkclz.iam.sdk.helper.AkSignHelper;
-import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.iam.sdk.helper.SessionHelper;
+import com.wkclz.web.helper.RequestHelper;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class SsoFacadeImpl implements SsoFacade {
+
+    private static final Logger log = LoggerFactory.getLogger(SsoFacadeImpl.class);
 
     private static final String URI_PREFIX = "/sign";
 
@@ -24,7 +31,32 @@ public class SsoFacadeImpl implements SsoFacade {
         postData("/saveLog", log);
     }
 
-    private void postData(String uri, RequestLog data) {
+    @Override
+    public void logout(String token) {
+        if (StringUtils.isBlank(token)) {
+            return;
+        }
+        String serverUrl = config.getServerUrl();
+        if (StringUtils.isBlank(serverUrl)) {
+            log.error("iam.sdk.server-url 未配置，无法远程登出，请配置 SSO 服务端地址");
+            throw new RuntimeException("iam.sdk.server-url 未配置，无法远程登出，请配置 SSO 服务端地址");
+        }
+        log.info("远程登出，token: {}", token);
+        LogoutReq logoutReq = new LogoutReq();
+        logoutReq.setToken(token);
+        postData("/logout", logoutReq);
+    }
+
+    @Override
+    public void logout() {
+        String token = SessionHelper.getToken(RequestHelper.getRequest());
+        if (StringUtils.isBlank(token)) {
+            return;
+        }
+        logout(token);
+    }
+
+    private void postData(String uri, Object data) {
         if (StringUtils.isBlank(uri)) {
             throw new RuntimeException("uri 不能为空");
         }

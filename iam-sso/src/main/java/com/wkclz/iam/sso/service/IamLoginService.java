@@ -18,6 +18,7 @@ import com.wkclz.iam.sdk.bean.req.LoginReq;
 import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.bean.UserSession;
+import com.wkclz.iam.sdk.facade.SsoFacade;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
@@ -48,6 +49,8 @@ public class IamLoginService {
 
     private static final Logger log = LoggerFactory.getLogger(IamLoginService.class);
 
+    @Autowired
+    private SsoFacade ssoFacade;
     @Autowired
     private IamSsoConfig iamSsoConfig;
     @Autowired
@@ -240,19 +243,8 @@ public class IamLoginService {
         if (StringUtils.isBlank(token)) {
             return;
         }
-        UserSession userSession = SessionHelper.getUserSession(request);
-        if (userSession == null) {
-            return;
-        }
-
-        String tokenRedisKey = JwtUtil.getTokenRedisKey(token, userSession.getUsername());
-        redisTemplate.opsForValue().getAndDelete(tokenRedisKey);
-
-        // 从用户会话列表中移除当前 Token
-        String sessionListKey = JwtUtil.getSessionListRedisKey(userSession.getUsername());
-        String tokenMd5 = Md5Tool.md5(token);
-        redisTemplate.opsForZSet().remove(sessionListKey, tokenMd5);
-        log.info("用户 {} 登出，会话已移除, tokenMd5={}", userSession.getUsername(), tokenMd5);
+        // 委托 SsoFacade 执行登出，保持登出逻辑统一入口
+        ssoFacade.logout(token);
     }
 
 
