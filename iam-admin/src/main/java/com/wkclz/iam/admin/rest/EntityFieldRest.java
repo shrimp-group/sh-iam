@@ -6,9 +6,13 @@ import com.wkclz.iam.admin.bean.resp.EntityFieldNode;
 import com.wkclz.iam.admin.helper.EntityFieldAnalyzer;
 import com.wkclz.web.bean.RestInfo;
 import com.wkclz.web.helper.RestHelper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +28,8 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Route.PREFIX)
+@Validated
+@Tag(name = "实体字段分析", description = "实体字段分析接口")
 public class EntityFieldRest {
 
     private static final Logger log = LoggerFactory.getLogger(EntityFieldRest.class);
@@ -37,7 +43,10 @@ public class EntityFieldRest {
      * 2. 若 R 未指定泛型，则分析 R 类本身的结构返回给前端
      */
     @GetMapping(Route.ENTITY_FIELD_RESOLVE)
-    public R<Map<String, Object>> entityFieldResolve(@RequestParam String method, @RequestParam String uri) {
+    @Operation(summary = "根据API定位实体类字段树")
+    public R<Map<String, Object>> entityFieldResolve(
+            @RequestParam @NotBlank(message = "method 不能为空") String method,
+            @RequestParam @NotBlank(message = "uri 不能为空") String uri) {
         log.info("根据API定位实体类字段树, method={}, uri={}", method, uri);
 
         // 通过 RestHelper 匹配接口

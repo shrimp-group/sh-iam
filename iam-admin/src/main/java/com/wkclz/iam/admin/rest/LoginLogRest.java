@@ -1,46 +1,46 @@
 package com.wkclz.iam.admin.rest;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
-import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.LoginLogPageReq;
+import com.wkclz.iam.admin.bean.resp.LoginLogResp;
 import com.wkclz.iam.admin.service.IamLoginLogService;
 import com.wkclz.iam.common.entity.IamLoginLog;
-import com.wkclz.tool.utils.DateUtil;
+import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.web.bean.IdReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(Route.PREFIX)
+@Validated
+@Tag(name = "登录日志", description = "登录日志查询接口")
 public class LoginLogRest {
 
     @Autowired
     protected IamLoginLogService iamLoginLogService;
 
     @GetMapping(Route.LOGIN_LOG_PAGE)
-    public R<PageData<IamLoginLog>> loginLogPage(IamLoginLog entity) {
-        Assert.notNull(entity.getTimeFrom(), "timeFrom 不能为空");
-        Assert.notNull(entity.getTimeTo(), "timeTo 不能为空");
-        LocalDateTime timeFrom = entity.getTimeFrom();
-        LocalDateTime timeTo = entity.getTimeTo();
-        long between = LocalDateTimeUtil.between(timeFrom, timeTo, ChronoUnit.DAYS);
-        if (between > 30) {
-            return R.warn("时间间隔不能超过30天");
-        }
+    @Operation(summary = "登录日志分页查询")
+    public R<PageData<LoginLogResp>> loginLogPage(@Valid LoginLogPageReq req) {
+        IamLoginLog entity = BeanUtil.cp(req, IamLoginLog.class);
         PageData<IamLoginLog> page = iamLoginLogService.getLoginLogPage(entity);
-        return R.ok(page);
+        PageData<LoginLogResp> convert = page.convert(LoginLogResp.class);
+        return R.ok(convert);
     }
 
     @GetMapping(Route.LOGIN_LOG_INFO)
-    public R<IamLoginLog> loginLogInfo(IamLoginLog entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        IamLoginLog loginLog = iamLoginLogService.selectById(entity.getId());
-        return R.ok(loginLog);
+    @Operation(summary = "登录日志详情")
+    public R<LoginLogResp> loginLogInfo(@Valid IdReq req) {
+        IamLoginLog loginLog = iamLoginLogService.selectById(req.getId());
+        return R.ok(BeanUtil.cp(loginLog, LoginLogResp.class));
     }
 
 }

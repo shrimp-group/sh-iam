@@ -1,47 +1,46 @@
 package com.wkclz.iam.admin.rest;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
-import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.RequestLogPageReq;
+import com.wkclz.iam.admin.bean.resp.RequestLogResp;
 import com.wkclz.iam.admin.service.IamRequestLogService;
 import com.wkclz.iam.common.entity.IamRequestLog;
+import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.web.bean.IdReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-
 @RestController
 @RequestMapping(Route.PREFIX)
+@Validated
+@Tag(name = "请求日志", description = "请求日志查询接口")
 public class RequestLogRest {
 
     @Autowired
     protected IamRequestLogService iamRequestLogService;
 
     @GetMapping(Route.REQUEST_LOG_PAGE)
-    public R<PageData<IamRequestLog>> requestLogPage(IamRequestLog entity) {
-        Assert.notNull(entity.getTimeFrom(), "timeFrom 不能为空");
-        Assert.notNull(entity.getTimeTo(), "timeTo 不能为空");
-        LocalDateTime timeFrom = entity.getTimeFrom();
-        LocalDateTime timeTo = entity.getTimeTo();
-        long between = LocalDateTimeUtil.between(timeFrom, timeTo, ChronoUnit.DAYS);
-        if (between > 30) {
-            return R.warn("时间间隔不能超过30天");
-        }
+    @Operation(summary = "请求日志分页查询")
+    public R<PageData<RequestLogResp>> requestLogPage(@Valid RequestLogPageReq req) {
+        IamRequestLog entity = BeanUtil.cp(req, IamRequestLog.class);
         PageData<IamRequestLog> page = iamRequestLogService.getRequestLogPage(entity);
-        return R.ok(page);
+        PageData<RequestLogResp> convert = page.convert(RequestLogResp.class);
+        return R.ok(convert);
     }
 
     @GetMapping(Route.REQUEST_LOG_INFO)
-    public R<IamRequestLog> requestLogInfo(IamRequestLog entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        IamRequestLog requestLog = iamRequestLogService.selectById(entity.getId());
-        return R.ok(requestLog);
+    @Operation(summary = "请求日志详情")
+    public R<RequestLogResp> requestLogInfo(@Valid IdReq req) {
+        IamRequestLog requestLog = iamRequestLogService.selectById(req.getId());
+        return R.ok(BeanUtil.cp(requestLog, RequestLogResp.class));
     }
 
 }

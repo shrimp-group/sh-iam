@@ -52,6 +52,8 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
     }
 
     public IamMenu create(IamMenu entity) {
+        // 一级路由路径校验：必须以 / 开头
+        validateRoutePath(entity);
         // FIELDS 类型校验：parentCode 必须指向 MENU 类型
         if ("FIELDS".equals(entity.getMenuType()) && !"0".equals(entity.getParentCode())) {
             IamMenu parentParam = new IamMenu();
@@ -69,6 +71,8 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
     }
 
     public IamMenu update(IamMenu entity) {
+        // 一级路由路径校验：必须以 / 开头
+        validateRoutePath(entity);
         duplicateCheck(entity);
         IamMenu oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
@@ -126,7 +130,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         if (StringUtils.isBlank(entity.getMenuCode())) {
             return;
         }
-        
+
         // 唯一条件不为空，请设置唯一条件
         IamMenu param = new IamMenu();
         // 唯一条件：menuCode + appCode
@@ -140,6 +144,15 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         }
         // 查到有值，为新增或 id 不一样场景，为数据重复
         throw UserException.of(ResultCode.RECORD_DUPLICATE);
+    }
+
+    /**
+     * 一级路由路径校验：parentCode 为 "0" 时，routePath 必须以 / 开头
+     */
+    private void validateRoutePath(IamMenu entity) {
+        if ("0".equals(entity.getParentCode()) && StringUtils.isNotBlank(entity.getRoutePath()) && !entity.getRoutePath().startsWith("/")) {
+            throw ValidationException.of("一级路由的路径必须以 / 开头!");
+        }
     }
 
     private List<IamMenuDto> buildMenuTree(List<IamMenuDto> menus) {

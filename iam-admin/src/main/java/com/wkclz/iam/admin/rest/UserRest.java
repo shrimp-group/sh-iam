@@ -2,64 +2,79 @@ package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
-import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.UserCreateReq;
+import com.wkclz.iam.admin.bean.req.UserPageReq;
+import com.wkclz.iam.admin.bean.req.UserUpdateReq;
+import com.wkclz.iam.admin.bean.resp.UserResp;
 import com.wkclz.iam.admin.service.IamUserService;
 import com.wkclz.iam.common.dto.IamUserDto;
 import com.wkclz.iam.common.entity.IamUser;
+import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.web.bean.IdReq;
+import com.wkclz.web.bean.RemoveReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping(Route.PREFIX)
+@Tag(name = "用户管理", description = "用户管理接口")
 public class UserRest {
 
     @Autowired
     protected IamUserService iamUserService;
 
     @GetMapping(Route.USER_PAGE)
-    public R<PageData<IamUser>> userPage(IamUser entity) {
+    @Operation(summary = "用户分页查询")
+    public R<PageData<UserResp>> userPage(@Valid UserPageReq req) {
+        IamUser entity = BeanUtil.cp(req, IamUser.class);
         PageData<IamUser> page = iamUserService.userPage(entity);
-        return R.ok(page);
+        return R.ok(page.convert(UserResp.class));
     }
 
     @GetMapping(Route.USER_INFO)
-    public R<IamUser> userInfo(IamUser entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        IamUser user = iamUserService.selectById(entity.getId());
-        return R.ok(user);
+    @Operation(summary = "用户详情")
+    public R<UserResp> userInfo(@Valid IdReq req) {
+        IamUser user = iamUserService.selectById(req.getId());
+        return R.ok(BeanUtil.cp(user, UserResp.class));
     }
 
     @PostMapping(Route.USER_CREATE)
-    public R<IamUserDto> userCreate(@RequestBody IamUserDto dto) {
-        paramCheck(dto);
-        Assert.notNull(dto.getPassword(), "密码不能为空");
+    @Operation(summary = "用户创建")
+    public R<UserResp> userCreate(@Valid @RequestBody UserCreateReq req) {
+        IamUserDto dto = BeanUtil.cp(req, IamUserDto.class);
         dto = iamUserService.customCreate(dto);
-        dto.setPassword(null);
-        return R.ok(dto);
+        return R.ok(BeanUtil.cp(dto, UserResp.class));
     }
 
     @PostMapping(Route.USER_UPDATE)
-    public R<IamUser> userUpdate(@RequestBody IamUser entity) {
-        paramCheck(entity);
+    @Operation(summary = "用户更新")
+    public R<UserResp> userUpdate(@Valid @RequestBody UserUpdateReq req) {
+        IamUser entity = BeanUtil.cp(req, IamUser.class);
         entity = iamUserService.update(entity);
-        return R.ok(entity);
+        return R.ok(BeanUtil.cp(entity, UserResp.class));
     }
 
     @PostMapping(Route.USER_REMOVE)
-    public R<IamUser> userRemove(@RequestBody IamUser entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        entity = iamUserService.remove(entity);
-        return R.ok(entity);
-    }
-
-    private void paramCheck(IamUser entity) {
-        if (entity.getId() != null) {
-            Assert.notNull(entity.getVersion(), ResultCode.UPDATE_NO_VERSION.getMessage());
+    @Operation(summary = "用户删除")
+    public R<Void> userRemove(@Valid @RequestBody RemoveReq req) {
+        if (req.getId() != null) {
+            IamUser entity = new IamUser();
+            entity.setId(req.getId());
+            iamUserService.remove(entity);
+        } else if (req.getIds() != null) {
+            for (Long id : req.getIds()) {
+                IamUser entity = new IamUser();
+                entity.setId(id);
+                iamUserService.remove(entity);
+            }
         }
-        Assert.notNull(entity.getUsername(), "用户名不能为空");
-        Assert.notNull(entity.getNickname(), "昵称不能为空");
+        return R.ok();
     }
 
 }

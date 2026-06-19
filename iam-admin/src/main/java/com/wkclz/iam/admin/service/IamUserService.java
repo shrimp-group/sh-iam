@@ -14,7 +14,7 @@ import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.helper.PasswordHelper;
-import com.wkclz.iam.sdk.enums.AuthType;
+import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;

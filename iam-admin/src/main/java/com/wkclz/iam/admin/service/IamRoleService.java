@@ -101,6 +101,14 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 检查角色下是否有子角色
+        IamRole param = new IamRole();
+        param.setParentCode(oldEntity.getRoleCode());
+        long childrenRoleCount = selectCountByEntity(param);
+        if (childrenRoleCount > 0) {
+            throw ValidationException.of("请先删除子角色");
+        }
+        log.info("删除角色, roleCode={}, roleName={}", oldEntity.getRoleCode(), oldEntity.getRoleName());
         deleteById(oldEntity);
         return oldEntity;
     }

@@ -1,25 +1,35 @@
 package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.R;
-import com.wkclz.core.enums.ResultCode;
-import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.Route;
-import com.wkclz.iam.admin.service.IamMenuService;
-import com.wkclz.iam.admin.service.IamUserMenuService;
+import com.wkclz.iam.admin.bean.req.MenuCreateReq;
+import com.wkclz.iam.admin.bean.req.MenuListReq;
+import com.wkclz.iam.admin.bean.req.MenuUpdateReq;
 import com.wkclz.iam.admin.bean.resp.MenuDetailResp;
+import com.wkclz.iam.admin.bean.resp.MenuResp;
 import com.wkclz.iam.admin.bean.resp.MenuRoleResp;
 import com.wkclz.iam.admin.bean.resp.MenuUserResp;
+import com.wkclz.iam.admin.service.IamMenuService;
+import com.wkclz.iam.admin.service.IamUserMenuService;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
-import org.apache.commons.lang3.StringUtils;
+import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.web.bean.IdReq;
+import com.wkclz.web.bean.RemoveReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping(Route.PREFIX)
+@Tag(name = "菜单管理", description = "菜单管理接口")
 public class MenuRest {
 
     @Autowired
@@ -29,80 +39,80 @@ public class MenuRest {
     private IamUserMenuService iamUserMenuService;
 
     @GetMapping(Route.MENU_LIST)
-    public R<List<IamMenuDto>> menuList(IamMenu entity) {
-        Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
-        List<IamMenuDto> tree = iamMenuService.menuList(entity);
-        return R.ok(tree);
+    @Operation(summary = "菜单列表")
+    public R<List<MenuResp>> menuList(@Valid MenuListReq req) {
+        IamMenu entity = BeanUtil.cp(req, IamMenu.class);
+        List<IamMenuDto> list = iamMenuService.menuList(entity);
+        return R.ok(BeanUtil.cp(list, MenuResp.class));
     }
 
     @GetMapping(Route.MENU_TREE)
-    public R<List<IamMenuDto>> menuTree(IamMenu entity) {
-        Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
+    @Operation(summary = "菜单树")
+    public R<List<MenuResp>> menuTree(@Valid MenuListReq req) {
+        IamMenu entity = BeanUtil.cp(req, IamMenu.class);
         List<IamMenuDto> tree = iamMenuService.menuTree(entity);
-        return R.ok(tree);
+        return R.ok(BeanUtil.cp(tree, MenuResp.class));
     }
 
     @GetMapping(Route.MENU_INFO)
-    public R<IamMenu> menuInfo(IamMenu entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        IamMenu menu = iamMenuService.selectById(entity.getId());
-        return R.ok(menu);
+    @Operation(summary = "菜单详情")
+    public R<MenuResp> menuInfo(@Valid IdReq req) {
+        IamMenu menu = iamMenuService.selectById(req.getId());
+        return R.ok(BeanUtil.cp(menu, MenuResp.class));
     }
 
     @PostMapping(Route.MENU_CREATE)
-    public R<IamMenu> menuCreate(@RequestBody IamMenu entity) {
-        paramCheck(entity);
+    @Operation(summary = "菜单创建")
+    public R<MenuResp> menuCreate(@Valid @RequestBody MenuCreateReq req) {
+        IamMenu entity = BeanUtil.cp(req, IamMenu.class);
         entity = iamMenuService.create(entity);
-        return R.ok(entity);
+        return R.ok(BeanUtil.cp(entity, MenuResp.class));
     }
 
     @PostMapping(Route.MENU_UPDATE)
-    public R<IamMenu> menuUpdate(@RequestBody IamMenu entity) {
-        paramCheck(entity);
+    @Operation(summary = "菜单更新")
+    public R<MenuResp> menuUpdate(@Valid @RequestBody MenuUpdateReq req) {
+        IamMenu entity = BeanUtil.cp(req, IamMenu.class);
         entity = iamMenuService.update(entity);
-        return R.ok(entity);
+        return R.ok(BeanUtil.cp(entity, MenuResp.class));
     }
 
     @PostMapping(Route.MENU_REMOVE)
-    public R<IamMenu> menuRemove(@RequestBody IamMenu entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        entity = iamMenuService.remove(entity);
-        return R.ok(entity);
+    @Operation(summary = "菜单删除")
+    public R<Void> menuRemove(@Valid @RequestBody RemoveReq req) {
+        if (req.getId() != null) {
+            IamMenu entity = new IamMenu();
+            entity.setId(req.getId());
+            iamMenuService.remove(entity);
+        } else if (req.getIds() != null) {
+            for (Long id : req.getIds()) {
+                IamMenu entity = new IamMenu();
+                entity.setId(id);
+                iamMenuService.remove(entity);
+            }
+        }
+        return R.ok();
     }
 
     @GetMapping(Route.MENU_DETAIL)
-    public R<MenuDetailResp> menuDetail(IamMenu entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        MenuDetailResp detail = iamMenuService.getMenuDetail(entity.getId());
+    @Operation(summary = "菜单详情页")
+    public R<MenuDetailResp> menuDetail(@Valid IdReq req) {
+        MenuDetailResp detail = iamMenuService.getMenuDetail(req.getId());
         return R.ok(detail);
     }
 
     @GetMapping(Route.MENU_BOUND_ROLES)
-    public R<List<MenuRoleResp>> menuBoundRoles(@RequestParam String menuCode) {
-        Assert.notNull(menuCode, "menuCode 不能为空!");
+    @Operation(summary = "菜单绑定角色列表")
+    public R<List<MenuRoleResp>> menuBoundRoles(@NotBlank(message = "menuCode不能为空") @RequestParam String menuCode) {
         List<MenuRoleResp> list = iamUserMenuService.getMenuBoundRoles(menuCode);
         return R.ok(list);
     }
 
     @GetMapping(Route.MENU_BOUND_USERS)
-    public R<List<MenuUserResp>> menuBoundUsers(@RequestParam String menuCode) {
-        Assert.notNull(menuCode, "menuCode 不能为空!");
+    @Operation(summary = "菜单绑定用户列表")
+    public R<List<MenuUserResp>> menuBoundUsers(@NotBlank(message = "menuCode不能为空") @RequestParam String menuCode) {
         List<MenuUserResp> list = iamUserMenuService.getMenuBoundUsers(menuCode);
         return R.ok(list);
-    }
-
-    private void paramCheck(IamMenu entity) {
-        if (entity.getId() != null) {
-            Assert.notNull(entity.getVersion(), "version 不能为空");
-        }
-        Assert.notNull(entity.getAppCode(), "appCode 不能为空");
-        Assert.notNull(entity.getMenuName(), "menuName 不能为空");
-        Assert.notNull(entity.getMenuType(), "menuType 不能为空");
-
-        if ("0".equals(entity.getParentCode()) && StringUtils.isNotBlank(entity.getRoutePath()) && !entity.getRoutePath().startsWith("/")) {
-            throw ValidationException.of("一缓步路由的路径必需以 / 开头!");
-        }
-
     }
 
 }

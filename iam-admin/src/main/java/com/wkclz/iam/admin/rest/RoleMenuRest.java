@@ -2,39 +2,45 @@ package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.RoleMenuSaveReq;
 import com.wkclz.iam.admin.bean.resp.RoleBoundResp;
 import com.wkclz.iam.admin.service.IamRoleMenuService;
-import com.wkclz.iam.admin.bean.req.RoleMenuSaveReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping(Route.PREFIX)
+@Tag(name = "角色菜单管理", description = "角色-菜单关联管理接口")
 public class RoleMenuRest {
 
     @Autowired
     protected IamRoleMenuService iamRoleMenuService;
 
     @GetMapping(Route.ROLE_MENU_LIST)
-    public R<List<String>> roleMenuList(String roleCode) {
-        Assert.notNull(roleCode, "roleCode 不能为空!");
+    @Operation(summary = "查询角色已绑定的菜单编码列表")
+    public R<List<String>> roleMenuList(@RequestParam @NotBlank(message = "roleCode 不能为空") String roleCode) {
         List<String> menuCodes = iamRoleMenuService.getBoundMenuCodes(roleCode);
         return R.ok(menuCodes);
     }
 
     @PostMapping(Route.ROLE_MENU_SAVE)
-    public R<Void> roleMenuSave(@RequestBody RoleMenuSaveReq req) {
-        Assert.notNull(req.getRoleCode(), "roleCode 不能为空!");
+    @Operation(summary = "批量保存角色-菜单绑定关系")
+    public R<Void> roleMenuSave(@Valid @RequestBody RoleMenuSaveReq req) {
         iamRoleMenuService.saveRoleMenus(req.getRoleCode(), req.getMenuCodes());
         return R.ok();
     }
 
     @GetMapping(Route.ROLE_MENU_BOUND_ROLES)
-    public R<List<RoleBoundResp>> roleMenuBoundRoles(String menuCode) {
-        Assert.notNull(menuCode, "menuCode 不能为空!");
+    @Operation(summary = "查询菜单已绑定的角色列表")
+    public R<List<RoleBoundResp>> roleMenuBoundRoles(@RequestParam @NotBlank(message = "menuCode 不能为空") String menuCode) {
         List<RoleBoundResp> list = iamRoleMenuService.getBoundRoles(menuCode);
         return R.ok(list);
     }

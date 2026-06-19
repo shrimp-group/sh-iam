@@ -1,9 +1,12 @@
 package com.wkclz.iam.admin.bean.req;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -12,12 +15,14 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(description = "角色-菜单保存请求")
-public class RoleMenuSaveReq {
+public class RoleMenuSaveReq implements Serializable {
 
-    @Schema(description = "角色编码")
+    @NotBlank(message = "roleCode 不能为空")
+    @Schema(description = "角色编码", requiredMode = Schema.RequiredMode.REQUIRED)
     private String roleCode;
 
-    @Schema(description = "菜单编码列表")
+    @NotEmpty(message = "menuCodes 不能为空")
+    @Schema(description = "菜单编码列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<String> menuCodes;
 
 }
