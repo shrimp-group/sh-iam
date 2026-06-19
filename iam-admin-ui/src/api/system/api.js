@@ -50,3 +50,8 @@ export const apiDetail = (params) => {
   return request({url: '/iam-admin/api/detail', method: 'get', params})
 }
 
+// 11. API管理-接口文档
+export function apiDoc(query) {
+  return request({url: '/iam-admin/api/doc', method: 'get', params: query})
+}
+

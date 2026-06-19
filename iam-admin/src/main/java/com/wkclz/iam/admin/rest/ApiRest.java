@@ -4,11 +4,13 @@ import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.bean.req.ApiCreateReq;
+import com.wkclz.iam.admin.bean.req.ApiDocReq;
 import com.wkclz.iam.admin.bean.req.ApiListReq;
 import com.wkclz.iam.admin.bean.req.ApiPageReq;
 import com.wkclz.iam.admin.bean.req.ApiPasteReq;
 import com.wkclz.iam.admin.bean.req.ApiUpdateReq;
 import com.wkclz.iam.admin.bean.resp.ApiDetailResp;
+import com.wkclz.iam.admin.bean.resp.ApiDocResp;
 import com.wkclz.iam.admin.bean.resp.ApiResp;
 import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
@@ -120,6 +122,13 @@ public class ApiRest {
     public R<Integer> apiPaste(@Valid @RequestBody ApiPasteReq req) {
         Integer count = iamApiService.apiPaste(req.getApis());
         return R.ok(count);
+    }
+
+    @GetMapping(Route.API_DOC)
+    @Operation(summary = "接口文档")
+    public R<ApiDocResp> apiDoc(@Valid ApiDocReq req) {
+        ApiDocResp docResp = iamApiService.getApiDoc(req.getMethod(), req.getUri());
+        return R.ok(docResp);
     }
 
 }

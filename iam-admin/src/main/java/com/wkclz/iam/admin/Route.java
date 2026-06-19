@@ -160,6 +160,8 @@ public interface Route {
     String API_PASTE = "/api/paste";
     @ApiDesc("10. API管理-详情页")
     String API_DETAIL = "/api/detail";
+    @ApiDesc("11. API管理-接口文档")
+    String API_DOC = "/api/doc";
 
     // 登录日志
     @ApiDesc("1. 登录日志-分页")
