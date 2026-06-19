@@ -1,6 +1,6 @@
 package com.wkclz.iam.sdk.service;
 
-import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.bean.UserSession;
 
 public interface IamSsoService {
 

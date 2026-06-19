@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.enums;
+package com.wkclz.iam.sdk.bean.enums;
 
 /**
  * 登录状态枚举（参照LDAP返回码设计）

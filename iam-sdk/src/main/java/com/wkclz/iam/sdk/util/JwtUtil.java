@@ -1,6 +1,6 @@
 package com.wkclz.iam.sdk.util;
 
-import com.wkclz.iam.sdk.model.UserJwt;
+import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.tool.tools.Md5Tool;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

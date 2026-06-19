@@ -1,7 +1,7 @@
 package com.wkclz.iam.sdk.helper;
 
 import com.wkclz.core.exception.SystemException;
-import com.wkclz.iam.sdk.model.PictureCaptchaResponse;
+import com.wkclz.iam.sdk.bean.resp.PictureCaptchaResp;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -28,7 +28,7 @@ public class CaptchaHelper {
     private static final String CHARACTERS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 
-    public static PictureCaptchaResponse getCaptcha() {
+    public static PictureCaptchaResp getCaptcha() {
         // 生成验证码内容
         String captchaCode = generateCaptchaCode();
         // 生成验证码唯一ID
@@ -37,7 +37,7 @@ public class CaptchaHelper {
         String base64Image = generateCaptchaImage(captchaCode);
 
         // 构建返回结果
-        PictureCaptchaResponse response = new PictureCaptchaResponse();
+        PictureCaptchaResp response = new PictureCaptchaResp();
         response.setCaptchaId(captchaId);
         response.setCaptchaCode(captchaCode);
         response.setCaptchaImage(base64Image);

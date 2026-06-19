@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.enums;
+package com.wkclz.iam.sdk.bean.enums;
 
 public enum AuthType {
 

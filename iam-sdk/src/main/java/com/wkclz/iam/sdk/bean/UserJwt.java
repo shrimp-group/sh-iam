@@ -1,5 +1,6 @@
-package com.wkclz.iam.sdk.model;
+package com.wkclz.iam.sdk.bean;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -9,15 +10,19 @@ import java.io.Serializable;
  * @author shrimp
  */
 @Data
+@Schema(description = "用户JWT信息")
 public class UserJwt implements Serializable {
 
-    // 用户编码
+    @Schema(description = "用户编码")
     private String userCode;
-    // 用户名
+
+    @Schema(description = "用户名")
     private String username;
-    // 昵称
+
+    @Schema(description = "昵称")
     private String nickname;
-    // 头像
+
+    @Schema(description = "头像")
     private String avatar;
 
 }

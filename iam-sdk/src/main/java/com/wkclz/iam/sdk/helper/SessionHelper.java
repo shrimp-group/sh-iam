@@ -3,8 +3,8 @@ package com.wkclz.iam.sdk.helper;
 
 import com.wkclz.core.base.UserInfo;
 import com.wkclz.core.user.UserContext;
-import com.wkclz.iam.sdk.model.UserJwt;
-import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.bean.UserJwt;
+import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;

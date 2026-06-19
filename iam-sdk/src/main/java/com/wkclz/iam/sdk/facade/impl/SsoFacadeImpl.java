@@ -7,7 +7,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.facade.SsoFacade;
 import com.wkclz.iam.sdk.helper.AkSignHelper;
-import com.wkclz.iam.sdk.model.RequestLog;
+import com.wkclz.iam.sdk.bean.RequestLog;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 

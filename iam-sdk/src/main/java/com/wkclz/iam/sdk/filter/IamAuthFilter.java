@@ -3,8 +3,8 @@ package com.wkclz.iam.sdk.filter;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.helper.ResponseHelper;
 import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.iam.sdk.model.UserJwt;
-import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.bean.UserJwt;
+import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.iam.sdk.service.IamSsoService;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -29,12 +29,12 @@ public class IamAuthFilter extends OncePerRequestFilter {
 
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        String requestURI = request.getRequestURI();
-        if ("/".equals(requestURI)) {
+        String requesturi = request.getRequestURI();
+        if ("/".equals(requesturi)) {
             ResponseHelper.responseError(response, HttpStatus.FORBIDDEN, "Forbidden");
             return;
         }
-        if (SessionHelper.match( "/*/public/**", requestURI)) {
+        if (SessionHelper.match("/*/public/**", requesturi)) {
             chain.doFilter(request, response);
             return;
         }
