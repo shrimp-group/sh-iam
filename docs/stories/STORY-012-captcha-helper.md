@@ -15,7 +15,7 @@
 ## 验收标准
 
 1. `CaptchaHelper.getCaptcha()` 生成完整验证码响应
-2. 返回 `PictureCaptchaResponse`（含 captchaId、captchaCode、captchaImage、expireTime）
+2. 返回 `PictureCaptchaResp`（含 captchaId、captchaCode、captchaImage、expireTime）
 3. 验证码字符数 4 位
 4. 图片尺寸 120x40 px，字体大小 20
 5. 字符集排除易混淆字符（0/O/1/I/l）
@@ -41,7 +41,7 @@
 
 ## 涉及文件
 
-| 文件 | 路径 |
-|------|------|
-| CaptchaHelper | iam-sdk/src/main/java/com/wkclz/iam/sdk/helper/CaptchaHelper.java |
-| PictureCaptchaResponse | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/PictureCaptchaResponse.java |
+| 文件                 | 路径                                                                    |
+|--------------------|-----------------------------------------------------------------------|
+| CaptchaHelper      | iam-sdk/src/main/java/com/wkclz/iam/sdk/helper/CaptchaHelper.java     |
+| PictureCaptchaResp | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/PictureCaptchaResp.java |

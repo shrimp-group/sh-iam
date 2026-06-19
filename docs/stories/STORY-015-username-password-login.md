@@ -15,7 +15,7 @@
 ## 验收标准
 
 1. API 端点：`POST /iam-sso/public/sso/login`
-2. 接收 `LoginRequest`（username、password、captchaId、captchaCode）
+2. 接收 `LoginReq`（username、password、captchaId、captchaCode）
 3. 登录流程（7 步校验）：
    - RSA 解密前端密码（若配置了 RSA 私钥且密码长度 > 32）
    - 跨三表 JOIN 查询用户认证信息
@@ -32,7 +32,7 @@
    - 构建 UserSession 存入 Redis
    - 记录登录日志
    - 更新用户最后登录 IP
-5. 返回 `LoginResponse`（含 token、用户信息）
+5. 返回 `LoginResp`（含 token、用户信息）
 6. 每次登录尝试（无论成功失败）都记录登录日志
 
 ## 技术实现要点
@@ -55,11 +55,11 @@
 
 ## 涉及文件
 
-| 文件 | 路径 |
-|------|------|
-| LoginRest | iam-sso/src/main/java/com/wkclz/iam/sso/rest/LoginRest.java |
-| IamLoginService | iam-sso/src/main/java/com/wkclz/iam/sso/service/IamLoginService.java |
-| SsoLoginMapper | iam-sso/src/main/java/com/wkclz/iam/sso/mapper/SsoLoginMapper.java |
+| 文件                | 路径                                                                    |
+|-------------------|-----------------------------------------------------------------------|
+| LoginRest         | iam-sso/src/main/java/com/wkclz/iam/sso/rest/LoginRest.java           |
+| IamLoginService   | iam-sso/src/main/java/com/wkclz/iam/sso/service/IamLoginService.java  |
+| SsoLoginMapper    | iam-sso/src/main/java/com/wkclz/iam/sso/mapper/SsoLoginMapper.java    |
 | SsoLoginLogMapper | iam-sso/src/main/java/com/wkclz/iam/sso/mapper/SsoLoginLogMapper.java |
-| LoginRequest | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/LoginRequest.java |
-| LoginResponse | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/LoginResponse.java |
+| LoginReq          | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/LoginReq.java           |
+| LoginResp         | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/LoginResp.java          |

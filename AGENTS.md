@@ -47,48 +47,49 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-common (`com.wkclz.iam.common`)
 
-| 包           | 类                                                                                                                                                                                                                               | 说明                                    |
-|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|
-| `entity`    | IamUser, IamRole, IamMenu, IamApi, IamApp, IamAccessKey, IamUserAuth, IamUserAuthPassword, IamUserPasswordHis, IamLoginLog, IamRequestLog, IamUserRole, IamRoleMenu, IamMenuApi, IamAccessKeyApi, IamRoleData, IamDataDimension | 17 个实体，对应 17 张表                       |
-| `dto`       | IamUserDto, IamRoleDto, IamMenuDto, ...                                                                                                                                                                                         | 17 个 DTO，均继承对应 Entity                 |
-| `bean.req`  | MenuApiBindReq, MenuApiListReq, RoleMenuSaveReq                                                                                                                                                                                 | 请求 Bean，继承 sh-web IdReq/PageReq 或独立定义 |
-| `bean.resp` | ApiBoundResp, ApiDetailResp, MenuDetailResp                                                                                                                                                                                     | 响应 Bean，继承 sh-web EntityResp          |
-| `helper`    | PasswordHelper, IpLocalCacheHelper                                                                                                                                                                                              | 密码 MD5+salt 加密校验、IP 归属地缓存             |
+| 包        | 类                                                                                                                                                                                                                                                                     | 说明                        |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
+| `entity` | IamUser, IamRole, IamMenu, IamApi, IamApp, IamAccessKey, IamUserAuth, IamUserAuthPassword, IamUserPasswordHis, IamLoginLog, IamRequestLog, IamUserRole, IamRoleMenu, IamMenuApi, IamAccessKeyApi, IamRoleData, IamDataDimension, IamApiField, IamMenuField, IamTenant | 20 个实体，对应 20 张表           |
+| `dto`    | IamUserDto, IamRoleDto, IamMenuDto, ...                                                                                                                                                                                                                               | 20 个 DTO，均继承对应 Entity     |
+| `helper` | PasswordHelper, IpLocalCacheHelper                                                                                                                                                                                                                                    | 密码 MD5+salt 加密校验、IP 归属地缓存 |
 
 ### iam-sdk (`com.wkclz.iam.sdk`)
 
-| 包 | 类 | 说明 |
-|----|-----|------|
-| `config` | IamSdkConfig | SDK 配置 (appCode, jwtSecretKey, serverUrl, appId/appSecret) |
-| `facade` | SsoFacade | 门面接口: `saveLog(RequestLog)` |
-| `service` | IamSsoService | SSO 接口: `tokenCheck(token, authIdentifier)` |
-| `filter` | IamAuthFilter, LoggingFilter, RequestWrapperFilter | 鉴权/日志/请求包装过滤器 |
-| `helper` | SessionHelper, AkSignHelper, CaptchaHelper, ResponseHelper | Session/AK签名/验证码/响应工具 |
-| `model` | UserJwt, UserSession, LoginRequest, LoginResponse, RequestLog, RegisterRequest, PictureCaptchaResponse | SDK 公共模型 |
-| `enums` | AuthType, LoginStatus | 认证类型 (PASSWORD/LDAP)、登录状态枚举 |
-| `util` | JwtUtil | JWT 生成/解析/验证/刷新 |
-| 根包 | IamSdkAutoConfig | 自动配置 (`@AutoConfiguration` + `@ConditionalOnProperty`) |
+| 包         | 类                                                                                                         | 说明                                                         |
+|-----------|-----------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| `config`  | IamSdkConfig                                                                                              | SDK 配置 (appCode, jwtSecretKey, serverUrl, appId/appSecret) |
+| `facade`  | SsoFacade                                                                                                 | 门面接口: `saveLog(RequestLog)`                                |
+| `service` | IamSsoService                                                                                             | SSO 接口: `tokenCheck(token, authIdentifier)`                |
+| `filter`  | IamAuthFilter, LoggingFilter, RequestWrapperFilter                                                        | 鉴权/日志/请求包装过滤器                                              |
+| `helper`  | SessionHelper, AkSignHelper, CaptchaHelper, ResponseHelper                                                | Session/AK签名/验证码/响应工具                                      |
+| `model`   | UserJwt, UserSession, LoginReq, LoginResp, ChangePasswordReq, RegisterReq, PictureCaptchaResp, RequestLog | SDK 公共模型 (均使用 @Schema 注解描述)                                |
+| `enums`   | AuthType, LoginStatus                                                                                     | 认证类型 (PASSWORD/LDAP)、登录状态枚举                                |
+| `util`    | JwtUtil                                                                                                   | JWT 生成/解析/验证/刷新                                            |
+| 根包        | IamSdkAutoConfig                                                                                          | 自动配置 (`@AutoConfiguration` + `@ConditionalOnProperty`)     |
 
 ### iam-sso (`com.wkclz.iam.sso`)
 
-| 包 | 类 | 说明 |
-|----|-----|------|
-| `config` | IamSsoConfig | SSO 配置 (密码过期天数、RSA 公私钥) |
-| `rest` | LoginRest, CaptchaRest, RegisterRest, UserInfoRest | 登录/验证码/注册/用户信息接口 |
-| `service` | IamLoginService, IamSsoServiceImpl, SsoFacadeImpl, SsoResourceService, UsernameCacheService, IamRequestService | SSO 核心业务逻辑 |
-| `mapper` | SsoLoginMapper, SsoLoginLogMapper, SsoRequestLogMapper, SsoResourceMapper | SSO 数据访问 |
-| 根包 | IamSsoAutoConfig, Route | 自动配置 + 路由常量接口 (前缀 `/iam-sso`) |
+| 包         | 类                                                                                                                        | 说明                                                               |
+|-----------|--------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| `config`  | IamSsoConfig                                                                                                             | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
+| `rest`    | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                       | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
+| `service` | IamLoginService, IamSsoServiceImpl, SsoFacadeImpl, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService | SSO 核心业务逻辑                                                       |
+| `mapper`  | SsoLoginMapper, SsoLoginLogMapper, SsoRequestLogMapper, SsoResourceMapper                                                | SSO 数据访问                                                         |
+| 根包        | IamSsoAutoConfig, Route                                                                                                  | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
-| 包         | 类                                                                                                   | 说明                                     |
-|-----------|-----------------------------------------------------------------------------------------------------|----------------------------------------|
-| `rest`    | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, ...                                  | 17 个 REST 控制器 (RoleRest 含角色列表/树/CRUD)  |
-| `service` | IamUserService, IamRoleService(含角色树构建), IamMenuService, IamUserMenuService, IamUserRoleService, ... | 17+ Service                            |
-| `mapper`  | IamUserMapper, IamRoleMapper, ...                                                                   | 17 个 Mapper + XML                      |
-| `job`     | UserRoleExpireJobHandler                                                                            | 用户角色有效期定时任务 (XXL-Job + @Scheduled 双触发) |
-| `init`    | RestfulScan                                                                                         | 启动时扫描 @Router 注解 → 同步 API 到数据库         |
-| 根包        | IamAdminAutoConfig, Route                                                                           | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)        |
+| 包           | 类                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 说明                                                                                                                |
+|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `rest`      | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, AccessKeyApiRest, UserAuthRest, DataDimensionRest, RoleMenuRest, MenuApiRest, RoleDataRest, UserMenuRest, LoginLogRest, RequestLogRest, EntityFieldRest, MenuFieldRest, ApiFieldRest                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | REST 控制器 (均使用 @Validated + @Tag + @Operation，参数校验通过 Req 注解实现)                                                     |
+| `bean.req`  | UserPageReq, UserCreateReq, UserUpdateReq, UserRoleBindReq, RoleListReq, RoleCreateReq, RoleUpdateReq, RoleMenuSaveReq, RoleUserPageReq, RoleUserBindReq, RoleUserUnbindReq, RoleDataListReq, RoleDataBindReq, MenuListReq, MenuCreateReq, MenuUpdateReq, MenuApiBindReq, MenuApiListReq, MenuFieldBindReq, MenuFieldSaveReq, AppPageReq, AppCreateReq, AppUpdateReq, ApiPageReq, ApiCreateReq, ApiUpdateReq, ApiListReq, ApiPasteReq, ApiFieldCreateReq, ApiFieldUpdateReq, AccessKeyPageReq, AccessKeyCreateReq, AccessKeyUpdateReq, AccessKeyApiBindReq, UserAuthListReq, UserAuthCreateReq, UserAuthUpdateReq, UserAuthResetPasswordReq, DataDimPageReq, DataDimCreateReq, DataDimUpdateReq, UserMenuListReq, LoginLogPageReq, RequestLogPageReq | 请求参数封装 (继承 PageReq/UpdateReq/IdReq/RemoveReq 或 implements Serializable，使用 @NotBlank/@NotNull/@NotEmpty/@Valid 校验) |
+| `bean.resp` | UserResp, RoleResp, MenuResp, AppResp, ApiResp, ApiDetailResp, ApiBoundResp, MenuDetailResp, MenuApiResp, MenuRoleResp, MenuUserResp, AccessKeyResp, AccessKeyApiResp, UserAuthResp, DataDimResp, RoleDataResp, RoleBoundResp, RoleUserResp, UserRoleResp, UserMenuSourceResp, LoginLogResp, RequestLogResp, ApiFieldResp, MenuFieldResp, EntityFieldNode                                                                                                                                                                                                                                                                                                                                                                                            | 响应封装 (继承 EntityResp，使用 @Schema 描述)                                                                                |
+| `service`   | IamUserService, IamRoleService(含角色树构建+子角色删除校验), IamMenuService(含路由路径校验+子菜单删除校验), IamUserMenuService, IamUserRoleService, ...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 17+ Service                                                                                                       |
+| `mapper`    | IamUserMapper, IamRoleMapper, ...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 17 个 Mapper + XML                                                                                                 |
+| `helper`    | EntityFieldAnalyzer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 实体字段分析器 (字段树生成、API返回值实体类自动定位、方法参数推断实体类)                                                                           |
+| `job`       | UserRoleExpireJobHandler                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 用户角色有效期定时任务 (XXL-Job + @Scheduled 双触发)                                                                            |
+| `init`      | RestfulScan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 启动时扫描 @Router 注解 → 同步 API 到数据库                                                                                    |
+| 根包          | IamAdminAutoConfig, Route                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)                                                                                   |
 
 ### iam-admin-ui 前端关键组件 (`src/views/`)
 
@@ -157,29 +158,37 @@ iam_request_log ── 请求日志 (独立)
 
 ### 命名规范
 
-| 类型 | 命名模式 | 示例 |
-|------|---------|------|
-| Entity | `Iam` + 业务名 | `IamUser`, `IamRole` |
-| DTO | `Iam` + 业务名 + `Dto` | `IamUserDto` (继承 IamUser) |
-| Service | `Iam` + 业务名 + `Service` | `IamUserService` |
-| Mapper | `Iam` + 业务名 + `Mapper` | `IamUserMapper` |
-| REST Controller | 业务名 + `Rest` | `UserRest`, `RoleRest` |
-| 表名 | `iam_` + 下划线业务名 | `iam_user`, `iam_user_auth` |
-| 路由常量 | 集中定义在 `Route` 接口 | `Route.PREFIX + "/user/page"` |
+| 类型              | 命名模式                    | 示例                                           |
+|-----------------|-------------------------|----------------------------------------------|
+| Entity          | `Iam` + 业务名             | `IamUser`, `IamRole`                         |
+| DTO             | `Iam` + 业务名 + `Dto`     | `IamUserDto` (继承 IamUser)                    |
+| Req             | 业务名 + 操作 + `Req`        | `UserCreateReq`, `RoleListReq`, `AppPageReq` |
+| Resp            | 业务名 + `Resp`            | `UserResp`, `RoleResp`, `ApiResp`            |
+| Service         | `Iam` + 业务名 + `Service` | `IamUserService`                             |
+| Mapper          | `Iam` + 业务名 + `Mapper`  | `IamUserMapper`                              |
+| REST Controller | 业务名 + `Rest`            | `UserRest`, `RoleRest`                       |
+| 表名              | `iam_` + 下划线业务名         | `iam_user`, `iam_user_auth`                  |
+| 路由常量            | 集中定义在 `Route` 接口        | `Route.PREFIX + "/user/page"`                |
 
 ### 注解与风格
 
 - 实体类: `@Data` + `@EqualsAndHashCode(callSuper = false)` + `@Desc("字段描述")`
 - Service: `@Service`，继承 `BaseService<Entity, Mapper>`
-- 控制器: `@RestController` + `@RequestMapping(Route.PREFIX)`
+- 控制器: `@Validated` + `@RestController` + `@RequestMapping(Route.PREFIX)` + `@Tag(name, description)`
+- 控制器方法: `@Operation(summary = "xxx")`，POST 参数使用 `@Valid @RequestBody XxxReq`，GET 参数使用 `@Valid XxxReq`
+- REST 响应: 统一使用 `R` 封装 (`com.wkclz.core.base.R`)，单对象返回 `R<XxxResp>`，分页返回 `R<PageData<XxxResp>>`
+- Req 类: `@Data` + `@EqualsAndHashCode(callSuper = false)` + `@Schema(description)`，必填字段使用 `@NotBlank`/
+  `@NotNull`/`@NotEmpty`
+- Resp 类: `@Data` + `@EqualsAndHashCode(callSuper = false)` + `@Schema(description)`，字段仅用 `@Schema` 描述（无校验注解）
+- 对象转换: `BeanUtil.cp(source, TargetClass.class)` (`com.wkclz.tool.utils.BeanUtil`)，Controller 层使用
+  `BeanUtil.cp(req, Entity.class)` 入参转换、`BeanUtil.cp(entity, Resp.class)` 出参转换
+- 参数校验: Controller 层通过 Req 注解校验（`@NotBlank`/`@NotNull`/`@NotEmpty` + `@Valid`），Controller 不使用
+  Assert；Service 层使用 `Assert.notNull()` + 自定义异常
 - 自动配置: `@AutoConfiguration` + `@ComponentScan` + `@MapperScan`
 - 条件装配: `@ConditionalOnProperty`, `@ConditionalOnMissingBean`
 - 事务: `@Transactional(rollbackFor = Exception.class)`
-- REST 响应: 统一使用 `R` 封装 (`com.wkclz.core.base.R`)
-- 分页: `PageQuery.page()` → `PageData<T>`
+- 分页: `PageQuery.page()` → `PageData<T>`，转换使用 `page.convert(Resp.class)`
 - ID 生成: `RedisIdGenerator.generateIdWithPrefix("user_")`
-- 属性拷贝: 实体自带的 `copyIfNotNull()` 静态方法
-- 参数校验: `Assert.notNull()` + 自定义异常 (`ValidationException`, `UserException`)
 
 ### 路由规范
 

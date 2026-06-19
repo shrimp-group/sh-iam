@@ -16,7 +16,7 @@
 
 1. API 端点：`GET /iam-sso/public/captcha/chart`
 2. 调用 `CaptchaHelper.getCaptcha()` 生成验证码
-3. 返回 `PictureCaptchaResponse`（captchaId、captchaImage、expireTime）
+3. 返回 `PictureCaptchaResp`（captchaId、captchaImage、expireTime）
 4. 计算验证码在 Redis 中的 TTL（过期时间 - 当前时间 + 10 秒缓冲）
 5. 将 `captchaId -> captchaCode` 存入 Redis，设置 TTL
 6. 返回给前端时 captchaCode 置空（不暴露答案）

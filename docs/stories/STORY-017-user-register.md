@@ -15,7 +15,7 @@
 ## 验收标准
 
 1. API 端点：`POST /iam-sso/public/sso/register`
-2. 接收 `RegisterRequest` 请求体
+2. 接收 `RegisterReq` 请求体
 3. 当前为占位实现，直接返回 `R.ok()`
 4. 预留注册验证接口：`POST /iam-sso/public/sso/register/verify`
 5. 路由常量已在 Route 接口中定义
@@ -33,7 +33,7 @@
 
 ## 涉及文件
 
-| 文件 | 路径 |
-|------|------|
+| 文件           | 路径                                                             |
+|--------------|----------------------------------------------------------------|
 | RegisterRest | iam-sso/src/main/java/com/wkclz/iam/sso/rest/RegisterRest.java |
-| RegisterRequest | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/RegisterRequest.java |
+| RegisterReq  | iam-sdk/src/main/java/com/wkclz/iam/sdk/model/RegisterReq.java |
