@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: iam_admin_backend
+title: IAM 管理端核心模块
+scope:
+    - iam-admin/
+    - iam-admin-starter/
+source_files: []
+depends_on: []
+related_to:
+    - path: iam_sso_backend
+    - path: iam_admin_ui

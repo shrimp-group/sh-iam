@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: iam_sso_backend
+title: 单点登录与身份认证服务
+scope:
+    - iam-sso/
+    - iam-sso-starter/
+source_files: []
+depends_on: []
+related_to:
+    - path: iam_admin_backend
+    - path: iam_sso_ui
