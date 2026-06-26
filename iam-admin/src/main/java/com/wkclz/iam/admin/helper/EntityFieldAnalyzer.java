@@ -128,6 +128,7 @@ public class EntityFieldAnalyzer {
             FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
             node.setFieldDesc(fieldDesc != null ? fieldDesc.value() : fieldName);
             node.setFieldType(fieldType.getSimpleName());
+            node.setFieldTypeClazz(fieldType);
 
             String jsonPath = parentPath + "." + fieldName;
             node.setJsonPath(jsonPath);
@@ -195,6 +196,7 @@ public class EntityFieldAnalyzer {
             if (isPageDataClass(dataClass)) {
                 node.setIsList(false);
                 node.setFieldType("PageData");
+                node.setFieldTypeClazz(dataClass);
                 node.setChildren(buildFieldTreeFromGeneric(dataClass, jsonPath, dataTypeArg));
                 return;
             }
@@ -203,6 +205,7 @@ public class EntityFieldAnalyzer {
             if (List.class.isAssignableFrom(dataClass) || Set.class.isAssignableFrom(dataClass)) {
                 node.setIsList(true);
                 node.setFieldType("List");
+                node.setFieldTypeClazz(dataClass);
                 if (typeArgs != null && !typeArgs.isEmpty()) {
                     JSONObject elementTypeArg = typeArgs.getJSONObject(0);
                     String elementRawType = elementTypeArg.getString("rawType");
@@ -231,6 +234,7 @@ public class EntityFieldAnalyzer {
             // 简单类型
             node.setIsList(false);
             node.setFieldType(dataClass.getSimpleName());
+            node.setFieldTypeClazz(dataClass);
 
         } catch (ClassNotFoundException e) {
             log.warn("data字段类型未找到: {}", rawType);
@@ -309,6 +313,7 @@ public class EntityFieldAnalyzer {
 
             Class<?> fieldType = field.getType();
             node.setFieldType(fieldType.getSimpleName());
+            node.setFieldTypeClazz(fieldType);
 
             // 生成 JSONPath
             String jsonPath = buildJsonPath(parentPath, fieldName, isParentList);

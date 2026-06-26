@@ -349,7 +349,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
             resp.setName(node.getFieldName());
             resp.setDescription(node.getFieldDesc());
             resp.setType(node.getFieldType());
-            resp.setSimpleType(ClassTypeHelper.isSimpleType(node.getFieldType()));
+            resp.setSimpleType(ClassTypeHelper.isSimpleType(node.getFieldTypeClazz()));
 
             // 递归转换子字段
             if (node.getChildren() != null && !node.getChildren().isEmpty()) {

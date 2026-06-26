@@ -2,6 +2,7 @@ package com.wkclz.iam.sso.service;
 
 import com.alibaba.fastjson2.JSON;
 import com.wkclz.iam.common.entity.IamLoginLog;
+import com.wkclz.iam.sdk.bean.RequestLog;
 import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
@@ -9,7 +10,6 @@ import com.wkclz.iam.sdk.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.facade.SsoFacade;
-import com.wkclz.iam.sdk.bean.RequestLog;
 import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.config.IamSsoConfig;
@@ -66,9 +66,10 @@ public class SsoFacadeImpl implements SsoFacade {
         // 2. 缓存 UserSession 到 Redis
         UserSession us = new UserSession();
         us.setUserCode(req.getUserCode());
-        us.setUsername(req.getAuthIdentifier());
+        us.setUsername(req.getUsername());
         us.setNickname(req.getNickname());
         us.setAuthType(req.getAuthType());
+        us.setAuthIdentifier(req.getAuthIdentifier());
 
         String tokenRedisKey = JwtUtil.getTokenRedisKey(jwtToken, jwt.getUsername());
         redisTemplate.opsForValue().set(tokenRedisKey, JSON.toJSONString(us), JwtUtil.SESSION_TTL_SECONDS, TimeUnit.SECONDS);

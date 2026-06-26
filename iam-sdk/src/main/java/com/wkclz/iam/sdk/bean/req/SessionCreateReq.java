@@ -21,11 +21,6 @@ public class SessionCreateReq implements Serializable {
 
     @Schema(description = "用户名（显示名，用于JWT）")
     private String username;
-
-    @NotBlank(message = "authIdentifier不能为空")
-    @Schema(description = "认证标识（登录标识，用于UserSession和登录日志）", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String authIdentifier;
-
     @Schema(description = "昵称")
     private String nickname;
 
@@ -35,5 +30,11 @@ public class SessionCreateReq implements Serializable {
     @NotBlank(message = "authType不能为空")
     @Schema(description = "认证类型（PASSWORD/LDAP等）", requiredMode = Schema.RequiredMode.REQUIRED)
     private String authType;
+
+
+    @NotBlank(message = "authIdentifier不能为空")
+    @Schema(description = "认证标识（登录标识，用于UserSession和登录日志）", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String authIdentifier;
+
 
 }

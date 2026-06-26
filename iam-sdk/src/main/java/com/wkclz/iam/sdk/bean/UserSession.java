@@ -25,9 +25,9 @@ public class UserSession implements Serializable {
     private String authType;
 
     /**
-     * 小程序登录场景
+     * 三方登录场景，authIdentifier 为三方平台标识符
      */
-    @Schema(description = "微信OpenID")
-    private String openId;
+    @Schema(description = "三方平台标识符")
+    private String authIdentifier;
 
 }

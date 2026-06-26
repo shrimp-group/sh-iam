@@ -48,7 +48,7 @@ public class SessionHelper {
         userInfo.setNickname(userJwt.getNickname());
         userInfo.setAvatar(userJwt.getAvatar());
         userInfo.setTenantCode(getTenantCode());
-        userInfo.setOpenId(userSession.getOpenId());
+        userInfo.setAuthIdentifier(userSession.getAuthIdentifier());
         UserContext.setUserInfo(userInfo);
     }
 

@@ -23,6 +23,9 @@ public class EntityFieldNode {
     @Schema(description = "字段类型")
     private String fieldType;
 
+    @Schema(description = "字段类型Class")
+    private Class<?> fieldTypeClazz;
+
     @Schema(description = "是否为列表类型")
     private Boolean isList;
 
