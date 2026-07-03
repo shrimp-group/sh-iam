@@ -316,7 +316,8 @@ iam_request_log ── 请求日志 (独立)
 
 ### 代码规范
 
-详见 [docs/coding-standards/java.md](docs/coding-standards/java.md)
+- [Java 编码规范](docs/coding-standards/java.md)
+- [Node/前端编码规范](docs/coding-standards/node.md)
 
 ### 研发规范
 

@@ -1,6 +1,7 @@
 # Changes
 
-本目录用于记录当前正在进行的变更，由 Skill 工作流（grill → plan → plan-to-tasks → write-code → check-work）自动管理。
+本目录用于记录当前正在进行的变更，由 Skill 工作流（brainstorming → writing-plans → test-driven-development →
+verification-before-completion）自动管理。
 
 ## 目录结构
 
@@ -20,8 +21,8 @@ changes/
 
 ## 生命周期
 
-1. **创建**：grill Skill 分析需求后创建变更目录
-2. **规划**：plan Skill 生成 spec.md 和 tasks.md
-3. **执行**：write-code Skill 按 tasks.md 逐项实现
-4. **审查**：check-work Skill 审查实现结果
+1. **创建**：brainstorming Skill 分析需求后创建变更目录
+2. **规划**：writing-plans Skill 生成 spec.md 和 tasks.md
+3. **执行**：test-driven-development Skill 按 tasks.md 逐项实现
+4. **审查**：verification-before-completion + requesting-code-review Skill 审查实现结果
 5. **完成**：变更合并后，变更目录可归档或删除

@@ -15,7 +15,7 @@
 
 1. 选择对应语言模板（Java / Node）
 2. 根据项目特点调整目录结构
-3. 配置 lint、test、CI/CD 等工具链
+3. 配置 lint、test 等工具链
 4. 初始化 Git 仓库并创建初始提交
 5. 创建 `docs/` 目录并放入规范文档
 
@@ -24,7 +24,6 @@
 - [ ] 目录结构符合 [harness-spec.md](harness-spec.md) 定义
 - [ ] lint 配置已就绪
 - [ ] test 配置已就绪
-- [ ] CI/CD 流水线已配置
 - [ ] .editorconfig 已配置
 - [ ] .gitignore 已配置
 - [ ] README.md 已创建
@@ -184,9 +183,8 @@ Build，任一阶段失败即阻断流水线。
 
 每次完成任务后，必须按照 [活文档更新规则](living-docs-guide.md) 更新 docs/living-docs-technical/ 和
 docs/living-docs-business/：
-
 - 新增/删除模块 → 更新"模块说明"和"架构概览"
 - 新增/修改 API → 更新"API 列表"
 - 新增/修改数据模型 → 更新"数据模型"
 - 新增/升级依赖 → 更新"外部依赖"
-- 任何变更 → 在"变更日志"添加记录
+

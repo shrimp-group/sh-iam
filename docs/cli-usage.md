@@ -29,16 +29,29 @@ npm run init
 Usage: harness-init [options]
 
 Options:
-  --lang <java|node>    Language template to use
-  --target <path>       Target project directory (default: current directory)
-  --help                Show this help message
+  --lang <java|node>      Language template to use
+  --target <path>         Target project directory (default: current directory)
+  --no-superpowers        Skip superpowers initialization (only deploy 3 retained skills)
+  --help                  Show this help message
 ```
 
-| 参数         | 说明                      | 必填 | 默认值       |
-|------------|-------------------------|----|-----------|
-| `--lang`   | 语言模板，可选 `java` 或 `node` | 否  | 无（进入交互模式） |
-| `--target` | 目标项目路径                  | 否  | 当前目录      |
-| `--help`   | 显示帮助信息                  | 否  | -         |
+| 参数                 | 说明                                                                                                 | 必填 | 默认值                   |
+|--------------------|----------------------------------------------------------------------------------------------------|----|-----------------------|
+| `--lang`           | 语言模板，可选 `java` 或 `node`                                                                            | 否  | 无（进入交互模式）             |
+| `--target`         | 目标项目路径                                                                                             | 否  | 当前目录                  |
+| `--no-superpowers` | 跳过 superpowers 初始化，仅部署 3 个保留 Skill（`coding-skill`、`zoom-out`、`handoff`），不部署 20 个 superpowers skill | 否  | 未传则执行 superpowers 初始化 |
+| `--help`           | 显示帮助信息                                                                                             | 否  | -                     |
+
+### Superpowers 初始化行为
+
+默认情况下，`harness-init` 会在部署保留 Skill 之后执行 superpowers 初始化：
+
+1. **在线优先**：执行 `npx superpowers-zh --tool trae`，从远端拉取 20 个 superpowers skill 与 `superpowers-zh.md`
+   规则文件，部署到目标项目的 `.trae/skills/` 和 `.trae/rules/`。
+2. **本地回退**：若在线初始化失败，从 sh-harness 自身的 `.trae/` 目录拷贝 superpowers 文件到目标项目。
+
+传入 `--no-superpowers` 后，跳过上述步骤，目标项目仅包含 3 个保留 Skill，不具备 superpowers 工作流能力（如 `brainstorming`、
+`writing-plans`、`test-driven-development`、`verification-before-completion` 等）。详见 [Skill 配置指引](skill-setup.md)。
 
 ## 交互模式
 
@@ -92,7 +105,6 @@ npm run init:node
 - JUnit 5 单元测试
 - Checkstyle 代码规范检查
 - JaCoCo 代码覆盖率
-- GitHub Actions CI 工作流
 - 统一的编辑器配置
 
 模板占位符替换：
@@ -110,7 +122,6 @@ npm run init:node
 - Jest 单元测试
 - ESLint 代码检查
 - Prettier 代码格式化
-- GitHub Actions CI 工作流
 - 统一的编辑器配置
 
 模板占位符替换：

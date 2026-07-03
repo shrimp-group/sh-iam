@@ -22,8 +22,7 @@ docs/
     ├── modules/             # 业务模块索引
     ├── processes/           # 业务流程索引
     ├── rules/               # 业务规则索引
-    ├── glossary/            # 业务术语表
-    └── changelog.md         # 业务变更日志
+    └── glossary/            # 业务术语表
 ```
 
 ---
@@ -31,7 +30,6 @@ docs/
 ## 活文档-技术 更新规范
 
 ### 何时更新
-
 - 新增/删除技术模块时 → 更新 `docs/living-docs-technical/modules/README.md`
 - 新增/修改 API 时 → 更新 `docs/living-docs-technical/api/README.md`
 - 新增/修改数据模型时 → 更新 `docs/living-docs-technical/data-models/README.md`
@@ -39,7 +37,6 @@ docs/
 - 依赖变更时 → 更新 `docs/living-docs-technical/dependencies/README.md`
 
 ### 更新格式
-
 - 模块列表格式：| 模块名 | 职责 | 技术栈 | 入口路径 |
 - API 列表格式：| 方法 | 路径 | 说明 | 模块 |
 - 数据模型格式：| 实体名 | 说明 | 关联模块 |
@@ -50,27 +47,22 @@ docs/
 ## 活文档-业务 更新规范
 
 ### 何时更新
-
 - 新增/修改业务模块时 → 更新 `docs/living-docs-business/modules/README.md`
 - 业务流程变更时 → 更新 `docs/living-docs-business/processes/README.md`
 - 业务规则变更时 → 更新 `docs/living-docs-business/rules/README.md`
 - 术语定义变更时 → 更新 `docs/living-docs-business/glossary/README.md`
-- 任何业务变更后 → 在 `docs/living-docs-business/changelog.md` 添加记录
 
 ### 更新格式
-
 - 业务模块列表格式：| 模块名 | 业务职责 | 关联技术模块 |
 - 业务流程列表格式：| 流程名 | 触发条件 | 业务价值 |
 - 业务规则列表格式：| 规则名 | 规则描述 | 适用范围 |
 - 术语列表格式：| 术语名 | 定义 | 英文名 | 分类 |
-- 业务变更日志格式：| 日期 | 变更内容 | 关联 Story |
 
 ---
 
 ## 通用更新原则
-
 - 文档与代码必须同步，禁止文档滞后
-- 活文档只记录"当前状态"，不记录历史决策（历史在变更日志中）
+- 活文档只记录"当前状态"，不记录历史决策
 - 架构图使用 mermaid 语法，保持简洁
 - 每次更新后修改"最后更新"日期
 - 日期格式：YYYY-MM-DD
@@ -82,17 +74,10 @@ docs/
 当 AI 完成一个任务后，应：
 
 ### 技术活文档更新
-
 1. 检查本次变更影响了哪些技术模块/API/数据模型/依赖
 2. 更新 `docs/living-docs-technical/` 中对应的章节
 3. 更新"最后更新"日期
 
 ### 业务活文档更新
-
 1. 检查本次变更影响了哪些业务流程/规则/术语
 2. 更新 `docs/living-docs-business/` 中对应的章节
-3. 在 `docs/living-docs-business/changelog.md` 中添加变更记录
-
-### 技术债务与活文档
-
-- 技术债务状态从 open 变为 in-progress 或 resolved 时，在业务变更日志中添加记录

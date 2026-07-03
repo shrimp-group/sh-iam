@@ -26,11 +26,10 @@ project-root/
 │   ├── standards/         # 开发规范目录
 │   └── tech-debts/        # 技术债务目录（含 INDEX.md 索引）
 ├── .trae/                 # Trae 配置目录
-│   ├── skills/            # Trae Skill 定义文件
+│   ├── skills/            # Trae Skill 定义文件（3 保留 + 20 superpowers）
+│   ├── rules/             # superpowers-zh.md 规则文件
 │   ├── .ignore            # Trae IDE 忽略规则
 │   └── mcp.json           # MCP Server 配置
-├── .github/               # CI/CD 配置
-│   └── workflows/
 ├── .editorconfig          # 编辑器配置
 ├── .gitignore             # Git 忽略规则
 ├── changes/               # 变更记录目录（Skill 工作流使用）
@@ -54,14 +53,27 @@ project-root/
 | `docs/coding-standards/`      | 代码规范文档（按语言）                      | 从 sh-harness 复制      |
 | `docs/standards/`             | 开发规范文档（前端、后端、数据库、API 等）          | 从 sh-harness 复制      |
 | `docs/tech-debts/`            | 技术债务记录与跟踪                        | 每条债务一个文件，INDEX.md 汇总 |
-| `.github/workflows/`          | CI/CD 流水线定义                      | GitHub Actions 格式    |
 | `AGENTS.md`                   | AI 索引文件，供 AI 快速理解项目              | 简洁精炼                 |
 
 ### .trae/ 目录
 
-- `.trae/skills/` — Trae Skill 定义文件目录，harness 初始化时自动部署 13 个标配 skill
+- `.trae/skills/` — Trae Skill 定义文件目录，harness 初始化时部署 **3 个保留 Skill + 20 个 Superpowers Skill**：
+    - 保留 Skill（由 `copySkills` 从 `templates/common/skills/` 拷贝）：`coding-skill`、`zoom-out`、`handoff`
+    - Superpowers Skill（20 个，覆盖需求探索、计划、TDD、验证、审查、调试、收尾等研发链路）
+- `.trae/rules/` — superpowers 规则文件目录，存放 `superpowers-zh.md`（superpowers 技能框架的总入口与核心规则）
 - `.trae/.ignore` — Trae IDE 忽略规则，排除不应被处理的文件
 - `.trae/mcp.json` — MCP Server 配置文件，定义项目级 MCP Server 连接
+
+#### Superpowers 初始化行为
+
+harness 初始化时默认执行 superpowers 部署（除非向 `harness-init` 传入 `--no-superpowers` 参数）：
+
+1. **在线优先**：执行 `npx superpowers-zh --tool trae`，将 20 个 superpowers skill 部署到 `.trae/skills/`，规则文件
+   `superpowers-zh.md` 部署到 `.trae/rules/`。
+2. **本地回退**：在线初始化失败时，从 sh-harness 自身的 `.trae/rules/` 与 `.trae/skills/` 拷贝 superpowers 文件到目标项目。
+
+传入 `--no-superpowers` 时跳过 superpowers 部署，目标项目仅包含 3 个保留 Skill。详见 [Skill 配置指引](skill-setup.md)
+与 [CLI 使用说明](cli-usage.md)。
 
 ---
 
@@ -73,7 +85,6 @@ project-root/
 |---------------|-------------|----|
 | Lint 配置       | 代码风格与静态检查规则 | 是  |
 | Test 配置       | 测试框架与覆盖率规则  | 是  |
-| CI/CD 配置      | 自动化构建与部署流水线 | 是  |
 | .editorconfig | 统一编辑器格式     | 是  |
 | .gitignore    | Git 忽略规则    | 是  |
 
@@ -83,7 +94,6 @@ project-root/
 - **Lint**：Checkstyle（规则文件 `checkstyle.xml`，置于 `config/` 目录）
 - **测试**：JUnit 5 + Mockito
 - **覆盖率**：JaCoCo，最低覆盖率 80%
-- **CI/CD**：GitHub Actions，流水线定义于 `.github/workflows/`
 
 ### Node 项目配置
 
@@ -92,7 +102,6 @@ project-root/
 - **格式化**：Prettier（配置文件 `.prettierrc.*`）
 - **测试**：Jest（配置文件 `jest.config.*`）
 - **类型系统**：TypeScript（可选，推荐启用）
-- **CI/CD**：GitHub Actions，流水线定义于 `.github/workflows/`
 
 ---
 
