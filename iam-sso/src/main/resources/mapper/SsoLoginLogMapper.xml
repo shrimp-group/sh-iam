@@ -33,7 +33,7 @@
     </insert>
 
 
-    <select id="getLoginFailedCountIn1Hour" parameterType="com.wkclz.iam.common.entity.IamLoginLog"
+    <select id="getLastLoginIn1Hour" parameterType="com.wkclz.iam.common.entity.IamLoginLog"
             resultType="com.wkclz.iam.common.entity.IamLoginLog">
         SELECT
             auth_identifier,

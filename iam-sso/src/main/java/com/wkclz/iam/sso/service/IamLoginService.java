@@ -83,9 +83,10 @@ public class IamLoginService {
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
         param.setAuthType(AuthType.PASSWORD.name());
-        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLoginFailedCountIn1Hour(param);
+        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLastLoginIn1Hour(param);
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
+            log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username, lastLoginIn1Hour);
             loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
             return failResp(LoginStatus.NEED_CAPTCHA);
         }
