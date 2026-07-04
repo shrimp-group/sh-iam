@@ -51,7 +51,6 @@ public class IamRequestService {
         iLog.setNickname(log.getNickname());
         iLog.setCostTime(log.getCostTime());
         iLog.setErrorMsg(log.getErrorMsg());
-        iLog.setRequestBody(log.getRequestBody());
         iLog.setResponseBody(log.getResponseBody());
 
         // 缓存的地址信息

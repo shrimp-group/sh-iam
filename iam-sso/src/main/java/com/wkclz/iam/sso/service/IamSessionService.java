@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 
 @Service
@@ -28,10 +30,12 @@ public class IamSessionService {
         String sessionListKey = JwtUtil.getSessionListRedisKey(username);
         Set<String> tokenMd5Set = redisTemplate.opsForZSet().range(sessionListKey, 0, -1);
         if (tokenMd5Set != null && !tokenMd5Set.isEmpty()) {
+            Collection<String> sessionKeys = new ArrayList<>(tokenMd5Set.size());
             for (String tokenMd5 : tokenMd5Set) {
-                String sessionKey = "iam:session:" + username + ":" + tokenMd5;
-                redisTemplate.delete(sessionKey);
+                sessionKeys.add("iam:session:" + username + ":" + tokenMd5);
             }
+            Long deleted = redisTemplate.delete(sessionKeys);
+            log.info("用户 {} 批量删除 {} 个会话 key，实际删除 {} 个", username, sessionKeys.size(), deleted);
         }
         redisTemplate.delete(sessionListKey);
         log.info("用户 {} 的所有会话已失效，共清理 {} 个会话", username, tokenMd5Set == null ? 0 : tokenMd5Set.size());

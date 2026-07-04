@@ -46,19 +46,20 @@ public class SsoResourceService {
 
     private static List<IamMenuDto> makeTree(List<IamMenuDto> dtos) {
         List<IamMenuDto> tree = new ArrayList<>();
+        Map<String, IamMenuDto> menuMap = dtos.stream().collect(Collectors.toMap(IamMenu::getMenuCode, t -> t));
         for (IamMenuDto l : dtos) {
-            if ("0".equals(l.getParentCode())) {
+            String parentCode = l.getParentCode();
+            if ("0".equals(parentCode)) {
                 tree.add(l);
             } else {
-                for (IamMenuDto p : dtos) {
-                    if (p.getMenuCode().equals(l.getParentCode())) {
-                        List<IamMenuDto> children = p.getChildren();
-                        if (children == null) {
-                            children = new ArrayList<>();
-                        }
-                        children.add(l);
+                IamMenuDto p = menuMap.get(parentCode);
+                if (p != null) {
+                    List<IamMenuDto> children = p.getChildren();
+                    if (children == null) {
+                        children = new ArrayList<>();
                         p.setChildren(children);
                     }
+                    children.add(l);
                 }
             }
         }

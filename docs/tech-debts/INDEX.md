@@ -10,11 +10,11 @@
 docs/tech-debts/
 ├── INDEX.md                         # 本索引文件
 │
-├── 历史归类（已有 27 个技术债务文件）
-│   ├── 代码质量/                     # 9 个文件（OTHER）
-│   ├── 安全/                         # 7 个文件（SEC）
-│   ├── 并发/                         # 4 个文件（CONC）
-│   └── 性能/                         # 7 个文件（PERF）
+├── 历史归类（已有 15 个技术债务文件）
+│   ├── 代码质量/                     # 6 个文件（OTHER）
+│   ├── 安全/                         # 6 个文件（SEC）
+│   ├── 并发/                         # 2 个文件（CONC）
+│   └── 性能/                         # 1 个文件（PERF）
 │
 └── Harness 标准归类（用于后续技术债务归档）
     ├── 性能风险/                     # 性能风险类
@@ -26,16 +26,16 @@ docs/tech-debts/
 
 ### 历史归类（Historical Categories）
 
-项目早期采用 4 个分类目录对技术债务进行归档，共收录 27 个技术债务文件：
+项目早期采用 4 个分类目录对技术债务进行归档，共收录 15 个技术债务文件：
 
 | 分类目录 | 分类编码  | 文件数 | 说明              |
 |------|-------|-----|-----------------|
-| 代码质量 | OTHER | 9   | 代码质量、规范、重复实现等问题 |
-| 安全   | SEC   | 7   | 安全漏洞、加密、鉴权等问题   |
-| 性能   | PERF  | 7   | 性能、缓存、SQL 优化等问题 |
-| 并发   | CONC  | 4   | 并发、竞态、线程管理等问题   |
+| 代码质量 | OTHER | 6   | 代码质量、规范、重复实现等问题 |
+| 安全   | SEC   | 6   | 安全漏洞、加密、鉴权等问题   |
+| 性能   | PERF  | 1   | 性能、缓存、SQL 优化等问题 |
+| 并发   | CONC  | 2   | 并发、竞态、线程管理等问题   |
 
-> 历史归类目录及其中已存在的 27 个技术债务文件保持原状，不再迁移。
+> 历史归类目录及其中已存在的 15 个技术债务文件保持原状，不再迁移。
 
 ### Harness 标准归类（Harness Standard Categories）
 
@@ -55,9 +55,9 @@ docs/tech-debts/
 
 | 状态          | 数量 |
 |-------------|----|
-| Open        | 31 |
+| Open        | 15 |
 | In Progress | 0  |
-| Resolved    | 0  |
+| Resolved    | 16 |
 | **合计**      | 31 |
 
 ## 按严重程度分布
@@ -65,18 +65,20 @@ docs/tech-debts/
 | 严重程度     | Open | In Progress | Resolved | 合计 |
 |----------|------|-------------|----------|----|
 | Critical | 2    | 0           | 0        | 2  |
-| High     | 7    | 0           | 0        | 7  |
-| Medium   | 13   | 0           | 0        | 13 |
-| Low      | 9    | 0           | 0        | 9  |
+| High     | 5    | 0           | 2        | 7  |
+| Medium   | 7    | 0           | 6        | 13 |
+| Low      | 1    | 0           | 8        | 9  |
 
 ## 按分类分布
 
 | 分类          | Critical | High | Medium | Low | 合计 |
 |-------------|----------|------|--------|-----|----|
 | SEC（安全）     | 2        | 2    | 2      | 2   | 8  |
-| PERF（性能）    | 0        | 2    | 3      | 2   | 7  |
-| CONC（并发）    | 0        | 1    | 2      | 1   | 4  |
-| OTHER（代码质量） | 0        | 2    | 6      | 4   | 12 |
+| PERF（性能）    | 0        | 0    | 1      | 0   | 1  |
+| CONC（并发）    | 0        | 1    | 1      | 0   | 2  |
+| OTHER（代码质量） | 0        | 2    | 3      | 3   | 8  |
+
+> 注：表格按"历史归属总数"统计。已解决文件已从目录中删除，但分类合计反映该分类历史累计登记数。
 
 ## Open 债务
 
@@ -87,49 +89,33 @@ docs/tech-debts/
 | TD-001 | SEC | critical | JWT 密钥硬编码默认值            | [安全/001-JWT密钥硬编码默认值.md](安全/001-JWT密钥硬编码默认值.md) |
 | TD-002 | SEC | critical | 密码使用 MD5+salt 不符合现代安全标准 | [安全/002-密码MD5加密不安全.md](安全/002-密码MD5加密不安全.md)   |
 
-### High (7)
+### High (5)
 
 | ID     | 分类    | 严重程度 | 简述                              | 文件                                                 |
 |--------|-------|------|---------------------------------|----------------------------------------------------|
 | TD-003 | SEC   | high | AK 签名验签方法被注释                    | [安全/003-AK验签方法被注释.md](安全/003-AK验签方法被注释.md)         |
 | TD-004 | SEC   | high | ConfigValidator 未实现             | [安全/004-配置校验器未实现.md](安全/004-配置校验器未实现.md)           |
-| TD-009 | PERF  | high | IP_ADDR_CACHE 无容量限制和过期策略        | [性能/009-IP缓存无容量限制.md](性能/009-IP缓存无容量限制.md)         |
-| TD-010 | PERF  | high | LOGS_SET 无容量限制                  | [性能/010-日志集合无容量限制.md](性能/010-日志集合无容量限制.md)         |
 | TD-016 | CONC  | high | Ip2LocationScheduler 使用裸线程无优雅关闭 | [并发/016-IP调度器裸线程管理.md](并发/016-IP调度器裸线程管理.md)       |
 | TD-020 | OTHER | high | 零测试覆盖                           | [代码质量/020-零测试覆盖.md](代码质量/020-零测试覆盖.md)             |
 | TD-021 | OTHER | high | JWT 异常包装丢失类型信息                  | [代码质量/021-JWT异常丢失类型信息.md](代码质量/021-JWT异常丢失类型信息.md) |
 
-### Medium (13)
+### Medium (7)
 
 | ID     | 分类    | 严重程度   | 简述                                          | 文件                                                     |
 |--------|-------|--------|---------------------------------------------|--------------------------------------------------------|
 | TD-005 | SEC   | medium | 登录失败次数检查逻辑有误                                | [安全/005-登录失败计数逻辑有误.md](安全/005-登录失败计数逻辑有误.md)           |
 | TD-006 | SEC   | medium | 请求日志记录完整 Token 值                            | [安全/006-日志记录完整Token值.md](安全/006-日志记录完整Token值.md)       |
-| TD-011 | PERF  | medium | 菜单树构建使用 O(n^2) 算法                           | [性能/011-菜单树构建O(n2).md](性能/011-菜单树构建O(n2).md)           |
 | TD-012 | PERF  | medium | 树形构建逻辑重复实现 4 次                              | [性能/012-树构建逻辑重复实现.md](性能/012-树构建逻辑重复实现.md)             |
-| TD-013 | PERF  | medium | 角色列表查询 LEFT JOIN + GROUP BY                 | [性能/013-角色列表JOIN性能差.md](性能/013-角色列表JOIN性能差.md)         |
-| TD-017 | CONC  | medium | IP 队列 contains+offer 非原子竞态                  | [并发/017-IP队列竞态条件.md](并发/017-IP队列竞态条件.md)               |
 | TD-018 | CONC  | medium | 验证码校验与删除竞态条件                                | [并发/018-验证码校验竞态条件.md](并发/018-验证码校验竞态条件.md)             |
 | TD-022 | OTHER | medium | duplicateCheck() 方法重复实现                     | [代码质量/022-重复检查方法重复实现.md](代码质量/022-重复检查方法重复实现.md)       |
-| TD-023 | OTHER | medium | BeanUtils.copyProperties 与 BeanUtil.cp() 混用 | [代码质量/023-BeanUtil使用不一致.md](代码质量/023-BeanUtil使用不一致.md) |
 | TD-024 | OTHER | medium | SessionHelper.getTenantCode() 硬编码           | [代码质量/024-租户编码硬编码.md](代码质量/024-租户编码硬编码.md)             |
 | TD-025 | OTHER | medium | SsoFacadeImpl 抛出 RuntimeException           | [代码质量/025-运行时异常未统一.md](代码质量/025-运行时异常未统一.md)           |
-| TD-026 | OTHER | medium | API 粘贴 SQL 语法错误                             | [代码质量/026-API粘贴SQL语法错误.md](代码质量/026-API粘贴SQL语法错误.md)   |
-| TD-027 | OTHER | medium | requestBody 重复设置覆盖脱敏                        | [代码质量/027-请求体重复设置.md](代码质量/027-请求体重复设置.md)             |
 
-### Low (9)
+### Low (1)
 
 | ID     | 分类    | 严重程度 | 简述                                    | 文件                                                   |
 |--------|-------|------|---------------------------------------|------------------------------------------------------|
-| TD-007 | SEC   | low  | IP 解析 API 使用 HTTP 而非 HTTPS            | [安全/007-IP解析使用HTTP协议.md](安全/007-IP解析使用HTTP协议.md)     |
-| TD-008 | SEC   | low  | IamApiMapper SQL 语法错误                 | [安全/008-SQL语法错误.md](安全/008-SQL语法错误.md)               |
-| TD-014 | PERF  | low  | 菜单列表查询 LEFT JOIN + GROUP BY           | [性能/014-菜单列表JOIN性能差.md](性能/014-菜单列表JOIN性能差.md)       |
-| TD-015 | PERF  | low  | LoggingFilter.isLog() 使用 synchronized | [性能/015-日志过滤器同步锁瓶颈.md](性能/015-日志过滤器同步锁瓶颈.md)         |
-| TD-019 | CONC  | low  | 密码修改后逐个删除 Session 非原子                 | [并发/019-Session逐个删除非原子.md](并发/019-Session逐个删除非原子.md) |
-| TD-028 | OTHER | low  | 方法名拼写错误 Faild→Failed                  | [代码质量/028-方法名拼写错误.md](代码质量/028-方法名拼写错误.md)           |
 | TD-029 | OTHER | low  | RestfulScan 删除 API 仅打印日志              | [代码质量/029-API扫描删除仅打印日志.md](代码质量/029-API扫描删除仅打印日志.md) |
-| TD-030 | OTHER | low  | AkSignHelper 注释代码不可编译                 | [代码质量/030-AK签名注释代码不可编译.md](代码质量/030-AK签名注释代码不可编译.md) |
-| TD-031 | OTHER | low  | IamMenuApiMapper.xml 保留示例查询           | [代码质量/031-保留示例查询代码.md](代码质量/031-保留示例查询代码.md)         |
 
 ## In Progress 债务
 
@@ -139,6 +125,28 @@ docs/tech-debts/
 
 ## Resolved 债务
 
-| ID | 分类 | 严重程度 | 简述 | 解决日期 | 文件 |
-|----|----|------|----|------|----|
-| -  | -  | -    | -  | -    | -  |
+| ID     | 分类    | 严重程度   | 简述                                          | 解决日期       | 文件 |
+|--------|-------|--------|---------------------------------------------|------------|----|
+| TD-007 | SEC   | low    | IP 解析 API 使用 HTTP 而非 HTTPS                  | 2026-07-04 | -  |
+| TD-008 | SEC   | low    | IamApiMapper SQL 语法错误                       | 2026-07-04 | -  |
+| TD-009 | PERF  | high   | IP_ADDR_CACHE 无容量限制和过期策略                    | 2026-07-04 | -  |
+| TD-010 | PERF  | high   | LOGS_SET 无容量限制                              | 2026-07-04 | -  |
+| TD-011 | PERF  | medium | 菜单树构建使用 O(n^2) 算法                           | 2026-07-04 | -  |
+| TD-013 | PERF  | medium | 角色列表查询 LEFT JOIN + GROUP BY                 | 2026-07-04 | -  |
+| TD-014 | PERF  | low    | 菜单列表查询 LEFT JOIN + GROUP BY                 | 2026-07-04 | -  |
+| TD-015 | PERF  | low    | LoggingFilter.isLog() 使用 synchronized       | 2026-07-04 | -  |
+| TD-017 | CONC  | medium | IP 队列 contains+offer 非原子竞态                  | 2026-07-04 | -  |
+| TD-019 | CONC  | low    | 密码修改后逐个删除 Session 非原子                       | 2026-07-04 | -  |
+| TD-023 | OTHER | medium | BeanUtils.copyProperties 与 BeanUtil.cp() 混用 | 2026-07-04 | -  |
+| TD-026 | OTHER | medium | API 粘贴 SQL 语法错误                             | 2026-07-04 | -  |
+| TD-027 | OTHER | medium | requestBody 重复设置覆盖脱敏                        | 2026-07-04 | -  |
+| TD-028 | OTHER | low    | 方法名拼写错误 Faild→Failed                        | 2026-07-04 | -  |
+| TD-030 | OTHER | low    | AkSignHelper 注释代码不可编译                       | 2026-07-04 | -  |
+| TD-031 | OTHER | low    | IamMenuApiMapper.xml 保留示例查询                 | 2026-07-04 | -  |
+
+> 注：
+> - TD-008 与 TD-026 描述同一问题（IamApiMapper.getApis4Paste SQL 缺少 AND 关键字），已一并修复。
+> - TD-009/010/017 同涉 IpLocalCacheHelper，已合并改造为 Guava Cache + ConcurrentHashSet 一次性修复。
+> - TD-010/015 同涉 LoggingFilter，已合并改造为 Guava Cache 一次性修复。
+> - TD-013/014 SQL 优化采用相关子查询替代 LEFT JOIN + GROUP BY，返回结果字段保持一致。
+> - 源码修复细节见 git 提交历史。
