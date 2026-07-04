@@ -276,7 +276,7 @@ public class LoggingFilter extends OncePerRequestFilter {
         log.setQueryString(subText(log.getQueryString(), 1023));
         log.setRequestBody(subText(log.getRequestBody(), 4095));
         log.setHttpStatus(log.getHttpStatus());
-        log.setToken(subText(log.getToken(), 511));
+        log.setToken(maskToken(log.getToken()));
         log.setUserCode(subText(log.getUserCode(), 31));
         log.setUsername(subText(log.getUsername(), 31));
         log.setNickname(subText(log.getNickname(), 31));
@@ -300,6 +300,21 @@ public class LoggingFilter extends OncePerRequestFilter {
         }
         matcher.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * TD-006: Token 脱敏，仅保留前 8 位 + ... + 后 4 位
+     * 短 token（< 16 位）全部用 * 替换，避免被还原
+     */
+    private static String maskToken(String token) {
+        if (StringUtils.isBlank(token)) {
+            return token;
+        }
+        int len = token.length();
+        if (len < 16) {
+            return "*".repeat(len);
+        }
+        return token.substring(0, 8) + "***" + token.substring(len - 4);
     }
 
     private static String subText(String text, int max) {

@@ -1,6 +1,7 @@
 package com.wkclz.iam.sdk.util;
 
 import com.wkclz.iam.sdk.bean.UserJwt;
+import com.wkclz.iam.sdk.exception.JwtValidationException;
 import com.wkclz.tool.tools.Md5Tool;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -67,9 +68,9 @@ public class JwtUtil {
      * 从token中获取UserJwt对象
      * @param token JWT token字符串
      * @return UserJwt对象
-     * @throws Exception 解析异常
+     * @throws JwtValidationException 解析异常，包含错误类型信息
      */
-    public static UserJwt parseToken(String token, String secretKey) throws Exception {
+    public static UserJwt parseToken(String token, String secretKey) throws JwtValidationException {
         Claims claims = parseClaims(token, secretKey);
         UserJwt userJwt = new UserJwt();
         userJwt.setUserCode(claims.get("userCode", String.class));
@@ -83,9 +84,9 @@ public class JwtUtil {
      * 解析JWT获取声明
      * @param token JWT token字符串
      * @return Claims对象
-     * @throws Exception 解析异常
+     * @throws JwtValidationException 解析异常，通过 errorCode 区分过期/签名错误等情况
      */
-    public static Claims parseClaims(String token, String secretKey) throws Exception {
+    public static Claims parseClaims(String token, String secretKey) throws JwtValidationException {
         try {
             SecretKey signingKey = getSigningKey(secretKey);
             return Jwts.parser()
@@ -94,15 +95,15 @@ public class JwtUtil {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (ExpiredJwtException e) {
-            throw new Exception("JWT已过期", e);
+            throw new JwtValidationException(JwtValidationException.CODE_EXPIRED, "JWT已过期", e);
         } catch (MalformedJwtException e) {
-            throw new Exception("JWT格式错误", e);
+            throw new JwtValidationException(JwtValidationException.CODE_MALFORMED, "JWT格式错误", e);
         } catch (UnsupportedJwtException e) {
-            throw new Exception("不支持的JWT", e);
+            throw new JwtValidationException(JwtValidationException.CODE_UNSUPPORTED, "不支持的JWT", e);
         } catch (SignatureException e) {
-            throw new Exception("JWT签名错误", e);
+            throw new JwtValidationException(JwtValidationException.CODE_SIGNATURE, "JWT签名错误", e);
         } catch (IllegalArgumentException e) {
-            throw new Exception("JWT参数错误", e);
+            throw new JwtValidationException(JwtValidationException.CODE_ILLEGAL_ARGUMENT, "JWT参数错误", e);
         }
     }
 
@@ -115,7 +116,7 @@ public class JwtUtil {
         try {
             parseClaims(token, secretKey);
             return true;
-        } catch (Exception e) {
+        } catch (JwtValidationException e) {
             return false;
         }
     }
@@ -129,10 +130,8 @@ public class JwtUtil {
         try {
             Claims claims = parseClaims(token, secretKey);
             return claims.getExpiration().before(new Date());
-        } catch (ExpiredJwtException e) {
-            return true;
-        } catch (Exception e) {
-            return false;
+        } catch (JwtValidationException e) {
+            return JwtValidationException.CODE_EXPIRED.equals(e.getErrorCode());
         }
     }
 
@@ -142,7 +141,7 @@ public class JwtUtil {
      * @return 新的JWT token字符串
      * @throws Exception 刷新异常
      */
-    public static String refreshToken(String token, String secretKey) throws Exception {
+    public static String refreshToken(String token, String secretKey) throws JwtValidationException {
         UserJwt userJwt = parseToken(token, secretKey);
         return generateToken(userJwt, secretKey);
     }
@@ -154,7 +153,7 @@ public class JwtUtil {
      * @return 新的JWT token字符串
      * @throws Exception 刷新异常
      */
-    public static String refreshToken(String token, String secretKey, long expiration) throws Exception {
+    public static String refreshToken(String token, String secretKey, long expiration) throws JwtValidationException {
         UserJwt userJwt = parseToken(token, secretKey);
         return generateToken(userJwt, secretKey, expiration);
     }
@@ -167,7 +166,7 @@ public class JwtUtil {
      * @return 声明值
      * @throws Exception 解析异常
      */
-    public static <T> T getClaim(String token, String claimName, Class<T> claimType, String secretKey) throws Exception {
+    public static <T> T getClaim(String token, String claimName, Class<T> claimType, String secretKey) throws JwtValidationException {
         Claims claims = parseClaims(token, secretKey);
         return claims.get(claimName, claimType);
     }
@@ -178,7 +177,7 @@ public class JwtUtil {
      * @return 过期时间
      * @throws Exception 解析异常
      */
-    public static Date getExpirationDate(String token, String secretKey) throws Exception {
+    public static Date getExpirationDate(String token, String secretKey) throws JwtValidationException {
         Claims claims = parseClaims(token, secretKey);
         return claims.getExpiration();
     }
@@ -189,7 +188,7 @@ public class JwtUtil {
      * @return 签发时间
      * @throws Exception 解析异常
      */
-    public static Date getIssuedAt(String token, String secretKey) throws Exception {
+    public static Date getIssuedAt(String token, String secretKey) throws JwtValidationException {
         Claims claims = parseClaims(token, secretKey);
         return claims.getIssuedAt();
     }
@@ -200,7 +199,7 @@ public class JwtUtil {
      * @return userCode
      * @throws Exception 解析异常
      */
-    public static String getUserCode(String token, String secretKey) throws Exception {
+    public static String getUserCode(String token, String secretKey) throws JwtValidationException {
         return getClaim(token, "userCode", String.class, secretKey);
     }
 
@@ -210,7 +209,7 @@ public class JwtUtil {
      * @return username
      * @throws Exception 解析异常
      */
-    public static String getUsername(String token, String secretKey) throws Exception {
+    public static String getUsername(String token, String secretKey) throws JwtValidationException {
         return getClaim(token, "username", String.class, secretKey);
     }
 
@@ -220,7 +219,7 @@ public class JwtUtil {
      * @return nickname
      * @throws Exception 解析异常
      */
-    public static String getNickname(String token, String secretKey) throws Exception {
+    public static String getNickname(String token, String secretKey) throws JwtValidationException {
         return getClaim(token, "nickname", String.class, secretKey);
     }
 
@@ -230,7 +229,7 @@ public class JwtUtil {
      * @return avatar
      * @throws Exception 解析异常
      */
-    public static String getAvatar(String token, String secretKey) throws Exception {
+    public static String getAvatar(String token, String secretKey) throws JwtValidationException {
         return getClaim(token, "avatar", String.class, secretKey);
     }
 
