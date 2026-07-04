@@ -40,6 +40,13 @@
             <artifactId>jjwt-jackson</artifactId>
         </dependency>
 
+        <!-- TD-003: AK 验签需要 RedisTemplate 实现 nonce 防重放，标记为可选避免强制传递 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <optional>true</optional>
+        </dependency>
+
     </dependencies>
 
 </project>

@@ -382,18 +382,18 @@ iam_request_log ── 请求日志 (独立)
 
 ### SDK 鉴权与安全模块 (iam-sdk)
 
-| Story ID  | 故事名称                                   | 优先级 | 文档                                                            |
-|-----------|----------------------------------------|-----|---------------------------------------------------------------|
-| STORY-005 | ✅ JWT 令牌生成与校验                          | P0  | [STORY-005](docs/stories/SDK鉴权/005-JWT令牌生成与校验.md)             |
-| STORY-006 | ✅ 用户会话上下文管理                            | P0  | [STORY-006](docs/stories/SDK鉴权/006-用户会话上下文.md)                |
-| STORY-007 | ✅ IAM 鉴权过滤器                            | P0  | [STORY-007](docs/stories/SDK鉴权/007-IAM鉴权过滤器.md)               |
-| STORY-008 | ✅ 请求日志采集过滤器                            | P0  | [STORY-008](docs/stories/SDK鉴权/008-请求日志过滤器.md)                |
-| STORY-009 | ✅ 请求体可重复读取包装                           | P0  | [STORY-009](docs/stories/SDK鉴权/009-请求体包装过滤器.md)               |
-| STORY-010 | ❌ HTTP 安全过滤器                           | P1  | [STORY-010](docs/stories/SDK鉴权/010-HTTP安全过滤器.md)              |
-| STORY-011 | ⚠️ AK 签名工具（deSign() 验签方法被注释）           | P1  | [STORY-011](docs/stories/SDK鉴权/011-AK签名工具.md)                 |
-| STORY-012 | ✅ 图形验证码生成                              | P0  | [STORY-012](docs/stories/SDK鉴权/012-图形验证码生成.md)                |
-| STORY-013 | ⚠️ SDK 配置与自动装配（缺 ConfigValidator 启动校验） | P0  | [STORY-013](docs/stories/SDK鉴权/013-SDK配置与自动装配.md)             |
-| STORY-014 | ✅ SsoFacade 门面与 SsoService 接口          | P0  | [STORY-014](docs/stories/SDK鉴权/014-SsoFacade门面与SsoService.md) |
+| Story ID  | 故事名称                                            | 优先级 | 文档                                                            |
+|-----------|-------------------------------------------------|-----|---------------------------------------------------------------|
+| STORY-005 | ✅ JWT 令牌生成与校验                                   | P0  | [STORY-005](docs/stories/SDK鉴权/005-JWT令牌生成与校验.md)             |
+| STORY-006 | ✅ 用户会话上下文管理                                     | P0  | [STORY-006](docs/stories/SDK鉴权/006-用户会话上下文.md)                |
+| STORY-007 | ✅ IAM 鉴权过滤器                                     | P0  | [STORY-007](docs/stories/SDK鉴权/007-IAM鉴权过滤器.md)               |
+| STORY-008 | ✅ 请求日志采集过滤器                                     | P0  | [STORY-008](docs/stories/SDK鉴权/008-请求日志过滤器.md)                |
+| STORY-009 | ✅ 请求体可重复读取包装                                    | P0  | [STORY-009](docs/stories/SDK鉴权/009-请求体包装过滤器.md)               |
+| STORY-010 | ❌ HTTP 安全过滤器                                    | P1  | [STORY-010](docs/stories/SDK鉴权/010-HTTP安全过滤器.md)              |
+| STORY-011 | ✅ AK 签名工具（deSign/verifySign + IamAuthFilter 集成） | P1  | [STORY-011](docs/stories/SDK鉴权/011-AK签名工具.md)                 |
+| STORY-012 | ✅ 图形验证码生成                                       | P0  | [STORY-012](docs/stories/SDK鉴权/012-图形验证码生成.md)                |
+| STORY-013 | ⚠️ SDK 配置与自动装配（缺 ConfigValidator 启动校验）          | P0  | [STORY-013](docs/stories/SDK鉴权/013-SDK配置与自动装配.md)             |
+| STORY-014 | ✅ SsoFacade 门面与 SsoService 接口                   | P0  | [STORY-014](docs/stories/SDK鉴权/014-SsoFacade门面与SsoService.md) |
 
 ### SSO 登录认证模块 (iam-sso)
 
