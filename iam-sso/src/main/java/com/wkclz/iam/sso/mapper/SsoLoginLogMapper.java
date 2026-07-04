@@ -10,6 +10,6 @@ public interface SsoLoginLogMapper {
     Integer insertLoginLog(IamLoginLog entity);
 
 
-    IamLoginLog getLoginFaildCountIn1Hour(IamLoginLog entity);
+    IamLoginLog getLoginFailedCountIn1Hour(IamLoginLog entity);
 
 }

@@ -17,9 +17,6 @@ import java.util.List;
 @Mapper
 public interface IamMenuApiMapper extends BaseMapper<IamMenuApi> {
 
-    // 示例查询,可删除
-    Long example();
-
     /**
      * 查询菜单已绑定的 API 详情列表
      *

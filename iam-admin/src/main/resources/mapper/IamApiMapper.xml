@@ -101,7 +101,7 @@
             iam_api
         WHERE
             deleted = 0
-            api_code IN ( <foreach collection="apiCodes" item="item" separator=","> #{item} </foreach> )
+        AND api_code IN ( <foreach collection="apiCodes" item="item" separator=",">#{item}</foreach> )
         ORDER BY
             api_uri ASC
     </select>

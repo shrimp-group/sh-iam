@@ -83,7 +83,7 @@ public class IamLoginService {
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
         param.setAuthType(AuthType.PASSWORD.name());
-        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLoginFaildCountIn1Hour(param);
+        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLoginFailedCountIn1Hour(param);
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
