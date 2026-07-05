@@ -9,10 +9,16 @@ import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Description Create by sh-generator
@@ -23,6 +29,8 @@ import java.util.List;
 @Service
 public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
+    private static final Logger log = LoggerFactory.getLogger(IamRoleService.class);
+
 
     @Autowired
     private RedisIdGenerator redisIdGenerator;
@@ -30,6 +38,39 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
     public List<IamRoleDto> roleList(IamRole entity) {
         return mapper.getAppRoleList(entity.getAppCode());
+    }
+
+    public List<IamRoleDto> roleTree(IamRole entity) {
+        // 查询所有角色
+        List<IamRoleDto> roles = mapper.getAppRole4Tree(entity.getAppCode());
+        // 构建角色树
+        return buildRoleTree(roles);
+    }
+
+    private List<IamRoleDto> buildRoleTree(List<IamRoleDto> roles) {
+        List<IamRoleDto> tree = new ArrayList<>();
+        Map<String, IamRoleDto> roleMap = roles.stream()
+                .collect(Collectors.toMap(IamRoleDto::getRoleCode, t -> t, (v1, v2) -> v1, LinkedHashMap::new));
+
+        for (IamRoleDto roleDto : roleMap.values()) {
+            String parentCode = roleDto.getParentCode();
+            // 如果是顶级角色（父编码为"0"），直接放入tree
+            if ("0".equals(parentCode)) {
+                tree.add(roleDto);
+            } else {
+                // 否则，放入父角色的children列表
+                IamRoleDto parentNode = roleMap.get(parentCode);
+                if (parentNode != null) {
+                    List<IamRoleDto> children = parentNode.getChildren();
+                    if (children == null) {
+                        children = new ArrayList<>();
+                        parentNode.setChildren(children);
+                    }
+                    parentNode.getChildren().add(roleDto);
+                }
+            }
+        }
+        return tree;
     }
 
 
@@ -60,6 +101,14 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 检查角色下是否有子角色
+        IamRole param = new IamRole();
+        param.setParentCode(oldEntity.getRoleCode());
+        long childrenRoleCount = selectCountByEntity(param);
+        if (childrenRoleCount > 0) {
+            throw ValidationException.of("请先删除子角色");
+        }
+        log.info("删除角色, roleCode={}, roleName={}", oldEntity.getRoleCode(), oldEntity.getRoleName());
         deleteById(oldEntity);
         return oldEntity;
     }

@@ -14,13 +14,13 @@ import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.helper.PasswordHelper;
-import com.wkclz.iam.sdk.enums.AuthType;
+import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import com.wkclz.tool.utils.SecretUtil;
+import com.wkclz.tool.utils.BeanUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,8 +89,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         if (StringUtils.isBlank(dto.getUserCode())) {
             dto.setUserCode(redisIdGenerator.generateIdWithPrefix("user_"));
         }
-        IamUser user = new IamUser();
-        BeanUtils.copyProperties(dto, user);
+        IamUser user = BeanUtil.cp(dto, IamUser.class);
         insert(user);
 
         // 认证账号入库

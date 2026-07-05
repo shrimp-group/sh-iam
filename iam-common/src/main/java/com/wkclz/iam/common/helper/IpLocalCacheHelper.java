@@ -3,15 +3,18 @@ package com.wkclz.iam.common.helper;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSONPath;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.wkclz.iam.common.entity.IamRequestLog;
 import com.wkclz.tool.utils.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author shrimp
@@ -19,32 +22,32 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Slf4j
 public class IpLocalCacheHelper {
 
-    private static final String IP_LOCATION_SERVER = "http://opendata.baidu.com/api.php?resource_id=6006&query=";
+    private static final String IP_LOCATION_SERVER = "https://opendata.baidu.com/api.php?resource_id=6006&query=";
 
-
+    private static final Set<String> IP_QUEUED_SET = ConcurrentHashMap.newKeySet();
     private static final Queue<String> IP_QUEUE = new ConcurrentLinkedQueue<>();
-    private static final Map<String, IamRequestLog> IP_ADDR_CACHE = new ConcurrentHashMap<>();
+
+    private static final Cache<String, IamRequestLog> IP_ADDR_CACHE = CacheBuilder.newBuilder()
+        .maximumSize(10_000)
+        .expireAfterWrite(24, TimeUnit.HOURS)
+        .build();
 
     // 写队列
-    public static synchronized IamRequestLog offerQueue(String remoteAddr) {
+    public static IamRequestLog offerQueue(String remoteAddr) {
         if (StringUtils.isBlank(remoteAddr)) {
             return null;
         }
 
         // 不为空，实时返回
-        IamRequestLog authRequestLog = IP_ADDR_CACHE.get(remoteAddr);
+        IamRequestLog authRequestLog = IP_ADDR_CACHE.getIfPresent(remoteAddr);
         if (authRequestLog != null) {
             return authRequestLog;
         }
 
-        // 队列已存在，就不需要再加了
-        if (IP_QUEUE.contains(remoteAddr)) {
-            return null;
-        }
-
-        // 为空，写队列
-        boolean added = IP_QUEUE.offer(remoteAddr);
+        // Set.add 是原子操作：返回 true 表示之前不存在（成功入队），返回 false 表示已存在
+        boolean added = IP_QUEUED_SET.add(remoteAddr);
         if (added) {
+            IP_QUEUE.offer(remoteAddr);
             log.info("缓存未出现此IP, 已添加到队列: " + remoteAddr);
         }
         return null;
@@ -56,16 +59,18 @@ public class IpLocalCacheHelper {
         if (remoteAddr == null) {
             return null;
         }
+        // 出队后从去重 Set 中移除，允许后续再次入队
+        IP_QUEUED_SET.remove(remoteAddr);
         return remoteAddr;
     }
 
 
     // 从网络上解析 IP 为地址
-    public static synchronized IamRequestLog getLocation(String remoteAddr) {
+    public static IamRequestLog getLocation(String remoteAddr) {
         if (StringUtils.isBlank(remoteAddr)) {
             return null;
         }
-        IamRequestLog authRequestLog = IP_ADDR_CACHE.get(remoteAddr);
+        IamRequestLog authRequestLog = IP_ADDR_CACHE.getIfPresent(remoteAddr);
         if (authRequestLog != null) {
             return authRequestLog;
         }

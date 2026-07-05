@@ -2,7 +2,11 @@ package com.wkclz.iam.admin.mapper;
 
 import com.wkclz.mybatis.mapper.BaseMapper;
 import com.wkclz.iam.common.entity.IamRoleMenu;
+import com.wkclz.iam.admin.bean.resp.RoleBoundResp;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * Description Create by sh-generator
@@ -13,8 +17,15 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IamRoleMenuMapper extends BaseMapper<IamRoleMenu> {
 
-    // 示例查询,可删除
-    Long example();
+    /**
+     * 根据菜单编码查询已绑定的角色信息
+     */
+    List<RoleBoundResp> getBoundRoles(@Param("menuCode") String menuCode);
+
+    /**
+     * 根据角色编码查询已绑定的菜单编码列表
+     */
+    List<IamRoleMenu> getBoundMenuCodes(@Param("roleCode") String roleCode);
 
 }
 

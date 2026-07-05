@@ -41,11 +41,11 @@
               <el-input v-model="form.menuName" placeholder="请输入菜单名称" />
               <form-tip text="菜单的显示名称，用于前端展示"/>
             </el-form-item>
-            <el-form-item label="路由地址" prop="routePath">
+            <el-form-item label="路由地址" prop="routePath" :rules="[{ required: true, message: '路由地址不能为空', trigger: 'blur' }]">
               <el-input v-model="form.routePath" placeholder="请输入路由地址" />
               <form-tip html="前端路由路径，例如：/system/user<br>路由需满足 Vue-Router 组件要求"/>
             </el-form-item>
-            <el-form-item label="组件" prop="component">
+            <el-form-item label="组件" prop="component" :rules="[{ required: true, message: '页面组件不能为空', trigger: 'blur' }]">
               <div style="display: flex; gap: 8px; align-items: center;">
                 <el-input v-model="form.component" placeholder="请输入组件" style="flex: 1; width: 450px;" />
                 <el-select v-model="quickComponent" placeholder="快捷填充" @change="selectComponent" clearable style="width: 120px;">
@@ -77,7 +77,7 @@
               </div>
               <form-tip text="菜单图标，使用Element Plus图标名称"/>
             </el-form-item>
-            <el-form-item label="隐藏" prop="hidden">
+            <el-form-item label="隐藏" prop="hidden" :rules="[{ required: true, message: '隐藏不能为空', trigger: 'blur' }]">
               <el-radio-group v-model="form.hidden">
                 <el-radio-button v-for="item in BOOLEAN" :key="item.value" :label="item.label" :value="item.value" />
               </el-radio-group>
@@ -109,6 +109,17 @@
               </div>
             </el-form-item>
 
+          </div>
+
+          <div v-if="form.menuType === 'FIELDS'">
+            <el-form-item label="字段组名称" prop="menuName">
+              <el-input v-model="form.menuName" placeholder="请输入字段组名称" />
+              <form-tip text="字段组名称，用于标识一组字段权限"/>
+            </el-form-item>
+            <el-form-item label="按钮编码" prop="buttonCode">
+              <el-input v-model="form.buttonCode" placeholder="请输入字段组编码" />
+              <form-tip text="同一菜单下，字段组编码需要唯一"/>
+            </el-form-item>
           </div>
         </el-col>
       </el-row>
@@ -155,15 +166,6 @@ const rules = ref({
   ],
   buttonCode: [
     { required: true, message: "按钮编码不能为空", trigger: "blur" },
-  ],
-  component: [
-    { required: true, message: "页面组件不能为空", trigger: "blur" },
-  ],
-  routePath: [
-    { required: true, message: "路由地址不能为空", trigger: "blur" },
-  ],
-  hidden: [
-    { required: true, message: "隐藏不能为空", trigger: "blur" }
   ],
   sort: [
     { required: true, message: "排序不能为空", trigger: "blur" }

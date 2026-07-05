@@ -15,7 +15,8 @@ import lombok.EqualsAndHashCode;
 public class IamApiDto extends IamApi {
 
 
-
+    private Integer menuBindStatus;
+    private Integer menuBindCount;
 
     /**
      * entity 转 Dto

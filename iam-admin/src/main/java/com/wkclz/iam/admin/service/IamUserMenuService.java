@@ -1,8 +1,14 @@
 package com.wkclz.iam.admin.service;
 
+import com.wkclz.iam.admin.bean.resp.MenuRoleResp;
+import com.wkclz.iam.admin.bean.resp.MenuUserResp;
+import com.wkclz.iam.admin.bean.resp.UserMenuSourceResp;
 import com.wkclz.iam.admin.mapper.IamMenuMapper;
+import com.wkclz.iam.admin.mapper.IamUserRoleMapper;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +20,13 @@ import java.util.stream.Collectors;
 @Service
 public class IamUserMenuService {
 
+    private static final Logger log = LoggerFactory.getLogger(IamUserMenuService.class);
+
     @Autowired
     private IamMenuMapper iamMenuMapper;
+
+    @Autowired
+    private IamUserRoleMapper iamUserRoleMapper;
     
     /**
      * 根据用户编码查询菜单列表
@@ -67,5 +78,29 @@ public class IamUserMenuService {
             }
         }
         return tree;
+    }
+
+    /**
+     * 查询用户菜单来源角色信息
+     */
+    public List<UserMenuSourceResp> getUserMenuSourceList(String userCode, String appCode) {
+        log.info("查询用户菜单来源, userCode={}, appCode={}", userCode, appCode);
+        return iamUserRoleMapper.getUserMenuSourceList(userCode, appCode);
+    }
+
+    /**
+     * 查询菜单绑定的角色列表
+     */
+    public List<MenuRoleResp> getMenuBoundRoles(String menuCode) {
+        log.info("查询菜单绑定角色, menuCode={}", menuCode);
+        return iamUserRoleMapper.getMenuBoundRoles(menuCode);
+    }
+
+    /**
+     * 查询菜单关联的用户列表
+     */
+    public List<MenuUserResp> getMenuBoundUsers(String menuCode) {
+        log.info("查询菜单关联用户, menuCode={}", menuCode);
+        return iamUserRoleMapper.getMenuBoundUsers(menuCode);
     }
 }

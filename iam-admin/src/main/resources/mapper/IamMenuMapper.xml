@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamMenuMapper">
-      
+
     <select id="getAppMenuList" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamMenuDto">
         SELECT
             im1.id,
@@ -22,20 +22,52 @@
             im1.update_by,
             im1.remark,
             im1.version,
-            COUNT(im2.id) children_count
+        ( SELECT COUNT( * ) FROM iam_menu im2
+        WHERE im2.parent_code = im1.menu_code AND im2.app_code = im1.app_code AND im2.deleted = 0
+        ) children_count,
+        ( SELECT COUNT( * ) FROM iam_menu_api ma
+        WHERE ma.menu_code = im1.menu_code AND ma.deleted = 0
+        ) api_bind_count
         FROM
             iam_menu im1
-            LEFT JOIN iam_menu im2 ON im2.parent_code = im1.menu_code AND im2.app_code = im1.app_code AND im2.deleted = 0
         WHERE
             im1.deleted = 0
             AND im1.app_code = #{appCode}
-        GROUP BY
-            im1.id
         ORDER BY
             im1.sort,
             im1.id
   </select>
-    
+
+    <select id="getAppMenu4Tree" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamMenuDto">
+        SELECT
+        `id`,
+        `app_code`,
+        `parent_code`,
+        `menu_code`,
+        `menu_name`,
+        `icon`,
+        `menu_type`,
+        `route_path`,
+        `component`,
+        `button_code`,
+        `hidden`,
+        `sort`,
+        `create_time`,
+        `create_by`,
+        `update_time`,
+        `update_by`,
+        `remark`,
+        `version`
+        FROM
+        iam_menu
+        WHERE
+        app_code = #{appCode}
+        ORDER BY
+        sort,
+        id
+    </select>
+
+
     <!-- 根据用户编码查询菜单列表 -->
     <select id="selectMenusByUserCode" parameterType="com.wkclz.iam.common.entity.IamMenu" resultType="com.wkclz.iam.common.entity.IamMenu">
         SELECT DISTINCT
@@ -54,6 +86,6 @@
             m.sort ASC,
             m.id ASC
     </select>
-    
+
 </mapper>
 

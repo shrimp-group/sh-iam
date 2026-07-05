@@ -73,6 +73,8 @@ public interface Route {
     String ROLE_UPDATE = "/role/update";
     @ApiDesc("5. 角色管理-删除")
     String ROLE_REMOVE = "/role/remove";
+    @ApiDesc("6. 角色管理-树")
+    String ROLE_TREE = "/role/tree";
 
     // 用户角色关联
     @ApiDesc("1. 用户角色-列表")
@@ -81,10 +83,14 @@ public interface Route {
     String USER_ROLE_BIND = "/user-role/bind";
     @ApiDesc("3. 用户角色-解绑")
     String USER_ROLE_UNBIND = "/user-role/unbind";
+    @ApiDesc("4. 用户角色-角色树")
+    String USER_ROLE_ROLE_TREE = "/user-role/role-tree";
+    @ApiDesc("5. 用户角色-菜单来源")
+    String USER_MENU_SOURCE_LIST = "/user-role/menu-source";
 
     // 角色用户关联
-    @ApiDesc("1. 角色用户-列表")
-    String ROLE_USER_LIST = "/role-user/list";
+    @ApiDesc("1. 角色用户-分页")
+    String ROLE_USER_PAGE = "/role-user/page";
     @ApiDesc("2. 角色用户-绑定")
     String ROLE_USER_BIND = "/role-user/bind";
     @ApiDesc("3. 角色用户-解绑")
@@ -103,14 +109,20 @@ public interface Route {
     String MENU_UPDATE = "/menu/update";
     @ApiDesc("6. 菜单管理-删除")
     String MENU_REMOVE = "/menu/remove";
+    @ApiDesc("7. 菜单管理-详情页")
+    String MENU_DETAIL = "/menu/detail";
+    @ApiDesc("8. 菜单管理-绑定角色")
+    String MENU_BOUND_ROLES = "/menu/bound-roles";
+    @ApiDesc("9. 菜单管理-绑定用户")
+    String MENU_BOUND_USERS = "/menu/bound-users";
 
     // 角色菜单关联
     @ApiDesc("1. 角色菜单-列表")
     String ROLE_MENU_LIST = "/role-menu/list";
-    @ApiDesc("2. 角色菜单-绑定")
-    String ROLE_MENU_BIND = "/role-menu/bind";
-    @ApiDesc("3. 角色菜单-解绑")
-    String ROLE_MENU_UNBIND = "/role-menu/unbind";
+    @ApiDesc("2. 角色菜单-保存")
+    String ROLE_MENU_SAVE = "/role-menu/save";
+    @ApiDesc("3. 角色菜单-已绑定角色列表")
+    String ROLE_MENU_BOUND_ROLES = "/role-menu/bound-roles";
 
     // 用户菜单
     @ApiDesc("1. 用户菜单-列表")
@@ -146,6 +158,10 @@ public interface Route {
     String API_COPY = "/api/copy";
     @ApiDesc("9. API管理-粘贴JSON")
     String API_PASTE = "/api/paste";
+    @ApiDesc("10. API管理-详情页")
+    String API_DETAIL = "/api/detail";
+    @ApiDesc("11. API管理-接口文档")
+    String API_DOC = "/api/doc";
 
     // 登录日志
     @ApiDesc("1. 登录日志-分页")
@@ -184,10 +200,35 @@ public interface Route {
     // 菜单-API 关系
     @ApiDesc("1. 菜单-API-分页")
     String MENU_API_LIST = "/menu-api/list";
-    @ApiDesc("2. 访问密钥-API-创建")
+    @ApiDesc("2. 菜单-API-绑定")
     String MENU_API_BIND = "/menu-api/bind";
-    @ApiDesc("3. 访问密钥-API-删除")
+    @ApiDesc("3. 菜单-API-解绑")
     String MENU_API_UNBIND = "/menu-api/unbind";
+    @ApiDesc("4. 菜单-API-已绑定列表")
+    String MENU_API_BOUND_LIST = "/menu-api/bound-list";
 
+    // API字段权限
+    @ApiDesc("1. API字段权限-按API查询")
+    String API_FIELD_LIST_BY_API = "/api-field/list-by-api";
+    @ApiDesc("2. API字段权限-创建")
+    String API_FIELD_CREATE = "/api-field/create";
+    @ApiDesc("3. API字段权限-修改")
+    String API_FIELD_UPDATE = "/api-field/update";
+    @ApiDesc("4. API字段权限-删除")
+    String API_FIELD_REMOVE = "/api-field/remove";
+
+    // 实体字段分析
+    @ApiDesc("1. 实体字段-根据API定位")
+    String ENTITY_FIELD_RESOLVE = "/entity-field/resolve";
+
+    // 菜单字段关系
+    @ApiDesc("1. 菜单字段-列表")
+    String MENU_FIELD_LIST = "/menu-field/list";
+    @ApiDesc("2. 菜单字段-绑定")
+    String MENU_FIELD_BIND = "/menu-field/bind";
+    @ApiDesc("3. 菜单字段-批量保存")
+    String MENU_FIELD_SAVE = "/menu-field/save";
+    @ApiDesc("4. 菜单字段-解绑")
+    String MENU_FIELD_UNBIND = "/menu-field/unbind";
 
 }

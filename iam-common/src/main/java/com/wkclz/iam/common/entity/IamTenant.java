@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 
 /**
  * Description Create by sh-generator
- *
  * @author shrimp
  * @table iam_tenant (租户) 重新生成代码会覆盖
  */

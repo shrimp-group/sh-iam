@@ -1,72 +1,89 @@
 package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.R;
-import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.RoleCreateReq;
+import com.wkclz.iam.admin.bean.req.RoleListReq;
+import com.wkclz.iam.admin.bean.req.RoleUpdateReq;
+import com.wkclz.iam.admin.bean.resp.RoleResp;
 import com.wkclz.iam.admin.service.IamRoleService;
 import com.wkclz.iam.common.dto.IamRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
+import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.web.bean.IdReq;
+import com.wkclz.web.bean.RemoveReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping(Route.PREFIX)
+@Tag(name = "角色管理", description = "角色管理接口")
 public class RoleRest {
 
     @Autowired
     protected IamRoleService iamRoleService;
 
     @GetMapping(Route.ROLE_LIST)
-    public R roleList(IamRole entity) {
-        Assert.notNull(entity.getAppCode(), "appCode 不能为空!");
-        List<IamRoleDto> iamRoles = iamRoleService.roleList(entity);
-        return R.ok(iamRoles);
+    @Operation(summary = "角色列表")
+    public R<List<RoleResp>> roleList(@Valid RoleListReq req) {
+        IamRole entity = BeanUtil.cp(req, IamRole.class);
+        List<IamRoleDto> list = iamRoleService.roleList(entity);
+        return R.ok(BeanUtil.cp(list, RoleResp.class));
     }
 
     @GetMapping(Route.ROLE_INFO)
-    public R roleInfo(IamRole entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        IamRole role = iamRoleService.selectById(entity.getId());
-        return R.ok(role);
+    @Operation(summary = "角色详情")
+    public R<RoleResp> roleInfo(@Valid IdReq req) {
+        IamRole role = iamRoleService.selectById(req.getId());
+        return R.ok(BeanUtil.cp(role, RoleResp.class));
     }
 
     @PostMapping(Route.ROLE_CREATE)
-    public R roleCreate(@RequestBody IamRole entity) {
-        paramCheck(entity);
+    @Operation(summary = "角色创建")
+    public R<RoleResp> roleCreate(@Valid @RequestBody RoleCreateReq req) {
+        IamRole entity = BeanUtil.cp(req, IamRole.class);
         entity = iamRoleService.create(entity);
-        return R.ok(entity);
+        return R.ok(BeanUtil.cp(entity, RoleResp.class));
     }
 
     @PostMapping(Route.ROLE_UPDATE)
-    public R roleUpdate(@RequestBody IamRole entity) {
-        paramCheck(entity);
+    @Operation(summary = "角色更新")
+    public R<RoleResp> roleUpdate(@Valid @RequestBody RoleUpdateReq req) {
+        IamRole entity = BeanUtil.cp(req, IamRole.class);
         entity = iamRoleService.update(entity);
-        return R.ok(entity);
+        return R.ok(BeanUtil.cp(entity, RoleResp.class));
     }
 
     @PostMapping(Route.ROLE_REMOVE)
-    public R roleRemove(@RequestBody IamRole entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        // 检查角色下是否有子角色
-        IamRole param = new IamRole();
-        param.setParentCode(entity.getRoleCode());
-        long childrenRoleCount = iamRoleService.selectCountByEntity(param);
-        if (childrenRoleCount > 0) {
-            return R.error("请先删除子角色");
+    @Operation(summary = "角色删除")
+    public R<Void> roleRemove(@Valid @RequestBody RemoveReq req) {
+        if (req.getId() != null) {
+            IamRole entity = new IamRole();
+            entity.setId(req.getId());
+            iamRoleService.remove(entity);
+        } else if (req.getIds() != null) {
+            for (Long id : req.getIds()) {
+                IamRole entity = new IamRole();
+                entity.setId(id);
+                iamRoleService.remove(entity);
+            }
         }
-        entity = iamRoleService.remove(entity);
-        return R.ok(entity);
+        return R.ok();
     }
 
-    private void paramCheck(IamRole entity) {
-        if (entity.getId() != null) {
-            Assert.notNull(entity.getVersion(), "version 不能为空");
-        }
-        Assert.notNull(entity.getAppCode(), "appCode 不能为空");
-        Assert.notNull(entity.getRoleName(), "roleName 不能为空");
+    @GetMapping(Route.ROLE_TREE)
+    @Operation(summary = "角色树")
+    public R<List<RoleResp>> roleTree(@Valid RoleListReq req) {
+        IamRole entity = BeanUtil.cp(req, IamRole.class);
+        List<IamRoleDto> tree = iamRoleService.roleTree(entity);
+        return R.ok(BeanUtil.cp(tree, RoleResp.class));
     }
 
 }

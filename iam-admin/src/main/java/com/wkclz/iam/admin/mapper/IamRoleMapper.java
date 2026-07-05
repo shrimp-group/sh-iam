@@ -19,5 +19,7 @@ public interface IamRoleMapper extends BaseMapper<IamRole> {
 
     List<IamRoleDto> getAppRoleList(@Param("appCode") String appCode);
 
+    List<IamRoleDto> getAppRole4Tree(@Param("appCode") String appCode);
+
 }
 

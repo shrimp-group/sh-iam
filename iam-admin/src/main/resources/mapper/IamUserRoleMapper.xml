@@ -1,14 +1,195 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamUserRoleMapper">
-      
-    <!-- 示例查询, 可删除 -->
-    <select id="example" resultType="java.lang.Long">
-    SELECT
-      1 count
-    FROM
-      DUAL
-  </select>
-    
-</mapper>
 
+    <!-- 查询用户角色列表，JOIN iam_role 获取角色名称 -->
+    <select id="getUserRoleList" resultType="com.wkclz.iam.admin.bean.resp.UserRoleResp">
+        SELECT
+        ur.id,
+        r.role_code,
+        r.role_name,
+        ur.start_time,
+        ur.end_time,
+        ur.enable_status,
+        ur.create_time,
+        ur.create_by,
+        ur.update_time,
+        ur.update_by
+        FROM
+        iam_user_role ur
+        INNER JOIN iam_role r ON r.role_code = ur.role_code
+        WHERE
+        ur.deleted = 0
+        AND r.deleted = 0
+        AND ur.user_code = #{userCode}
+        <if test="roleCode != null and roleCode != ''">
+            AND ur.role_code = #{roleCode}
+        </if>
+        ORDER BY
+        ur.sort ASC,
+        ur.id ASC
+    </select>
+
+    <!-- 角色下用户分页查询，JOIN iam_user 获取用户信息，支持用户名精确匹配、姓名模糊搜索 -->
+    <select id="getRoleUserPage" parameterType="com.wkclz.iam.admin.bean.req.RoleUserPageReq"
+            resultType="com.wkclz.iam.admin.bean.resp.RoleUserResp">
+        SELECT
+        ur.id,
+        u.user_code,
+        u.username,
+        u.nickname,
+        ur.start_time,
+        ur.end_time,
+        ur.enable_status,
+        ur.create_time,
+        ur.create_by,
+        ur.update_time,
+        ur.update_by
+        FROM
+        iam_user_role ur
+        INNER JOIN iam_user u ON u.user_code = ur.user_code
+        WHERE
+        ur.deleted = 0
+        AND u.deleted = 0
+        AND ur.role_code = #{roleCode}
+        <if test="username != null">AND u.username = #{username}</if>
+        <if test="nickname != null">AND u.nickname LIKE CONCAT('%', #{nickname}, '%')</if>
+        ORDER BY
+        ur.sort ASC,
+        ur.id ASC
+    </select>
+
+    <!-- 用户在某应用下的角色树查询，含 bindCount 标记 -->
+    <select id="getUserRoleTree" resultType="com.wkclz.iam.common.dto.IamUserRoleDto">
+        SELECT
+        r.id,
+        r.app_code,
+        r.parent_code,
+        r.role_code,
+        r.role_name,
+        r.applicable,
+        IFNULL(bind.bind_count, 0) AS bind_count
+        FROM
+        iam_role r
+        LEFT JOIN (
+        SELECT role_code, COUNT(*) AS bind_count
+        FROM iam_user_role
+        WHERE deleted = 0
+        AND user_code = #{userCode}
+        GROUP BY role_code
+        ) bind ON bind.role_code = r.role_code
+        WHERE
+        r.deleted = 0
+        AND r.app_code = #{appCode}
+        ORDER BY
+        r.sort ASC,
+        r.id ASC
+    </select>
+
+    <!-- 查询菜单绑定的角色列表，通过 iam_role_menu 关联 -->
+    <select id="getMenuBoundRoles" resultType="com.wkclz.iam.admin.bean.resp.MenuRoleResp">
+        SELECT
+        r.id,
+        r.role_code,
+        r.role_name,
+        r.create_time,
+        r.create_by,
+        r.update_time,
+        r.update_by
+        FROM
+        iam_role_menu rm
+        INNER JOIN iam_role r ON r.role_code = rm.role_code
+        WHERE
+        rm.deleted = 0
+        AND r.deleted = 0
+        AND rm.menu_code = #{menuCode}
+        ORDER BY
+        r.sort ASC,
+        r.id ASC
+    </select>
+
+    <!-- 查询菜单关联的用户列表（含来源角色），通过 iam_role_menu + iam_user_role + iam_user 关联 -->
+    <select id="getMenuBoundUsers" resultType="com.wkclz.iam.admin.bean.resp.MenuUserResp">
+        SELECT
+        u.id,
+        u.user_code,
+        u.username,
+        u.nickname,
+        r.role_code,
+        r.role_name,
+        ur.start_time,
+        ur.end_time,
+        ur.enable_status,
+        ur.create_time,
+        ur.create_by,
+        ur.update_time,
+        ur.update_by
+        FROM
+        iam_role_menu rm
+        INNER JOIN iam_user_role ur ON ur.role_code = rm.role_code AND ur.deleted = 0
+        INNER JOIN iam_user u ON u.user_code = ur.user_code AND u.deleted = 0
+        INNER JOIN iam_role r ON r.role_code = rm.role_code AND r.deleted = 0
+        WHERE
+        rm.deleted = 0
+        AND rm.menu_code = #{menuCode}
+        ORDER BY
+        u.sort ASC,
+        u.id ASC
+    </select>
+
+    <!-- 查询用户菜单来源角色信息，通过 iam_user_role + iam_role_menu + iam_menu + iam_role 关联 -->
+    <select id="getUserMenuSourceList" resultType="com.wkclz.iam.admin.bean.resp.UserMenuSourceResp">
+        SELECT DISTINCT
+        m.id,
+        m.menu_code,
+        m.menu_name,
+        m.parent_code,
+        m.menu_type,
+        m.sort,
+        r.role_code,
+        r.role_name,
+        ur.start_time,
+        ur.end_time,
+        ur.enable_status,
+        ur.create_time,
+        ur.create_by,
+        ur.update_time,
+        ur.update_by
+        FROM
+        iam_user_role ur
+        INNER JOIN iam_role_menu rm ON rm.role_code = ur.role_code AND rm.deleted = 0
+        INNER JOIN iam_menu m ON m.menu_code = rm.menu_code AND m.deleted = 0
+        INNER JOIN iam_role r ON r.role_code = ur.role_code AND r.deleted = 0
+        WHERE
+        ur.deleted = 0
+        AND ur.user_code = #{userCode}
+            AND ur.app_code = #{appCode}
+        ORDER BY
+        m.sort ASC,
+        m.id ASC
+    </select>
+
+    <!-- 批量启用已到有效期的绑定 -->
+    <update id="enableExpiredBindings">
+        UPDATE iam_user_role
+        SET enable_status = 1,
+        update_time = NOW()
+        WHERE
+        deleted = 0
+        AND enable_status = 0
+        AND start_time &lt;= NOW()
+        AND end_time &gt;= NOW()
+    </update>
+
+    <!-- 批量禁用已过有效期的绑定 -->
+    <update id="disableExpiredBindings">
+        UPDATE iam_user_role
+        SET enable_status = 0,
+        update_time = NOW()
+        WHERE
+        deleted = 0
+        AND enable_status = 1
+        AND (end_time &lt; NOW() OR start_time &gt; NOW())
+    </update>
+
+</mapper>

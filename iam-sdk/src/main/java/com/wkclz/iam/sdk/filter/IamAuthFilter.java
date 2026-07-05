@@ -1,10 +1,11 @@
 package com.wkclz.iam.sdk.filter;
 
+import com.wkclz.iam.sdk.bean.UserJwt;
+import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
+import com.wkclz.iam.sdk.exception.JwtValidationException;
 import com.wkclz.iam.sdk.helper.ResponseHelper;
 import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.iam.sdk.model.UserJwt;
-import com.wkclz.iam.sdk.model.UserSession;
 import com.wkclz.iam.sdk.service.IamSsoService;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -29,18 +30,18 @@ public class IamAuthFilter extends OncePerRequestFilter {
 
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        String requestURI = request.getRequestURI();
-        if ("/".equals(requestURI)) {
+        String requesturi = request.getRequestURI();
+        if ("/".equals(requesturi)) {
             ResponseHelper.responseError(response, HttpStatus.FORBIDDEN, "Forbidden");
             return;
         }
-        if (SessionHelper.match( "/*/public/**", requestURI)) {
+        if (SessionHelper.match("/*/public/**", requesturi)) {
             chain.doFilter(request, response);
             return;
         }
         // 1. 从请求头中获取token
         String token = SessionHelper.getToken(request);
-        
+
         // 2. 验证token是否存在
         if (!StringUtils.hasText(token)) {
             ResponseHelper.responseError(response, HttpStatus.UNAUTHORIZED, "token 不存在!");
@@ -56,15 +57,22 @@ public class IamAuthFilter extends OncePerRequestFilter {
         try {
             // 4. 解析JWT获取用户信息
             UserJwt userJwt = JwtUtil.parseToken(token, iamSdkConfig.getJwtSecretKey());
-            
+
             // 5. 从Redis中获取用户会话信息 【从 cas 中获取】
             UserSession userSession = iamSsoService.tokenCheck(token, userJwt.getUsername());
+            if (userSession == null) {
+                ResponseHelper.responseError(response, HttpStatus.UNAUTHORIZED, "无效的token!");
+                return;
+            }
 
             // 6. 将用户信息存入请求上下文，方便后续使用
             SessionHelper.cacheUserInfo(request, userJwt, userSession);
 
             // 7. 放行请求
             chain.doFilter(request, response);
+        } catch (JwtValidationException e) {
+            // TD-021: 保留异常类型信息，区分过期/签名错误等情况
+            ResponseHelper.responseError(response, HttpStatus.UNAUTHORIZED, e.getMessage());
         } catch (Exception e) {
             ResponseHelper.responseError(response, HttpStatus.UNAUTHORIZED, "token验证失败!");
         }

@@ -3,11 +3,13 @@ package com.wkclz.iam.sdk.filter;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.iam.sdk.facade.SsoFacade;
 import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.iam.sdk.model.RequestLog;
-import com.wkclz.iam.sdk.model.UserSession;
+import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.LocalThreadHelper;
 import com.wkclz.web.rest.ErrorHandler;
@@ -29,9 +31,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +44,10 @@ public class LoggingFilter extends OncePerRequestFilter {
 
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final List<String> NO_LOGS = List.of("/public/status");
-    private static final Map<String, Boolean> LOGS_SET = new HashMap<>();
+    private static final Cache<String, Boolean> LOGS_SET = CacheBuilder.newBuilder()
+        .maximumSize(1_000)
+        .expireAfterWrite(1, TimeUnit.HOURS)
+        .build();
 
     // 正则表达式来匹配JSON字符串中密码字段的值
     private static final Pattern PWD_PATTERN = Pattern.compile("assword\"\\s*:\\s*\"(.*?)\"");
@@ -188,17 +192,24 @@ public class LoggingFilter extends OncePerRequestFilter {
         return new String(body, StandardCharsets.UTF_8);
     }
 
-    private synchronized boolean isLog(String uri) {
+    private boolean isLog(String uri) {
         if (StringUtils.isBlank(uri)) {
             return false;
         }
 
-        // 缓存
-        Boolean a = LOGS_SET.get(uri);
-        if (a != null) {
-            return a;
+        try {
+            return LOGS_SET.get(uri, () -> computeIsLog(uri));
+        } catch (Exception e) {
+            // Guava Cache.get 在 Callable 抛异常时不会缓存，回退到直接计算
+            logger.warn("isLog cache load failed for uri: {}, fallback to direct compute", uri, e);
+            return computeIsLog(uri);
         }
+    }
 
+    /**
+     * 计算指定 URI 是否需要记录日志（仅在缓存未命中时调用）
+     */
+    private boolean computeIsLog(String uri) {
         // no log
         if ("true".equals(config.getStaticEnabled())) {
             String staticSubfix = config.getStaticSubfix();
@@ -206,7 +217,6 @@ public class LoggingFilter extends OncePerRequestFilter {
                 String p = "^.+\\.(?i)("+staticSubfix+")$";
                 boolean match = uri.matches(p);
                 if (match) {
-                    LOGS_SET.put(uri, false);
                     return false;
                 }
             }
@@ -215,12 +225,10 @@ public class LoggingFilter extends OncePerRequestFilter {
         for (String noLog : NO_LOGS) {
             boolean match = ANT_PATH_MATCHER.match(noLog, uri);
             if (match) {
-                LOGS_SET.put(uri, false);
                 return false;
             }
         }
 
-        LOGS_SET.put(uri, true);
         return true;
     }
 
@@ -268,7 +276,7 @@ public class LoggingFilter extends OncePerRequestFilter {
         log.setQueryString(subText(log.getQueryString(), 1023));
         log.setRequestBody(subText(log.getRequestBody(), 4095));
         log.setHttpStatus(log.getHttpStatus());
-        log.setToken(subText(log.getToken(), 511));
+        log.setToken(maskToken(log.getToken()));
         log.setUserCode(subText(log.getUserCode(), 31));
         log.setUsername(subText(log.getUsername(), 31));
         log.setNickname(subText(log.getNickname(), 31));
@@ -292,6 +300,21 @@ public class LoggingFilter extends OncePerRequestFilter {
         }
         matcher.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * TD-006: Token 脱敏，仅保留前 8 位 + ... + 后 4 位
+     * 短 token（< 16 位）全部用 * 替换，避免被还原
+     */
+    private static String maskToken(String token) {
+        if (StringUtils.isBlank(token)) {
+            return token;
+        }
+        int len = token.length();
+        if (len < 16) {
+            return "*".repeat(len);
+        }
+        return token.substring(0, 8) + "***" + token.substring(len - 4);
     }
 
     private static String subText(String text, int max) {

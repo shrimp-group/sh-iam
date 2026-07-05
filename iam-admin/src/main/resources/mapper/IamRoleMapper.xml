@@ -10,6 +10,7 @@
             r1.parent_code,
             r1.role_code,
             r1.role_name,
+        r1.applicable,
             r1.sort,
             r1.create_time,
             r1.create_by,
@@ -17,20 +18,48 @@
             r1.update_by,
             r1.remark,
             r1.version,
-            COUNT( r2.id ) children_count
+        ( SELECT COUNT( * ) FROM iam_role r2
+        WHERE r2.parent_code = r1.role_code AND r2.app_code = r1.app_code AND r2.deleted = 0
+        ) children_count,
+        ( SELECT COUNT( * ) FROM iam_user_role ur
+        WHERE ur.role_code = r1.role_code AND ur.deleted = 0
+        ) user_bind_count
         FROM
             iam_role r1
-            LEFT JOIN iam_role r2 ON r2.parent_code = r1.role_code AND r2.app_code = r1.app_code AND r2.deleted = 0
         WHERE
             r1.deleted = 0
             AND r1.app_code = #{appCode}
-        GROUP BY
-            r1.id
         ORDER BY
             r1.sort,
             r1.id
 
   </select>
-    
+
+    <select id="getAppRole4Tree" parameterType="java.lang.String" resultType="com.wkclz.iam.common.dto.IamRoleDto">
+        SELECT
+        `id`,
+        `tenant_code`,
+        `app_code`,
+        `parent_code`,
+        `role_code`,
+        `role_name`,
+        `applicable`,
+        `sort`,
+        `create_time`,
+        `create_by`,
+        `update_time`,
+        `update_by`,
+        `remark`,
+        `version`
+        FROM
+        iam_role
+        WHERE
+        deleted = 0
+        AND app_code = #{appCode}
+        ORDER BY
+        sort,
+        id
+    </select>
+
 </mapper>
 

@@ -49,9 +49,9 @@ public class IamMenu extends BaseEntity {
     private String icon;
 
     /**
-     * 菜单类型:菜单MENU, 按钮BUTTON
+     * 菜单类型:菜单MENU, 按钮BUTTON,字段组FIELDS
      */
-    @FieldDesc(value = "菜单类型:菜单MENU, 按钮BUTTON")
+    @FieldDesc(value = "菜单类型:菜单MENU, 按钮BUTTON,字段组FIELDS")
     private String menuType;
 
     /**

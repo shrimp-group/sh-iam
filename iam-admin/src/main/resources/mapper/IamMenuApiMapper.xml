@@ -1,14 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamMenuApiMapper">
-      
-    <!-- 示例查询, 可删除 -->
-    <select id="example" resultType="java.lang.Long">
-    SELECT
-      1 count
-    FROM
-      DUAL
-  </select>
-    
-</mapper>
 
+    <!-- 查询菜单已绑定的 API 详情列表 -->
+    <select id="getBoundApis" resultType="com.wkclz.iam.admin.bean.resp.ApiBoundResp">
+        SELECT
+        a.id,
+        ma.id AS menu_api_id,
+        a.module,
+        a.app_code,
+        a.api_code,
+        a.api_method,
+        a.api_uri,
+        a.api_name,
+        a.write_flag,
+        a.create_time,
+        a.create_by,
+        a.update_time,
+        a.update_by
+        FROM
+        iam_menu_api ma
+        INNER JOIN iam_api a ON a.api_code = ma.api_code AND a.deleted = 0
+        WHERE
+        ma.deleted = 0
+        AND ma.menu_code = #{menuCode}
+        ORDER BY
+        a.api_uri ASC
+    </select>
+
+    <!-- 根据 API 编码一次性查询所有已绑定菜单的全路径（RECURSIVE CTE 避免 N+1 查询） -->
+    <select id="getBoundMenuPathsByApiCode" resultType="java.lang.String">
+        WITH RECURSIVE menu_path AS (
+        SELECT
+        m.id, m.parent_code, m.menu_code, m.menu_name, m.sort,
+        m.menu_code AS root_menu_code
+        FROM iam_menu m
+        INNER JOIN iam_menu_api ma ON ma.menu_code = m.menu_code AND ma.deleted = 0
+        WHERE m.deleted = 0
+        AND ma.api_code = #{apiCode}
+        UNION ALL
+        SELECT
+        p.id, p.parent_code, p.menu_code, p.menu_name, p.sort,
+        mp.root_menu_code
+        FROM iam_menu p
+        INNER JOIN menu_path mp ON p.menu_code = mp.parent_code AND p.deleted = 0
+        )
+        SELECT GROUP_CONCAT(mp.menu_name ORDER BY mp.sort ASC, mp.id ASC SEPARATOR ' &gt; ') AS menu_full_path
+        FROM menu_path mp
+        GROUP BY mp.root_menu_code
+        ORDER BY menu_full_path
+    </select>
+
+</mapper>

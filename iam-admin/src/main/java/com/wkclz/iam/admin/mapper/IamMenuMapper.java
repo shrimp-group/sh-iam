@@ -19,6 +19,7 @@ public interface IamMenuMapper extends BaseMapper<IamMenu> {
 
     List<IamMenuDto> getAppMenuList(@Param("appCode") String appCode);
 
+    List<IamMenuDto> getAppMenu4Tree(@Param("appCode") String appCode);
 
     /**
      * 根据用户编码查询菜单列表

@@ -48,6 +48,12 @@ public class IamRole extends BaseEntity {
     @FieldDesc(value = "名称")
     private String roleName;
 
+    /**
+     * 是否可申请
+     */
+    @FieldDesc(value = "是否可申请", notNull = true)
+    private Integer applicable;
+
 
     public static IamRole copy(IamRole source, IamRole target) {
         if (target == null ) { target = new IamRole();}
@@ -58,6 +64,7 @@ public class IamRole extends BaseEntity {
         target.setParentCode(source.getParentCode());
         target.setRoleCode(source.getRoleCode());
         target.setRoleName(source.getRoleName());
+        target.setApplicable(source.getApplicable());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -77,6 +84,9 @@ public class IamRole extends BaseEntity {
         if (source.getParentCode() != null) { target.setParentCode(source.getParentCode()); }
         if (source.getRoleCode() != null) { target.setRoleCode(source.getRoleCode()); }
         if (source.getRoleName() != null) { target.setRoleName(source.getRoleName()); }
+        if (source.getApplicable() != null) {
+            target.setApplicable(source.getApplicable());
+        }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }

@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.service;
 
+import cn.hutool.core.date.LocalDateTimeUtil;
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
@@ -7,9 +8,13 @@ import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamRequestLogMapper;
 import com.wkclz.iam.common.entity.IamRequestLog;
 import com.wkclz.mybatis.service.BaseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +27,19 @@ import java.util.List;
 @Service
 public class IamRequestLogService extends BaseService<IamRequestLog, IamRequestLogMapper> {
 
+    private static final Logger log = LoggerFactory.getLogger(IamRequestLogService.class);
+
     public PageData<IamRequestLog> getRequestLogPage(IamRequestLog entity) {
+        // 时间间隔校验：不能超过30天
+        LocalDateTime timeFrom = entity.getTimeFrom();
+        LocalDateTime timeTo = entity.getTimeTo();
+        if (timeFrom != null && timeTo != null) {
+            long between = LocalDateTimeUtil.between(timeFrom, timeTo, ChronoUnit.DAYS);
+            if (between > 30) {
+                throw ValidationException.of("时间间隔不能超过30天");
+            }
+        }
+        log.info("查询请求日志分页, timeFrom={}, timeTo={}", timeFrom, timeTo);
         entity.init();
         Long count = mapper.getRequestLogCount(entity);
         if (count == 0) {

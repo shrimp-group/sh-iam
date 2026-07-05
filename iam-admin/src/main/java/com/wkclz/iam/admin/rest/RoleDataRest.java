@@ -1,57 +1,54 @@
 package com.wkclz.iam.admin.rest;
 
 import com.wkclz.core.base.R;
-import com.wkclz.core.enums.ResultCode;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.RoleDataBindReq;
+import com.wkclz.iam.admin.bean.req.RoleDataListReq;
+import com.wkclz.iam.admin.bean.resp.RoleDataResp;
 import com.wkclz.iam.admin.service.IamRoleDataService;
 import com.wkclz.iam.common.entity.IamRoleData;
+import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.web.bean.RemoveReq;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping(Route.PREFIX)
+@Tag(name = "角色数据权限", description = "角色-数据权限关联管理接口")
 public class RoleDataRest {
 
     @Autowired
     protected IamRoleDataService iamRoleDataService;
 
     @GetMapping(Route.ROLE_DATA_LIST)
-    public R roleDataList(IamRoleData entity) {
-        Assert.notNull(entity.getRoleCode(), "roleCode 不能为空!");
-        Assert.notNull(entity.getRoleCode(), "dimensionCode 不能为空!");
-        List<IamRoleData> list = iamRoleDataService.getRoleDataList(entity.getRoleCode(), entity.getDimensionCode());
-        return R.ok(list);
+    @Operation(summary = "查询角色数据权限列表")
+    public R<List<RoleDataResp>> roleDataList(@Valid RoleDataListReq req) {
+        List<IamRoleData> list = iamRoleDataService.getRoleDataList(req.getRoleCode(), req.getDimensionCode());
+        return R.ok(BeanUtil.cp(list, RoleDataResp.class));
     }
 
     @PostMapping(Route.ROLE_DATA_BIND)
-    public R roleDataBind(@RequestBody IamRoleData entity) {
-        paramCheck(entity);
+    @Operation(summary = "角色数据权限绑定")
+    public R<RoleDataResp> roleDataBind(@Valid @RequestBody RoleDataBindReq req) {
+        IamRoleData entity = BeanUtil.cp(req, IamRoleData.class);
         entity = iamRoleDataService.create(entity);
-        return R.ok(entity);
+        return R.ok(BeanUtil.cp(entity, RoleDataResp.class));
     }
 
     @PostMapping(Route.ROLE_DATA_UNBIND)
-    public R roleDataUnbind(@RequestBody IamRoleData entity) {
-        Assert.notNull(entity.getId(), ResultCode.PARAM_NO_ID.getMessage());
-        entity = iamRoleDataService.remove(entity);
-        return R.ok(entity);
-    }
-
-    private void paramCheck(IamRoleData entity) {
-        Assert.notNull(entity.getAppCode(), "appCode 不能为空");
-        Assert.notNull(entity.getRoleCode(), "menuCode 不能为空");
-        Assert.notNull(entity.getDimensionCode(), "dimensionCode 不能为空");
-        Assert.notNull(entity.getDataCode(), "apiCode 不能为空");
-        if (entity.getId() == null) {
-            // 创建操作的参数检查
-        } else {
-            // 更新操作的参数检查
-            Assert.notNull(entity.getVersion(), "version 不能为空");
-        }
-
+    @Operation(summary = "角色数据权限解绑")
+    public R<Void> roleDataUnbind(@Valid @RequestBody RemoveReq req) {
+        IamRoleData entity = new IamRoleData();
+        entity.setId(req.getId());
+        iamRoleDataService.remove(entity);
+        return R.ok();
     }
 
 }
