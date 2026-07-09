@@ -346,7 +346,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
             resp.setKey(fieldKey);
 
             resp.setName(node.getFieldName());
-            resp.setDescription(node.getFieldDesc());
+            resp.setDescription(node.getFieldDescription());
             resp.setType(node.getFieldType());
             resp.setSimpleType(ClassTypeHelper.isSimpleType(node.getFieldTypeClazz()));
 

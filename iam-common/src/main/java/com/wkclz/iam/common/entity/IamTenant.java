@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,31 +21,31 @@ public class IamTenant extends BaseEntity {
     /**
      * 租户编码
      */
-    @FieldDesc(value = "租户编码", notNull = true)
+    @Schema(description = "租户编码")
     private String tenantCode;
 
     /**
      * 租户名称
      */
-    @FieldDesc(value = "租户名称")
+    @Schema(description = "租户名称")
     private String tenantName;
 
     /**
      * 可用状态
      */
-    @FieldDesc(value = "可用状态")
+    @Schema(description = "可用状态")
     private Integer enableFlag;
 
     /**
      * 可用开始
      */
-    @FieldDesc(value = "可用开始")
+    @Schema(description = "可用开始")
     private LocalDateTime enableBegin;
 
     /**
      * 可用结束
      */
-    @FieldDesc(value = "可用结束")
+    @Schema(description = "可用结束")
     private LocalDateTime enableEnd;
 
 
@@ -122,4 +122,3 @@ public class IamTenant extends BaseEntity {
     }
 
 }
-

@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,43 +21,43 @@ public class IamApi extends BaseEntity {
     /**
      * 模块
      */
-    @FieldDesc(value = "模块")
+    @Schema(description = "模块")
     private String module;
 
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * 路由映射编码
      */
-    @FieldDesc(value = "路由映射编码")
+    @Schema(description = "路由映射编码")
     private String apiCode;
 
     /**
      * 路由映射方法
      */
-    @FieldDesc(value = "路由映射方法")
+    @Schema(description = "路由映射方法")
     private String apiMethod;
 
     /**
      * 路由映射URI
      */
-    @FieldDesc(value = "路由映射URI")
+    @Schema(description = "路由映射URI")
     private String apiUri;
 
     /**
      * 路由映射名称
      */
-    @FieldDesc(value = "路由映射名称")
+    @Schema(description = "路由映射名称")
     private String apiName;
 
     /**
      * 白名单
      */
-    @FieldDesc(value = "白名单", notNull = true)
+    @Schema(description = "白名单")
     private Integer writeFlag;
 
 
@@ -104,4 +104,3 @@ public class IamApi extends BaseEntity {
     }
 
 }
-

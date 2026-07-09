@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,19 +21,19 @@ public class IamRoleMenu extends BaseEntity {
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * 角色编码
      */
-    @FieldDesc(value = "角色编码")
+    @Schema(description = "角色编码")
     private String roleCode;
 
     /**
      * 资源编码
      */
-    @FieldDesc(value = "资源编码")
+    @Schema(description = "资源编码")
     private String menuCode;
 
 

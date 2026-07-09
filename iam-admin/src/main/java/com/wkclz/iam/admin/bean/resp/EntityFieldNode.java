@@ -18,7 +18,7 @@ public class EntityFieldNode {
     private String fieldName;
 
     @Schema(description = "字段描述")
-    private String fieldDesc;
+    private String fieldDescription;
 
     @Schema(description = "字段类型")
     private String fieldType;

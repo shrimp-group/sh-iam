@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,19 +21,19 @@ public class IamMenuApi extends BaseEntity {
     /**
      * 所属应用
      */
-    @FieldDesc(value = "所属应用", notNull = true)
+    @Schema(description = "所属应用")
     private String appCode;
 
     /**
      * 菜单编码
      */
-    @FieldDesc(value = "菜单编码", notNull = true)
+    @Schema(description = "菜单编码")
     private String menuCode;
 
     /**
      * API 编码
      */
-    @FieldDesc(value = "API 编码", notNull = true)
+    @Schema(description = "API 编码")
     private String apiCode;
 
 

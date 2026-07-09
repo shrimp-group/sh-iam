@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,43 +21,43 @@ public class IamAccessKey extends BaseEntity {
     /**
      * 所属应用
      */
-    @FieldDesc(value = "所属应用", notNull = true)
+    @Schema(description = "所属应用")
     private String appCode;
 
     /**
      * 应用id
      */
-    @FieldDesc(value = "应用id", notNull = true)
+    @Schema(description = "应用id")
     private String appId;
 
     /**
      * AK
      */
-    @FieldDesc(value = "AK", notNull = true)
+    @Schema(description = "AK")
     private String accessKey;
 
     /**
      * SK
      */
-    @FieldDesc(value = "SK", notNull = true)
+    @Schema(description = "SK")
     private String secretKey;
 
     /**
      * 生效状态
      */
-    @FieldDesc(value = "生效状态", notNull = true)
+    @Schema(description = "生效状态")
     private Integer enableStatus;
 
     /**
      * 生效时间开始
      */
-    @FieldDesc(value = "生效时间开始", notNull = true)
+    @Schema(description = "生效时间开始")
     private LocalDateTime enableStart;
 
     /**
      * 生效时间结束
      */
-    @FieldDesc(value = "生效时间结束", notNull = true)
+    @Schema(description = "生效时间结束")
     private LocalDateTime enableStop;
 
 
@@ -104,4 +104,3 @@ public class IamAccessKey extends BaseEntity {
     }
 
 }
-

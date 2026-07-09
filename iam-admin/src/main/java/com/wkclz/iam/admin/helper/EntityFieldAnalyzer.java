@@ -1,7 +1,7 @@
 package com.wkclz.iam.admin.helper;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.bean.resp.EntityFieldNode;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ import java.util.*;
 
 /**
  * 实体字段分析器
- * 通过反射解析实体类，读取 @FieldDesc 注解，递归解析嵌套对象和 List 泛型，生成字段树
+ * 通过反射解析实体类，读取 @Schema 注解，递归解析嵌套对象和 List 泛型，生成字段树
  */
 @Component
 public class EntityFieldAnalyzer {
@@ -124,9 +124,9 @@ public class EntityFieldAnalyzer {
             EntityFieldNode node = new EntityFieldNode();
             node.setFieldName(fieldName);
 
-            // 读取 @FieldDesc 注解
-            FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
-            node.setFieldDesc(fieldDesc != null ? fieldDesc.value() : fieldName);
+            // 读取 @Schema 注解
+            Schema schema = field.getAnnotation(Schema.class);
+            node.setFieldDescription(schema != null ? schema.description() : fieldName);
             node.setFieldType(fieldType.getSimpleName());
             node.setFieldTypeClazz(fieldType);
 
@@ -307,9 +307,9 @@ public class EntityFieldAnalyzer {
             EntityFieldNode node = new EntityFieldNode();
             node.setFieldName(fieldName);
 
-            // 读取 @FieldDesc 注解作为描述
-            FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
-            node.setFieldDesc(fieldDesc != null ? fieldDesc.value() : fieldName);
+            // 读取 @Schema 注解作为描述
+            Schema schema = field.getAnnotation(Schema.class);
+            node.setFieldDescription(schema != null ? schema.description() : fieldName);
 
             Class<?> fieldType = field.getType();
             node.setFieldType(fieldType.getSimpleName());

@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,37 +21,37 @@ public class IamRole extends BaseEntity {
     /**
      * 租户编码
      */
-    @FieldDesc(value = "租户编码")
+    @Schema(description = "租户编码")
     private String tenantCode;
 
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * 父角色
      */
-    @FieldDesc(value = "父角色")
+    @Schema(description = "父角色")
     private String parentCode;
 
     /**
      * 角色编码
      */
-    @FieldDesc(value = "角色编码")
+    @Schema(description = "角色编码")
     private String roleCode;
 
     /**
      * 名称
      */
-    @FieldDesc(value = "名称")
+    @Schema(description = "名称")
     private String roleName;
 
     /**
      * 是否可申请
      */
-    @FieldDesc(value = "是否可申请", notNull = true)
+    @Schema(description = "是否可申请")
     private Integer applicable;
 
 

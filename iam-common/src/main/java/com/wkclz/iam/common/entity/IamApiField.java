@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,49 +19,49 @@ public class IamApiField extends BaseEntity {
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码", notNull = true)
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * API编码
      */
-    @FieldDesc(value = "API编码", notNull = true)
+    @Schema(description = "API编码")
     private String apiCode;
 
     /**
      * 字段编码
      */
-    @FieldDesc(value = "字段编码", notNull = true)
+    @Schema(description = "字段编码")
     private String fieldCode;
 
     /**
      * 字段名称
      */
-    @FieldDesc(value = "字段名称", notNull = true)
+    @Schema(description = "字段名称")
     private String fieldName;
 
     /**
      * JSONPath表达式
      */
-    @FieldDesc(value = "JSONPath表达式", notNull = true)
+    @Schema(description = "JSONPath表达式")
     private String jsonPath;
 
     /**
      * 动作类型(HIDDEN/MASK/READ_ONLY)
      */
-    @FieldDesc(value = "动作类型(HIDDEN/MASK/READ_ONLY)", notNull = true)
+    @Schema(description = "动作类型(HIDDEN/MASK/READ_ONLY)")
     private String action;
 
     /**
      * 脱敏规则(keepHead,keepTail)
      */
-    @FieldDesc(value = "脱敏规则(keepHead,keepTail)")
+    @Schema(description = "脱敏规则(keepHead,keepTail)")
     private String maskRule;
 
     /**
      * 描述说明
      */
-    @FieldDesc(value = "描述说明")
+    @Schema(description = "描述说明")
     private String description;
 
 
@@ -150,4 +150,3 @@ public class IamApiField extends BaseEntity {
     }
 
 }
-

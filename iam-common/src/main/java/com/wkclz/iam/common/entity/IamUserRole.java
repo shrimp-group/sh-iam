@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,43 +21,43 @@ public class IamUserRole extends BaseEntity {
     /**
      * 租户编码
      */
-    @FieldDesc(value = "租户编码", notNull = true)
+    @Schema(description = "租户编码")
     private String tenantCode;
 
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * 用户编码
      */
-    @FieldDesc(value = "用户编码", notNull = true)
+    @Schema(description = "用户编码")
     private String userCode;
 
     /**
      * 角色编码
      */
-    @FieldDesc(value = "角色编码")
+    @Schema(description = "角色编码")
     private String roleCode;
 
     /**
      * 有效开始
      */
-    @FieldDesc(value = "有效开始", notNull = true)
+    @Schema(description = "有效开始")
     private LocalDateTime startTime;
 
     /**
      * 有效结束
      */
-    @FieldDesc(value = "有效结束", notNull = true)
+    @Schema(description = "有效结束")
     private LocalDateTime endTime;
 
     /**
      * 当前有效状态
      */
-    @FieldDesc(value = "当前有效状态", notNull = true)
+    @Schema(description = "当前有效状态")
     private Integer enableStatus;
 
 

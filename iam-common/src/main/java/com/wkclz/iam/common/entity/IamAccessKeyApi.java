@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,19 +21,19 @@ public class IamAccessKeyApi extends BaseEntity {
     /**
      * 所属应用
      */
-    @FieldDesc(value = "所属应用", notNull = true)
+    @Schema(description = "所属应用")
     private String appCode;
 
     /**
      * 应用id
      */
-    @FieldDesc(value = "应用id", notNull = true)
+    @Schema(description = "应用id")
     private String appId;
 
     /**
      * API 编码
      */
-    @FieldDesc(value = "API 编码", notNull = true)
+    @Schema(description = "API 编码")
     private String apiCode;
 
 
@@ -72,4 +72,3 @@ public class IamAccessKeyApi extends BaseEntity {
     }
 
 }
-
