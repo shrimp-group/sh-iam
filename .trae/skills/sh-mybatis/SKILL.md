@@ -47,7 +47,7 @@ com.wkclz.mybatis
 
 | 方法 | 说明 | 特性 |
 |------|------|------|
-| `int insert(T entity)` | 插入单条 | 自增主键回填(@Options)；跳过null字段；@FieldDesc(notNull=true)校验 |
+| `int insert(T entity)` | 插入单条 | 自增主键回填(@Options)；跳过null字段 |
 | `int insertBatch(List<T> entities)` | 批量插入 | 全量字段插入（含null）；sort默认0；OGNL:`entities[i].field` |
 
 ### 删除操作（逻辑删除）
@@ -225,3 +225,141 @@ PageData<User> page = PageQuery.page(param, p -> userMapper.selectByEntity(p));
 - `ShMyBatisAutoConfig`：@ComponentScan("com.wkclz.mybatis") + @MapperScan("com.wkclz.mybatis.mapper")
 - 注册文件：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
 - 兼容注册：`META-INF/spring.factories`（Spring Boot 2.x兼容）
+
+---
+
+## 数据库设计参考
+
+> 来源: [数据库规范](https://doc.wkclz.com/backend/standard-backend/database.html)，结合 sh-framework 实体体系整理
+
+### 字符集
+
+- 数据表、字段统一使用 `utf8mb4_unicode_ci`
+- 若需区分大小写，可选 `utf8mb4_unicode_cs`
+- 字符集需全局设置，无需在 DML 中单独设置
+- **不遵守的后果**：字符集不一致无法使用 `=` 操作符；兼容度不够导致特殊字符无法存储
+
+### 命名规范
+
+| 规则 | 说明 |
+|------|------|
+| 命名法 | 蛇形命名法(snake_case)，示例：`aaa_bbb_ccc` |
+| 开头结尾 | 不允许出现 `_` |
+| 单字母 | 避免使用单字母 |
+| is_ 前缀 | 避免使用 `is_` 开头，可能被 Java 反射误解为布尔类型 |
+| 布尔类命名 | 必须使用正向含义，值存储 `1是0否` |
+| 表名前缀 | 多模块系统按模块统一添加前缀，前缀建议 2~4 个字母 |
+| 字段名前缀 | 字段名不建议使用前缀 |
+| 关键字 | 避开 MySQL 关键字 |
+
+**不遵守的后果**：代码生成工具/框架无法准确映射为实体对象；首尾 `_` 无法正确转换驼峰命名
+
+### 基础字段（与 DbColumnEntity 对应）
+
+数据库每张表必须包含以下基础字段，对应框架中 `DbColumnEntity` 的定义：
+
+| 数据库字段 | Java字段(DbColumnEntity) | 类型 | 含义 | 备注 |
+|-----------|------------------------|------|------|------|
+| `id` | `id` | bigint NOT NULL AUTO_INCREMENT | 主键 | 必须在首位，其他字段放表最后 |
+| `sort` | `sort` | int NOT NULL DEFAULT 0 | 排序 | 业务无需排序时可忽略 |
+| `create_time` | `createTime` | datetime NOT NULL DEFAULT CURRENT_TIMESTAMP | 创建时间 | 前端无需传值，后端自行维护 |
+| `create_by` | `createBy` | varchar(31) DEFAULT NULL | 创建人 | 用户编码，前端无需传值，后端自行维护 |
+| `update_time` | `updateTime` | datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 修改时间 | 前端无需传值，后端自行维护 |
+| `update_by` | `updateBy` | varchar(31) DEFAULT NULL | 修改人 | 用户编码，前端无需传值，后端自行维护 |
+| `remark` | `remark` | varchar(255) DEFAULT NULL | 备注 | 不用于控制业务，仅作数据备注 |
+| `version` | `version` | int NOT NULL DEFAULT 0 | 版本号 | 乐观锁控制字段，update 接口必传 |
+
+> 框架的 `MyBatisUpdateInterceptor` 自动维护 createBy/updateBy；createTime/updateTime 由数据库 DEFAULT 值维护。INSERT 时拦截器会将时间字段清空(null)，由数据库填充默认值。
+
+### 扩展字段
+
+| 数据库字段 | Java字段 | 含义 | 备注 |
+|-----------|---------|------|------|
+| `ext01` ~ `ext10` | `ext01` ~ `ext10` | 扩展字段 | 默认不需要，存在时默认01~10个，不够再单独加 |
+
+### 逻辑状态字段
+
+| 数据库字段 | 类型 | 含义 | 说明 |
+|-----------|------|------|------|
+| `deleted` | varchar(24) | 逻辑删除标记 | 框架使用：`0` 表示未删除，删除时填充时间戳 |
+
+> `deleted` 字段由框架 BaseMapper 逻辑删除机制管理，删除时写入 `DATE_FORMAT(NOW(6), '%Y%m%d%H%i%s%m')` 格式的时间戳。
+
+### 编码字段体系
+
+| 字段名 | 用途 | 索引 |
+|--------|------|------|
+| `id` | 当前表的唯一标识，只作为单表操作标识，不能关联到其他表 | 主键 |
+| `xxxx_code` | 系统级唯一标识，用于表间关联。不可修改 | 唯一索引 |
+| `parent_code` | 父子关系的父节点，顶级时为 `0` | 普通索引 |
+| `xxxx_code_path` | 编码路径，如 `aaa/bbb/ccc`，用于权限控制等逻辑 | — |
+| `xxxx_code_show` | 对外展示的唯一编码，不可用于关联，仅用于展示和查询。可修改但不建议 | 与 deleted 组合唯一 |
+
+**注意**：
+- 避免使用类似 `code` 无法直接读出含义的命名，需使用可读出含义的字段名
+- 没有 `xxxx_code_show` 展示需求时，尽量不设计此字段
+
+### 数据状态字段
+
+| 字段名 | 用途 | 说明 |
+|--------|------|------|
+| `start_time` | 数据有效开始时间 | 仅有简单时间含义的有效期描述 |
+| `end_time` | 数据有效结束时间 | 仅有简单时间含义的有效期描述 |
+| `status` | 数据有效状态 | `1` 有效，`0` 无效，仅简单含义时使用 |
+| `xxxx_status` | 数据业务状态 | 多状态：使用有业务含义的英文枚举；布尔状态：tinyint `1是0否` |
+
+**布尔类型约定**：
+- 命名使用正向含义（正例：生效状态，反例：失效状态）
+- 值使用正向值（正例：`1是0否`，反例：`0是1否`）
+
+### 索引规范
+
+- 作为索引的字段必须 `NOT NULL`
+- `xxxx_code` 使用唯一索引
+- `parent_code` 使用普通索引
+
+### 建表语句示例
+
+```sql
+CREATE TABLE `auth_user` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'ID',
+
+  -- 以下是业务字段
+  `user_code` varchar(31) NOT NULL DEFAULT '' COMMENT '用户编码',
+  `username` varchar(63) NOT NULL DEFAULT '' COMMENT '用户名',
+  `nickname` varchar(63) DEFAULT NULL COMMENT '昵称',
+  -- 以上是业务字段
+
+  `sort` int NOT NULL DEFAULT '0' COMMENT '排序',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_by` varchar(31) DEFAULT NULL COMMENT '创建人',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `update_by` varchar(31) DEFAULT NULL COMMENT '更新人',
+  `remark` varchar(255) DEFAULT NULL COMMENT '备注',
+  `version` int NOT NULL DEFAULT '0' COMMENT '版本号',
+  `deleted` varchar(24) NOT NULL DEFAULT '0' COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `user_code` (`user_code`) USING BTREE,
+  KEY `username` (`username`) USING BTREE
+) ENGINE=InnoDB COMMENT='用户';
+```
+
+### 框架与数据库字段映射关系
+
+```
+数据库(snake_case)          Java(camelCase)           所属类
+─────────────────────────────────────────────────────────────
+id                       → id                      → DbColumnEntity
+sort                     → sort                    → DbColumnEntity
+create_time              → createTime              → DbColumnEntity
+create_by                → createBy                → DbColumnEntity
+update_time              → updateTime              → DbColumnEntity
+update_by                → updateBy                → DbColumnEntity
+remark                   → remark                  → DbColumnEntity
+version                  → version                 → DbColumnEntity
+deleted                  → (框架内部管理,无Java字段)  —
+user_code                → userCode                → BaseEntity
+tenant_code              → tenantCode              → BaseEntity
+```
+
+> 表名自动映射：Java实体类名通过 `StringUtil.camelToUnderline()` 转换为蛇形表名。如 `AuthUser` → `auth_user`。
