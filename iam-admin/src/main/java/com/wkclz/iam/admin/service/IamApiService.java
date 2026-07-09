@@ -22,7 +22,7 @@ import com.wkclz.web.helper.RestHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
+import com.wkclz.tool.utils.BeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -184,8 +184,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
 
-        ApiDetailResp resp = new ApiDetailResp();
-        BeanUtils.copyProperties(api, resp);
+        ApiDetailResp resp = BeanUtil.cp(api, ApiDetailResp.class);
 
         // 使用 RECURSIVE CTE 一次性查询所有已绑定菜单的全路径，避免 N+1 查询
         List<String> boundMenuPaths = iamMenuApiMapper.getBoundMenuPathsByApiCode(api.getApiCode());

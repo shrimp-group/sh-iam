@@ -12,7 +12,7 @@ import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
+import com.wkclz.tool.utils.BeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -120,8 +120,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         if (menu == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
-        MenuDetailResp resp = new MenuDetailResp();
-        BeanUtils.copyProperties(menu, resp);
+        MenuDetailResp resp = BeanUtil.cp(menu, MenuDetailResp.class);
         return resp;
     }
 
