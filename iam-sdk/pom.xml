@@ -28,6 +28,17 @@
         </dependency>
 
         <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>iam-contract-api</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>iam-contract-default</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
         </dependency>
