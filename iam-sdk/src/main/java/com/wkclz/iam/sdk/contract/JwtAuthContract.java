@@ -9,6 +9,7 @@ import com.wkclz.iam.contract.context.PrincipalContext;
 import com.wkclz.iam.contract.enums.AuthErrorType;
 import com.wkclz.iam.contract.exception.AuthException;
 import com.wkclz.iam.contract.service.AuthContract;
+import com.wkclz.core.exception.SystemException;
 import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.exception.JwtValidationException;
 import com.wkclz.iam.sdk.util.JwtUtil;
@@ -44,6 +45,9 @@ public class JwtAuthContract implements AuthContract {
             throw new AuthException(
                     AuthErrorType.fromJwtErrorCode(e.getErrorCode()),
                     e.getMessage(), e);
+        } catch (RuntimeException e) {
+            log.error("JWT 解析发生未知异常", e);
+            throw new AuthException(AuthErrorType.TOKEN_INVALID, "Token 解析失败", e);
         }
 
         String username = userJwt.getUsername();
@@ -53,9 +57,10 @@ public class JwtAuthContract implements AuthContract {
             sessionJson = redisTemplate.opsForValue().get(sessionKey);
         } catch (Exception e) {
             log.error("认证 Redis 查询失败, username={}", username, e);
-            throw new RuntimeException("会话存储不可用", e);
+            throw new SystemException("认证 Redis 查询失败", e);
         }
         if (sessionJson == null) {
+            log.info("用户 {} 的会话已过期", username);
             throw new AuthException(AuthErrorType.SESSION_EXPIRED, "会话已过期");
         }
 
