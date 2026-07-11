@@ -4,7 +4,7 @@ import com.wkclz.iam.sdk.contract.bean.App;
 import com.wkclz.iam.sdk.contract.bean.DataDimension;
 import com.wkclz.iam.sdk.contract.bean.FieldPermission;
 import com.wkclz.auth.bean.MenuNode;
-import com.wkclz.iam.sdk.contract.bean.Principal;
+import com.wkclz.auth.bean.Principal;
 import com.wkclz.iam.sdk.contract.bean.Tenant;
 import com.wkclz.iam.sdk.contract.context.PrincipalContext;
 import jakarta.servlet.http.HttpServletRequest;

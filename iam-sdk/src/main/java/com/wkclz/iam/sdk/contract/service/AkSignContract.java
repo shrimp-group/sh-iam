@@ -1,7 +1,7 @@
 package com.wkclz.iam.sdk.contract.service;
 
 import com.wkclz.iam.sdk.contract.config.ContractSettings;
-import com.wkclz.iam.sdk.contract.exception.AuthException;
+import com.wkclz.auth.exception.AuthException;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**

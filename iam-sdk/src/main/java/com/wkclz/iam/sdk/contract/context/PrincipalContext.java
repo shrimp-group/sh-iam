@@ -1,6 +1,6 @@
 package com.wkclz.iam.sdk.contract.context;
 
-import com.wkclz.iam.sdk.contract.bean.Principal;
+import com.wkclz.auth.bean.Principal;
 import com.wkclz.iam.sdk.contract.bean.Session;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.AntPathMatcher;
