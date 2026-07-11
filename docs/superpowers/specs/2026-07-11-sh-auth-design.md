@@ -30,7 +30,7 @@
 ```xml
 <groupId>com.wkclz.framework</groupId>
 <artifactId>sh-auth</artifactId>
-<version>5.1.0-SNAPSHOT</version>
+<version>5.0.1-SNAPSHOT</version>
 ```
 
 ### 2.3 依赖关系
@@ -101,11 +101,11 @@ com.wkclz.auth/
 │   └── AuthCacheRefreshListener.java     # 事件监听器
 ├── filter/
 │   ├── RequestWrapperFilter.java         # 请求体可重复读取包装
-│   ├── RequestLogFilter.java             # 请求日志采集（最外层，确保异常请求也记录）
+│   ├── RequestRecordFilter.java             # 请求日志采集（最外层，确保异常请求也记录）
 │   ├── SecurityHeaderFilter.java         # HTTP 安全头注入
 │   ├── AuthenticationFilter.java         # 认证过滤器
 │   └── AuthorizationFilter.java          # 鉴权过滤器
-├── model/
+├── bean/
 │   ├── Principal.java                    # 用户主体
 │   ├── Subject.java                      # 认证主体（账号实体）
 │   ├── Credential.java                   # 凭据抽象
@@ -161,7 +161,6 @@ public class Principal implements Serializable {
     private String username;      // 用户名
     private String nickname;      // 昵称
     private String avatar;        // 头像 URL
-    private String tenantCode;    // 租户编码（多租户支持）
     private String appCode;       // 当前应用编码
     private String authIdentifier;// 认证标识（用户名/手机号/openId，按 authType 区分含义，可选）
 }
@@ -318,7 +317,6 @@ public class MenuNode implements Serializable {
     private String component;         // 前端组件
     private String buttonCode;        // 按钮权限标识
     private String appCode;           // 所属应用
-    private Integer sort;             // 排序
     private List<MenuNode> children;  // 子节点（构建树时填充）
 }
 ```
@@ -495,20 +493,41 @@ public class LoginRecord implements Serializable {
 
 ```java
 public class RequestRecord implements Serializable {
-    private String id;                // 记录 ID
-    private String requestUri;        // 请求 URI
-    private String requestMethod;     // 请求方法
-    private String userId;            // 用户 ID（已认证时）
-    private String username;          // 用户名（已认证时）
-    private String clientIp;          // 客户端 IP
-    private String userAgent;         // UA
-    private String requestBody;       // 请求体（脱敏后）
-    private Integer responseStatus;   // 响应状态码
-    private String responseBody;      // 响应体（截断后）
-    private Long costTime;            // 耗时(ms)
-    private LocalDateTime requestTime;// 请求时间
-    private String authType;          // 认证方式
-    private String exception;         // 异常信息（如有）
+    private String id;
+    private String tenantCode;
+    private String appCode;
+    private String userAgent;
+    private String browserName;
+    private String browserVersion;
+    private String engineName;
+    private String engineVersion;
+    private String userOs;
+    private String userPlatform;
+    private String characterEncoding;
+    private String accept;
+    private String acceptLanguage;
+    private String acceptEncoding;
+    private String cookie;
+    private String origin;
+    private String referer;
+    private String httpProtocol;
+    private String requestHost;
+    private String requestUri;
+    private String queryString;
+    private String requestBody;
+    private String responseBody;
+    private String remoteAddr;
+    private String method;
+    private Integer httpStatus;
+    private String token;
+    private String userCode;
+    private String username;
+    private String nickname;
+    private String location;
+    private String isp;
+    private Long costTime;
+    private LocalDateTime requestTime;
+    private String errorMsg;
 }
 ```
 
@@ -938,14 +957,14 @@ public interface AuthMetadataService {
 | 序号 | 过滤器 | 职责 | Order | 说明 |
 |------|--------|------|-------|------|
 | 1 | `RequestWrapperFilter` | 请求体可重复读取包装 | `Integer.MIN_VALUE` | 缓存请求体字节，确保后续过滤器可重复读取 |
-| 2 | `RequestLogFilter` | 请求日志全量采集 | `FilterOrder.LOGGING` | 最外层 try/finally，确保被拦截请求也记录 |
+| 2 | `RequestRecordFilter` | 请求日志全量采集 | `FilterOrder.LOGGING` | 最外层 try/finally，确保被拦截请求也记录 |
 | 3 | `SecurityHeaderFilter` | HTTP 安全头注入 | `FilterOrder.SEC_HEADER` | 调用 SecurityHeaderProvider 注入响应头 |
 | 4 | `AuthenticationFilter` | 认证 | `FilterOrder.AUTH` | 调用 AuthenticationProvider，设置 SecurityContext |
 | 5 | `AuthorizationFilter` | 鉴权 | `FilterOrder.AUTHZ` | 调用 AccessControlProvider，判断 API 权限 |
 
-**关键设计：`RequestLogFilter` 位置**
+**关键设计：`RequestRecordFilter` 位置**
 
-`RequestLogFilter` 包裹了认证和鉴权过滤器，采用 `try { chain.doFilter() } finally { saveLog() }` 模式。即使 `AuthenticationFilter` 或 `AuthorizationFilter` 抛出异常，日志依然在 finally 中被记录，确保任何请求——无论成功被拦截还是正常通过——都有日志留存。
+`RequestRecordFilter` 包裹了认证和鉴权过滤器，采用 `try { chain.doFilter() } finally { saveLog() }` 模式。即使 `AuthenticationFilter` 或 `AuthorizationFilter` 抛出异常，日志依然在 finally 中被记录，确保任何请求——无论成功被拦截还是正常通过——都有日志留存。
 
 ### 6.2 过滤器行为详解
 
@@ -954,7 +973,7 @@ public interface AuthMetadataService {
 - 输出：`EagerContentCachingRequestWrapper`（主动缓存 body，Spring 原生需要等流读完才缓存）
 - 异常处理：无异常，纯包装
 
-**RequestLogFilter**：
+**RequestRecordFilter**：
 - 前置：记录请求 URI、方法、IP、UA、headers（token 脱敏）
 - 执行：`chain.doFilter()`
 - 后置（finally）：采集响应状态码、响应体（截断到合理长度）、计算耗时 → 异步保存 → **`SecurityContext.clear()` 清理 ThreadLocal**
@@ -994,18 +1013,18 @@ sh.auth.white-list.paths:
   - /v3/api-docs/**
 ```
 
-白名单路径跳过认证和鉴权，但 `RequestLogFilter` 依然记录日志（由日志排除规则单独控制）。
+白名单路径跳过认证和鉴权，但 `RequestRecordFilter` 依然记录日志（由日志排除规则单独控制）。
 
 ### 6.4 SecurityContext 生命周期
 
 ```
 请求到达
   → SecurityContext 初始化（空）
-    → RequestLogFilter 记录请求
+    → RequestRecordFilter 记录请求
       → AuthenticationFilter: SecurityContext.setPrincipal() / setToken()
         → AuthorizationFilter: 读取 SecurityContext
       → 业务控制器: SecurityContext.getPrincipal() 可用
-    → RequestLogFilter finally: 保存日志 → SecurityContext.clear() 清理
+    → RequestRecordFilter finally: 保存日志 → SecurityContext.clear() 清理
 ```
 
 ---
@@ -1042,9 +1061,12 @@ RuntimeException
 
 ```java
 public enum AuthStatus {
-    SUCCESS,        // 认证成功（含 MFA）
-    MFA_REQUIRED,   // 需要 MFA 二次验证
-    FAILED          // 认证失败
+    SUCCESS("成功"),
+    MFA_REQUIRED("需要MFA"),
+    FAILED("失败");
+    private final String desc;
+    AuthStatus(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1052,24 +1074,27 @@ public enum AuthStatus {
 
 ```java
 public enum AuthErrorType {
-    BAD_CREDENTIALS,        // 凭证错误
-    USER_NOT_FOUND,         // 用户不存在
-    ACCOUNT_LOCKED,         // 账号锁定
-    ACCOUNT_DISABLED,       // 账号禁用
-    ACCOUNT_EXPIRED,        // 账号过期
-    CREDENTIALS_EXPIRED,    // 密码过期
-    TOKEN_EXPIRED,          // Token 过期
-    TOKEN_INVALID,          // Token 无效
-    CAPTCHA_REQUIRED,       // 需要验证码
-    CAPTCHA_ERROR,          // 验证码错误
-    CAPTCHA_TIMEOUT,        // 验证码超时
-    MFA_REQUIRED,           // 需要 MFA
-    MFA_ERROR,              // MFA 错误
-    RATE_LIMITED,           // 频率限制
-    SESSION_EXPIRED,        // 会话过期
-    ACCESS_DENIED,          // 无权访问
-    INTERNAL_ERROR,         // 内部错误
-    SERVICE_UNAVAILABLE     // 服务不可用
+    BAD_CREDENTIALS("凭证错误"),
+    USER_NOT_FOUND("用户不存在"),
+    ACCOUNT_LOCKED("账号锁定"),
+    ACCOUNT_DISABLED("账号禁用"),
+    ACCOUNT_EXPIRED("账号过期"),
+    CREDENTIALS_EXPIRED("凭证过期"),
+    TOKEN_EXPIRED("Token过期"),
+    TOKEN_INVALID("Token无效"),
+    CAPTCHA_REQUIRED("需要验证码"),
+    CAPTCHA_ERROR("验证码错误"),
+    CAPTCHA_TIMEOUT("验证码超时"),
+    MFA_REQUIRED("需要MFA"),
+    MFA_ERROR("MFA错误"),
+    RATE_LIMITED("频率限制"),
+    SESSION_EXPIRED("会话过期"),
+    ACCESS_DENIED("无权访问"),
+    INTERNAL_ERROR("内部错误"),
+    SERVICE_UNAVAILABLE("服务不可用");
+    private final String desc;
+    AuthErrorType(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1077,9 +1102,12 @@ public enum AuthErrorType {
 
 ```java
 public enum AccountStatus {
-    ENABLED,        // 启用
-    DISABLED,       // 禁用
-    LOCKED          // 锁定
+    ENABLED("启用"),
+    DISABLED("禁用"),
+    LOCKED("锁定");
+    private final String desc;
+    AccountStatus(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1087,9 +1115,12 @@ public enum AccountStatus {
 
 ```java
 public enum TokenType {
-    JWT,            // JWT 令牌（HS256/RS256）
-    OAUTH_BEARER,   // OAuth2 Bearer Token
-    SESSION_ID      // Session ID（传统会话）
+    JWT("JWT"),
+    OAUTH_BEARER("OAuth Bearer"),
+    SESSION_ID("SessionId");
+    private final String desc;
+    TokenType(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1097,9 +1128,12 @@ public enum TokenType {
 
 ```java
 public enum CredentialType {
-    PASSWORD,       // 密码
-    SMS_CODE,       // 短信验证码
-    SOCIAL_CODE     // 社交登录授权码（微信等）
+    PASSWORD("密码"),
+    SMS_CODE("短信验证码"),
+    SOCIAL_CODE("社交授权码");
+    private final String desc;
+    CredentialType(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1107,8 +1141,11 @@ public enum CredentialType {
 
 ```java
 public enum MfaType {
-    SMS,            // 短信验证码
-    TOTP            // 基于时间的一次性密码
+    SMS("短信验证"),
+    TOTP("TOTP令牌");
+    private final String desc;
+    MfaType(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1116,8 +1153,11 @@ public enum MfaType {
 
 ```java
 public enum MenuType {
-    MENU,           // 菜单
-    BUTTON          // 按钮
+    MENU("菜单"),
+    BUTTON("按钮");
+    private final String desc;
+    MenuType(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1125,9 +1165,12 @@ public enum MenuType {
 
 ```java
 public enum FieldPermissionType {
-    READ,           // 只读
-    WRITE,          // 可写
-    HIDDEN          // 隐藏
+    READ("只读"),
+    WRITE("读写"),
+    HIDDEN("隐藏");
+    private final String desc;
+    FieldPermissionType(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1135,9 +1178,12 @@ public enum FieldPermissionType {
 
 ```java
 public enum RefreshScope {
-    METADATA,   // 刷新应用级元数据 → 级联清空所有用户的权限计算结果
-    SUBJECT,    // 仅刷新指定用户的授权数据 + 权限计算结果
-    ALL         // 刷新所有缓存
+    METADATA("元数据级"),
+    SUBJECT("用户级"),
+    ALL("全部");
+    private final String desc;
+    RefreshScope(String desc) { this.desc = desc; }
+    public String getDesc() { return desc; }
 }
 ```
 
@@ -1392,8 +1438,8 @@ public class ShAuthAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RequestLogFilter requestLogFilter(List<RequestLogger> requestLoggers) {
-        return new RequestLogFilter(requestLoggers);
+    public RequestRecordFilter requestLogFilter(List<RequestLogger> requestLoggers) {
+        return new RequestRecordFilter(requestLoggers);
     }
 
     @Bean
@@ -1474,7 +1520,7 @@ public FilterRegistrationBean<AuthenticationFilter> authFilterReg(Authentication
 │  RequestWrapperFilter ─── 包装请求体可重复读                     │
 │      │                                                         │
 │      ▼                                                         │
-│  RequestLogFilter ─── 记录请求信息（最外层）                      │
+│  RequestRecordFilter ─── 记录请求信息（最外层）                      │
 │      │ try {                                                   │
 │      ▼                                                         │
 │  SecurityHeaderFilter ─── 注入安全头                             │
@@ -1512,7 +1558,7 @@ public FilterRegistrationBean<AuthenticationFilter> authFilterReg(Authentication
 │      │                                                         │
 │      ▼                                                         │
 │  } finally {                                                   │
-│      RequestLogFilter.saveLog() ─── 异步保存日志                │
+│      RequestRecordFilter.saveLog() ─── 异步保存日志                │
 │  }                                                             │
 │      │                                                         │
 │      ▼                                                         │
