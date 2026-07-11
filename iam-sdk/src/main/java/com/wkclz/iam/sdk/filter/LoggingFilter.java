@@ -10,7 +10,7 @@ import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.auth.filter.FilterOrder;
 import com.wkclz.auth.context.SecurityContext;
-import com.wkclz.iam.contract.facade.SsoFacadeContract;
+import com.wkclz.iam.sdk.contract.facade.SsoFacadeContract;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.LocalThreadHelper;
 import com.wkclz.web.rest.ErrorHandler;
