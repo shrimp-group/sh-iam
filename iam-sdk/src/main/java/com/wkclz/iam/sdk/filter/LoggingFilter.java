@@ -6,10 +6,11 @@ import cn.hutool.http.useragent.UserAgentUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
-import com.wkclz.iam.sdk.facade.SsoFacade;
-import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.iam.sdk.bean.RequestLog;
-import com.wkclz.iam.sdk.bean.UserSession;
+import com.wkclz.iam.contract.bean.Principal;
+import com.wkclz.iam.contract.bean.RequestLog;
+import com.wkclz.iam.contract.config.FilterOrder;
+import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.iam.contract.facade.SsoFacadeContract;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.LocalThreadHelper;
 import com.wkclz.web.rest.ErrorHandler;
@@ -37,7 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-@Order(Integer.MIN_VALUE + 1)
+@Order(FilterOrder.LOGGING)
 public class LoggingFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggingFilter.class);
@@ -56,7 +57,7 @@ public class LoggingFilter extends OncePerRequestFilter {
     @Autowired
     private IamSdkConfig config;
     @Autowired(required = false)
-    private SsoFacade ssoFacade;
+    private SsoFacadeContract ssoFacadeContract;
 
 
     @Override
@@ -84,11 +85,11 @@ public class LoggingFilter extends OncePerRequestFilter {
             throw e;
         } finally {
             // 请求结束后，获取 响应状态，用户信息, 请求体，响应体，计算响应时间
-            UserSession user = SessionHelper.getUserSession(request);
-            if (user != null) {
-                log.setUserCode(user.getUserCode());
-                log.setUsername(user.getUsername());
-                log.setNickname(user.getNickname());
+            Principal principal = PrincipalContext.getPrincipal(request);
+            if (principal != null) {
+                log.setUserCode(principal.getUserCode());
+                log.setUsername(principal.getUsername());
+                log.setNickname(principal.getNickname());
             }
             log.setHttpStatus(wrappedResponse.getStatus());
             String responseBody = getResponseBody(wrappedResponse);
@@ -148,9 +149,9 @@ public class LoggingFilter extends OncePerRequestFilter {
         log.setReferer(request.getHeader("Referer"));
 
         log.setRemoteAddr(IpHelper.getOriginIp(request));
-        log.setToken(SessionHelper.getToken(request));
-        log.setTenantCode(SessionHelper.getTenantCode());
-        log.setAppCode(SessionHelper.getAppCode(request));
+        log.setToken(PrincipalContext.getToken());
+        log.setTenantCode(PrincipalContext.getTenantCode());
+        log.setAppCode(PrincipalContext.getAppCode());
 
         if (log.getUserAgent() != null) {
             UserAgent ua = UserAgentUtil.parse(log.getUserAgent());
@@ -233,14 +234,13 @@ public class LoggingFilter extends OncePerRequestFilter {
     }
 
     private void saveResponseLog(RequestLog log) {
-        // 无实现的情况下不记录日志
-        if (ssoFacade == null) {
+        if (ssoFacadeContract == null) {
             return;
         }
         subLog(log);
         ThreadUtil.execAsync(() -> {
             try {
-                ssoFacade.saveLog(log);
+                ssoFacadeContract.saveLog(log);
             } catch (Exception e) {
                 logger.error("save request log error: log: {}, error: {}", log, e.getMessage());
             }
