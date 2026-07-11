@@ -121,7 +121,9 @@ com.wkclz.auth/
 │   ├── MfaChallenge.java                 # MFA 挑战
 │   ├── SubjectRole.java                  # 用户-角色关联
 │   ├── RoleDataScope.java                # 角色-数据权限关联
-│   └── ApiField.java                     # API-字段权限关联
+│   ├── ApiField.java                     # API-字段权限关联
+│   ├── AuthMetadata.java                 # 应用级 RBAC 缓存快照（单例）
+│   └── SubjectAuthorization.java         # 用户级授权缓存快照（轻量）
 ├── exception/
 │   ├── AuthenticationException.java      # 认证异常
 │   ├── AuthorizationException.java       # 授权异常
@@ -383,7 +385,54 @@ public class ApiField implements Serializable {
 }
 ```
 
-### 4.17 日志模型
+### 4.17 缓存模型
+
+#### AuthMetadata — 应用级 RBAC 缓存快照
+
+单例，每应用仅一份，启动时加载，配置变更时刷新。所有用户共享。
+
+```java
+public class AuthMetadata implements Serializable {
+    private String appCode;                              // 所属应用
+    private Map<String, Role> roles;                     // roleCode → Role
+    private Map<String, MenuNode> menus;                 // menuCode → MenuNode（已构建为树）
+    private Map<String, ApiResource> apis;               // apiCode → ApiResource
+    private Map<String, List<String>> roleMenus;         // roleCode → menuCodes
+    private Map<String, List<String>> menuApis;          // menuCode → apiCodes
+    private Map<String, List<ApiField>> apiFields;       // apiCode → 字段权限列表
+    private LocalDateTime loadTime;                      // 加载时间
+}
+```
+
+#### SubjectAuthorization — 用户级授权缓存快照
+
+每用户一份，体积极小（仅角色编码列表 + 数据权限），按需加载。
+
+```java
+public class SubjectAuthorization implements Serializable {
+    private String subjectId;                                  // 主体 ID
+    private List<SubjectRole> roles;                           // 角色列表（含有效期）
+    private Map<String, List<RoleDataScope>> roleDataScopes;   // roleCode → 数据权限范围
+    private LocalDateTime loadTime;                            // 加载时间
+}
+```
+
+**鉴权流程**（`AccessControlProvider` 实现方伪代码）：
+
+```
+hasPermission(principal, method, uri):
+    AuthMetadata meta = metadataCache.get(principal.appCode);        // 单例
+    SubjectAuthorization user = userAuthCache.get(principal.userCode); // 轻量
+
+    for (SubjectRole sr : user.roles):
+        if 过期 or 禁用 → skip
+        for (menuCode in meta.roleMenus[sr.roleCode]):
+            for (apiCode in meta.menuApis[menuCode]):
+                if meta.apis[apiCode] matches (method, uri) → true
+    → false
+```
+
+### 4.18 日志模型
 
 #### LoginRecord — 登录日志
 
