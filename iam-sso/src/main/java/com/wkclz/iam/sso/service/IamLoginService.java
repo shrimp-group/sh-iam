@@ -10,12 +10,13 @@ import com.wkclz.iam.common.helper.PasswordHelper;
 import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.helper.CaptchaHelper;
-import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sdk.bean.req.LoginReq;
-import com.wkclz.iam.sdk.bean.req.SessionCreateReq;
-import com.wkclz.iam.sdk.bean.resp.LoginResp;
-import com.wkclz.iam.sdk.facade.SsoFacade;
+import com.wkclz.iam.contract.bean.req.SessionCreateReq;
+import com.wkclz.iam.contract.bean.resp.LoginResp;
+import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.iam.contract.enums.LoginFailType;
+import com.wkclz.iam.contract.facade.SsoFacadeContract;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
@@ -43,7 +44,7 @@ public class IamLoginService {
     private static final Logger log = LoggerFactory.getLogger(IamLoginService.class);
 
     @Autowired
-    private SsoFacade ssoFacade;
+    private SsoFacadeContract ssoFacadeContract;
     @Autowired
     private IamSsoConfig iamSsoConfig;
     @Autowired
@@ -88,7 +89,7 @@ public class IamLoginService {
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username, lastLoginIn1Hour);
             loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
-            return failResp(LoginStatus.NEED_CAPTCHA);
+            return LoginResp.fail(LoginFailType.CAPTCHA_REQUIRED);
         }
 
         // 验证码校验
@@ -99,12 +100,12 @@ public class IamLoginService {
             // 验证码不存在或已过期
             if (StringUtils.isBlank(redisCaptchaCode)) {
                 loginLog(loginReq, auth, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
-                return failResp(LoginStatus.CAPTCHA_TIMEOUT);
+                return LoginResp.fail(LoginFailType.CAPTCHA_ERROR, "验证码已过期");
             }
             // 验证码错误
             if (!captchaCode.equalsIgnoreCase(redisCaptchaCode)) {
                 loginLog(loginReq, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
-                return failResp(LoginStatus.INVALID_CAPTCHA);
+                return LoginResp.fail(LoginFailType.CAPTCHA_ERROR);
             }
         }
 
@@ -112,31 +113,31 @@ public class IamLoginService {
         // 1. 用户不存在
         if (auth ==  null) {
             loginLog(loginReq, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
-            return failResp(LoginStatus.USER_NOT_FOUND, "用户不存在, 或密码错误!");
+            return LoginResp.fail(LoginFailType.USERNAME_OR_PASSWORD_ERROR);
         }
 
         // 2. 登录方式已禁用
         if (auth.getAuthStatus().equals(0)) {
             loginLog(loginReq, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
-            return failResp(LoginStatus.EXPIRED_ACCOUNT);
+            return LoginResp.fail(LoginFailType.ACCOUNT_DISABLED);
         }
 
         // 3. 用户已锁定
         if (auth.getUserStatus().equals(3)) {
             loginLog(loginReq, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
-            return failResp(LoginStatus.ACCOUNT_LOCKED);
+            return LoginResp.fail(LoginFailType.ACCOUNT_LOCKED);
         }
 
         // 4. 用户已禁用
         if (auth.getUserStatus().equals(2)) {
             loginLog(loginReq, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
-            return failResp(LoginStatus.ACCOUNT_DISABLED);
+            return LoginResp.fail(LoginFailType.ACCOUNT_DISABLED);
         }
 
         // 5. 密码错误
         if (!PasswordHelper.validatePassword(password, auth.getSalt(), auth.getPassword())) {
             loginLog(loginReq, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
-            return failResp(LoginStatus.INVALID_CREDENTIALS);
+            return LoginResp.fail(LoginFailType.USERNAME_OR_PASSWORD_ERROR);
         }
 
         // 6. 密码已过期
@@ -147,7 +148,7 @@ public class IamLoginService {
         long passwordExpireAt = timestamp + passwordExpireDays * 24 * 60 * 60 * 1000L;
         if (passwordExpireAt < System.currentTimeMillis()) {
             loginLog(loginReq, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
-            return failResp(LoginStatus.EXPIRED_PASSWORD);
+            return LoginResp.fail(LoginFailType.CREDENTIALS_EXPIRED);
         }
 
         // 7. 登录成功，通过 SsoFacade 创建会话
@@ -160,7 +161,7 @@ public class IamLoginService {
         sessionCreateReq.setAuthType(auth.getAuthType());
         log.info("用户 {} 认证成功，调用 SsoFacade 创建会话", auth.getAuthIdentifier());
 
-        LoginResp response = ssoFacade.login(sessionCreateReq);
+        LoginResp response = ssoFacadeContract.login(sessionCreateReq);
 
         // 登录成功，需要更新的信息
         IamUserAuth userAuth = new IamUserAuth();
@@ -173,12 +174,9 @@ public class IamLoginService {
 
 
     public void logout(HttpServletRequest request) {
-        String token = SessionHelper.getToken(request);
-        if (StringUtils.isBlank(token)) {
-            return;
-        }
-        // 委托 SsoFacade 执行登出，保持登出逻辑统一入口
-        ssoFacade.logout(token);
+        String token = PrincipalContext.getToken();
+        if (StringUtils.isBlank(token)) return;
+        ssoFacadeContract.logout(token);
     }
 
 
@@ -187,7 +185,7 @@ public class IamLoginService {
         Assert.notNull(request.getOldPassword(), "旧密码不能为空");
         Assert.notNull(request.getNewPassword(), "新密码不能为空");
 
-        String userCode = SessionHelper.getUserCode();
+        String userCode = PrincipalContext.getUserCode();
         String oldPassword = request.getOldPassword();
         String newPassword = request.getNewPassword();
         String privateKey = iamSsoConfig.getPrivateKey();
@@ -233,7 +231,7 @@ public class IamLoginService {
         ssoLoginMapper.insertPasswordHis(his);
 
         // 修改密码成功，使该用户所有会话失效
-        String username = SessionHelper.getUserJwt().getUsername();
+        String username = PrincipalContext.getUsername();
         iamSessionService.invalidateAllSessions(username);
         log.info("用户 {} 修改密码成功，所有会话已失效", username);
     }
@@ -262,21 +260,6 @@ public class IamLoginService {
             log.setUserAgent(request.getHeader("User-Agent"));
         }
         ssoLoginLogMapper.insertLoginLog(log);
-    }
-
-
-    /**
-     * 构建认证失败的响应
-     */
-    private LoginResp failResp(LoginStatus loginStatus) {
-        return failResp(loginStatus, loginStatus.getMessage());
-    }
-
-    private LoginResp failResp(LoginStatus loginStatus, String message) {
-        LoginResp response = new LoginResp();
-        response.setLoginStatus(loginStatus.getCode());
-        response.setLoginMessage(message);
-        return response;
     }
 
 
