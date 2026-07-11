@@ -41,9 +41,9 @@ public class HttpSsoFacadeContract implements SsoFacadeContract {
     }
 
     @Override
-    public void saveLog(RequestLog log) {
+    public void saveLog(RequestLog requestLog) {
         try {
-            postData("/saveLog", log);
+            postData("/saveLog", requestLog);
         } catch (Exception e) {
             log.error("远程保存请求日志失败: {}", e.getMessage());
         }
