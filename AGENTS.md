@@ -471,17 +471,17 @@ STORY-042 (Admin配置) ──→ STORY-031 (API自动扫描)
 
 | Story ID  | 故事名称                        | 优先级 | 文档                                             |
 |-----------|-----------------------------|-----|------------------------------------------------|
-| SHA-001 | ❌ 模块骨架与自动配置                  | P0  | [SHA-001](docs/stories/sh-auth/SHA-001-module-skeleton.md) |
-| SHA-002 | ❌ 枚举与异常体系                    | P0  | [SHA-002](docs/stories/sh-auth/SHA-002-enums-exceptions.md) |
-| SHA-003 | ❌ 核心数据模型（bean）               | P0  | [SHA-003](docs/stories/sh-auth/SHA-003-bean-models.md) |
-| SHA-004 | ❌ SecurityContext 安全上下文       | P0  | [SHA-004](docs/stories/sh-auth/SHA-004-security-context.md) |
-| SHA-005 | ❌ 认证域 SPI 契约                 | P0  | [SHA-005](docs/stories/sh-auth/SHA-005-auth-spi.md) |
-| SHA-006 | ❌ 授权域 SPI + 基础设施 SPI         | P0  | [SHA-006](docs/stories/sh-auth/SHA-006-authz-spi.md) |
-| SHA-007 | ❌ LoginService 登录模板方法        | P0  | [SHA-007](docs/stories/sh-auth/SHA-007-login-service.md) |
-| SHA-008 | ❌ 过滤器 — RequestWrapperFilter  | P0  | [SHA-008](docs/stories/sh-auth/SHA-008-request-wrapper-filter.md) |
-| SHA-009 | ❌ 过滤器 — RequestRecordFilter   | P0  | [SHA-009](docs/stories/sh-auth/SHA-009-request-record-filter.md) |
-| SHA-010 | ❌ 过滤器 — AuthenticationFilter  | P0  | [SHA-010](docs/stories/sh-auth/SHA-010-auth-filter.md) |
-| SHA-011 | ❌ 过滤器 — AuthorizationFilter   | P0  | [SHA-011](docs/stories/sh-auth/SHA-011-authz-filter.md) |
-| SHA-012 | ❌ 过滤器 — SecurityHeaderFilter  | P1  | [SHA-012](docs/stories/sh-auth/SHA-012-security-header-filter.md) |
-| SHA-013 | ❌ 缓存基础设施 — 三层缓存体系            | P0  | [SHA-013](docs/stories/sh-auth/SHA-013-cache-infra.md) |
-| SHA-014 | ❌ 缓存刷新事件机制                   | P1  | [SHA-014](docs/stories/sh-auth/SHA-014-cache-refresh.md) |
+| SHA-001 | ✅ 模块骨架与自动配置                  | P0  | [SHA-001](docs/stories/sh-auth/SHA-001-module-skeleton.md) |
+| SHA-002 | ✅ 枚举与异常体系                    | P0  | [SHA-002](docs/stories/sh-auth/SHA-002-enums-exceptions.md) |
+| SHA-003 | ✅ 核心数据模型（bean）               | P0  | [SHA-003](docs/stories/sh-auth/SHA-003-bean-models.md) |
+| SHA-004 | ✅ SecurityContext 安全上下文       | P0  | [SHA-004](docs/stories/sh-auth/SHA-004-security-context.md) |
+| SHA-005 | ✅ 认证域 SPI 契约                 | P0  | [SHA-005](docs/stories/sh-auth/SHA-005-auth-spi.md) |
+| SHA-006 | ✅ 授权域 SPI + 基础设施 SPI         | P0  | [SHA-006](docs/stories/sh-auth/SHA-006-authz-spi.md) |
+| SHA-007 | ✅ LoginService 登录模板方法        | P0  | [SHA-007](docs/stories/sh-auth/SHA-007-login-service.md) |
+| SHA-008 | ✅ 过滤器 — RequestWrapperFilter  | P0  | [SHA-008](docs/stories/sh-auth/SHA-008-request-wrapper-filter.md) |
+| SHA-009 | ✅ 过滤器 — RequestRecordFilter   | P0  | [SHA-009](docs/stories/sh-auth/SHA-009-request-record-filter.md) |
+| SHA-010 | ✅ 过滤器 — AuthenticationFilter  | P0  | [SHA-010](docs/stories/sh-auth/SHA-010-auth-filter.md) |
+| SHA-011 | ✅ 过滤器 — AuthorizationFilter   | P0  | [SHA-011](docs/stories/sh-auth/SHA-011-authz-filter.md) |
+| SHA-012 | ✅ 过滤器 — SecurityHeaderFilter  | P1  | [SHA-012](docs/stories/sh-auth/SHA-012-security-header-filter.md) |
+| SHA-013 | ✅ 缓存基础设施 — 三层缓存体系            | P0  | [SHA-013](docs/stories/sh-auth/SHA-013-cache-infra.md) |
+| SHA-014 | ✅ 缓存刷新事件机制                   | P1  | [SHA-014](docs/stories/sh-auth/SHA-014-cache-refresh.md) |
