@@ -93,7 +93,12 @@ com.wkclz.auth/
 │   │   └── FieldPermissionProvider.java  # 字段级权限提供者
 │   └── infra/                            # 基础设施 SPI
 │       ├── RequestLogger.java            # 请求日志记录器
-│       └── SecurityHeaderProvider.java   # HTTP 安全头提供者
+│       ├── SecurityHeaderProvider.java   # HTTP 安全头提供者
+│       └── AuthMetadataService.java      # 授权元数据加载 SPI
+├── cache/                                 # 缓存基础设施（sh-auth 内置）
+│   ├── AuthCacheManager.java             # 三层缓存管理器
+│   ├── AuthCacheRefreshEvent.java        # 缓存刷新事件
+│   └── AuthCacheRefreshListener.java     # 事件监听器
 ├── filter/
 │   ├── RequestWrapperFilter.java         # 请求体可重复读取包装
 │   ├── RequestLogFilter.java             # 请求日志采集（最外层，确保异常请求也记录）
@@ -123,7 +128,8 @@ com.wkclz.auth/
 │   ├── RoleDataScope.java                # 角色-数据权限关联
 │   ├── ApiField.java                     # API-字段权限关联
 │   ├── AuthMetadata.java                 # 应用级 RBAC 缓存快照（单例）
-│   └── SubjectAuthorization.java         # 用户级授权缓存快照（轻量）
+│   ├── SubjectAuthorization.java         # 用户级授权缓存快照（轻量）
+│   └── ResolvedAuthorization.java         # 权限计算结果缓存（API+字段+数据）
 ├── exception/
 │   ├── AuthenticationException.java      # 认证异常
 │   ├── AuthorizationException.java       # 授权异常
@@ -139,6 +145,7 @@ com.wkclz.auth/
     ├── CredentialType.java               # 凭证类型
     ├── MfaType.java                      # MFA 类型
     ├── MenuType.java                     # 菜单类型
+    ├── RefreshScope.java                 # 缓存刷新范围
     └── FieldPermissionType.java          # 字段权限类型
 ```
 
@@ -417,19 +424,53 @@ public class SubjectAuthorization implements Serializable {
 }
 ```
 
-**鉴权流程**（`AccessControlProvider` 实现方伪代码）：
+**鉴权流程**（结合 `ResolvedAuthorization` 缓存）：
 
 ```
 hasPermission(principal, method, uri):
-    AuthMetadata meta = metadataCache.get(principal.appCode);        // 单例
+    // 优先查缓存
+    ResolvedAuthorization resolved = resolvedCache.get(principal.subjectId, principal.appCode)
+    if (resolved != null):
+        return resolved.apiPermissions.contains(method + ":" + uri)   // O(1)
+
+    // 缓存未命中 → 计算
+    AuthMetadata meta = metadataCache.get(principal.appCode);         // 单例
     SubjectAuthorization user = userAuthCache.get(principal.userCode); // 轻量
 
+    result = new ResolvedAuthorization()
     for (SubjectRole sr : user.roles):
         if 过期 or 禁用 → skip
         for (menuCode in meta.roleMenus[sr.roleCode]):
             for (apiCode in meta.menuApis[menuCode]):
-                if meta.apis[apiCode] matches (method, uri) → true
-    → false
+                result.apiPermissions.add(meta.apis[apiCode].format(method, uri))
+    // 同样合并字段权限和多维度数据权限
+    resolvedCache.put(principal.subjectId, principal.appCode, result)
+    return result.apiPermissions.contains(method + ":" + uri)
+```
+
+#### ResolvedAuthorization — 权限计算结果缓存
+
+计算链路（用户→角色→菜单→API→字段+数据权限）的最终结果缓存。
+
+```java
+public class ResolvedAuthorization implements Serializable {
+    private String subjectId;
+    private String appCode;
+
+    /** API 权限："GET:/api/user/page" O(1) 查找 */
+    private Set<String> apiPermissions;
+
+    /** 字段权限：apiCode → (fieldName → 权限类型)。
+     *  合并规则：同字段多角色取最高权限 (WRITE > READ > HIDDEN) */
+    private Map<String, Map<String, FieldPermissionType>> fieldPermissions;
+
+    /** 数据权限：dimensionCode → {value1, value2, ...}。
+     *  合并规则：同维度多角色取并集。
+     *  例如: "dept_id" → {"D001","D002"}, "region" → {"R01"} */
+    private Map<String, Set<String>> dataScopes;
+
+    private LocalDateTime computedTime;
+}
 ```
 
 ### 4.18 日志模型
@@ -874,6 +915,20 @@ public interface SecurityHeaderProvider {
 }
 ```
 
+#### AuthMetadataService — 授权元数据加载 SPI
+
+IAM 实现方提供，从数据源加载 RBAC 原始数据供缓存层使用。
+
+```java
+public interface AuthMetadataService {
+    /** 加载应用级 RBAC 元数据（角色/菜单/API 定义及关联关系） */
+    AuthMetadata loadMetadata(String appCode);
+
+    /** 加载用户级授权数据（角色列表 + 数据权限范围） */
+    SubjectAuthorization loadSubjectAuth(String subjectId, String appCode);
+}
+```
+
 ---
 
 ## 6. 过滤器链
@@ -1076,9 +1131,127 @@ public enum FieldPermissionType {
 }
 ```
 
+### RefreshScope — 缓存刷新范围
+
+```java
+public enum RefreshScope {
+    METADATA,   // 刷新应用级元数据 → 级联清空所有用户的权限计算结果
+    SUBJECT,    // 仅刷新指定用户的授权数据 + 权限计算结果
+    ALL         // 刷新所有缓存
+}
+```
+
 ---
 
-## 9. 配置
+## 9. 缓存基础设施
+
+sh-auth 内置的三层缓存体系，不是 SPI，是具体实现。管理 `AuthMetadata`、`SubjectAuthorization`、`ResolvedAuthorization` 三级缓存的生命周期。
+
+### 9.1 AuthCacheManager
+
+```java
+public class AuthCacheManager {
+
+    private final AuthMetadataService metadataService;
+
+    /** L1: 应用级元数据缓存（单例，所有用户共享） */
+    private final LoadingCache<String, AuthMetadata> metadataCache;
+
+    /** L2: 用户级授权数据缓存（每用户，仅角色码 + 数据权限） */
+    private final LoadingCache<String, SubjectAuthorization> subjectAuthCache;
+
+    /** L3: 权限计算结果缓存（每用户，O(1) 查找） */
+    private final LoadingCache<String, ResolvedAuthorization> resolvedAuthCache;
+
+    /** 获取（或计算并缓存）权限计算结果 */
+    public ResolvedAuthorization getResolvedAuth(String subjectId, String appCode) {
+        return resolvedAuthCache.get(cacheKey(subjectId, appCode));
+    }
+
+    /** 逐出指定用户的缓存 */
+    public void evictSubject(String subjectId, String appCode) {
+        subjectAuthCache.invalidate(cacheKey(subjectId, appCode));
+        resolvedAuthCache.invalidate(cacheKey(subjectId, appCode));
+    }
+
+    /** 刷新应用元数据 → 级联清空所有用户的权限计算结果 */
+    public void refreshMetadata(String appCode) {
+        metadataCache.refresh(appCode);
+        resolvedAuthCache.invalidateAll();  // 元数据变了，所有用户结果失效
+    }
+
+    private String cacheKey(String subjectId, String appCode) {
+        return subjectId + ":" + appCode;
+    }
+}
+```
+
+### 9.2 AuthCacheRefreshEvent — 缓存刷新事件
+
+IAM admin 配置变更时发布，触发缓存刷新。
+
+```java
+public class AuthCacheRefreshEvent extends ApplicationEvent {
+    private final String appCode;        // 必填
+    private final String subjectId;      // 可选，null = 所有用户
+    private final RefreshScope scope;    // METADATA / SUBJECT / ALL
+}
+```
+
+### 9.3 AuthCacheRefreshListener — 事件监听器
+
+```java
+@Component
+public class AuthCacheRefreshListener {
+
+    private final AuthCacheManager cacheManager;
+
+    @EventListener
+    public void onRefresh(AuthCacheRefreshEvent event) {
+        switch (event.getScope()) {
+            case METADATA -> cacheManager.refreshMetadata(event.getAppCode());
+            case SUBJECT  -> cacheManager.evictSubject(event.getSubjectId(), event.getAppCode());
+            case ALL      -> {
+                cacheManager.refreshMetadata(event.getAppCode());
+                if (event.getSubjectId() != null) {
+                    cacheManager.evictSubject(event.getSubjectId(), event.getAppCode());
+                }
+            }
+        }
+    }
+}
+```
+
+### 9.4 缓存失效传播链
+
+```
+IAM admin 发布事件
+  │
+  ├── RefreshScope.METADATA
+  │     → metadataCache.refresh()       (重新加载 AuthMetadata)
+  │     → resolvedAuthCache.invalidateAll()  (级联清空所有用户计算结果)
+  │
+  ├── RefreshScope.SUBJECT + subjectId
+  │     → subjectAuthCache.invalidate()      (重新加载用户授权)
+  │     → resolvedAuthCache.invalidate()     (清空该用户计算结果)
+  │
+  └── RefreshScope.ALL
+        → 上述两者合并
+```
+
+### 9.5 IAM admin 发布事件场景
+
+| IAM 操作 | 事件 | 效果 |
+|----------|------|------|
+| 修改角色/菜单/API 定义 | `METADATA` | 所有用户权限重算 |
+| 修改角色-菜单绑定 | `METADATA` | 同上 |
+| 修改角色-数据权限 | `METADATA` | 同上 |
+| 修改用户-角色绑定 | `SUBJECT + subjectId` | 仅该用户权限重算 |
+| 批量导入/删除用户 | `METADATA` | 全量刷新 |
+
+---
+
+## 10. 配置
 
 ### AuthProperties
 
