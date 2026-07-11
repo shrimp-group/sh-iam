@@ -10,7 +10,6 @@ import com.wkclz.iam.contract.enums.AuthErrorType;
 import com.wkclz.iam.contract.exception.AuthException;
 import com.wkclz.iam.contract.service.AuthContract;
 import com.wkclz.core.exception.SystemException;
-import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.exception.JwtValidationException;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,9 +37,9 @@ public class JwtAuthContract implements AuthContract {
 
     @Override
     public AuthResult doAuthenticate(String token) {
-        UserJwt userJwt;
+        Principal principal;
         try {
-            userJwt = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
+            principal = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
         } catch (JwtValidationException e) {
             throw new AuthException(
                     AuthErrorType.fromJwtErrorCode(e.getErrorCode()),
@@ -50,7 +49,7 @@ public class JwtAuthContract implements AuthContract {
             throw new AuthException(AuthErrorType.TOKEN_INVALID, "Token 解析失败", e);
         }
 
-        String username = userJwt.getUsername();
+        String username = principal.getUsername();
         String sessionKey = JwtUtil.getTokenRedisKey(token, username);
         String sessionJson;
         try {
@@ -72,16 +71,16 @@ public class JwtAuthContract implements AuthContract {
             throw new AuthException(AuthErrorType.TOKEN_INVALID, "会话数据损坏", e);
         }
 
-        Principal principal = new Principal();
-        principal.setUserCode(userJwt.getUserCode());
-        principal.setUsername(username);
-        principal.setNickname(userJwt.getNickname());
-        principal.setAvatar(userJwt.getAvatar());
-        principal.setAuthIdentifier(session.getAuthIdentifier());
+        Principal result = new Principal();
+        result.setUserCode(principal.getUserCode());
+        result.setUsername(username);
+        result.setNickname(principal.getNickname());
+        result.setAvatar(principal.getAvatar());
+        result.setAuthIdentifier(session.getAuthIdentifier());
 
-        AuthResult result = new AuthResult();
-        result.setPrincipal(principal);
-        result.setSession(session);
-        return result;
+        AuthResult authResult = new AuthResult();
+        authResult.setPrincipal(result);
+        authResult.setSession(session);
+        return authResult;
     }
 }

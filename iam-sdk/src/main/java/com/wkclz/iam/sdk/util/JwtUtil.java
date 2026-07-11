@@ -1,6 +1,6 @@
 package com.wkclz.iam.sdk.util;
 
-import com.wkclz.iam.sdk.bean.UserJwt;
+import com.wkclz.iam.contract.bean.Principal;
 import com.wkclz.iam.sdk.exception.JwtValidationException;
 import com.wkclz.tool.tools.Md5Tool;
 import io.jsonwebtoken.*;
@@ -44,22 +44,22 @@ public class JwtUtil {
      * @param userJwt 用户JWT对象
      * @return JWT token字符串
      */
-    public static String generateToken(UserJwt userJwt, String secretKey) {
-        return generateToken(userJwt, secretKey, SESSION_TTL_SECONDS);
+    public static String generateToken(Principal principal, String secretKey) {
+        return generateToken(principal, secretKey, SESSION_TTL_SECONDS);
     }
 
     /**
      * 生成带过期时间的JWT token
-     * @param userJwt 用户JWT对象
+     * @param principal 用户Principal对象
      * @param sessionTtlSeconds 过期 sessionTtlSeconds * @return JWT token字符串
      */
-    public static String generateToken(UserJwt userJwt, String secretKey, long sessionTtlSeconds) {
+    public static String generateToken(Principal principal, String secretKey, long sessionTtlSeconds) {
         // 创建声明
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userCode", userJwt.getUserCode());
-        claims.put("username", userJwt.getUsername());
-        claims.put("nickname", userJwt.getNickname());
-        claims.put("avatar", userJwt.getAvatar());
+        claims.put("userCode", principal.getUserCode());
+        claims.put("username", principal.getUsername());
+        claims.put("nickname", principal.getNickname());
+        claims.put("avatar", principal.getAvatar());
         SecretKey signingKey = getSigningKey(secretKey);
 
         // 生成token
@@ -72,19 +72,19 @@ public class JwtUtil {
     }
 
     /**
-     * 从token中获取UserJwt对象
+     * 从token中获取Principal对象
      * @param token JWT token字符串
-     * @return UserJwt对象
+     * @return Principal对象
      * @throws JwtValidationException 解析异常，包含错误类型信息
      */
-    public static UserJwt parseToken(String token, String secretKey) throws JwtValidationException {
+    public static Principal parseToken(String token, String secretKey) throws JwtValidationException {
         Claims claims = parseClaims(token, secretKey);
-        UserJwt userJwt = new UserJwt();
-        userJwt.setUserCode(claims.get("userCode", String.class));
-        userJwt.setUsername(claims.get("username", String.class));
-        userJwt.setNickname(claims.get("nickname", String.class));
-        userJwt.setAvatar(claims.get("avatar", String.class));
-        return userJwt;
+        Principal principal = new Principal();
+        principal.setUserCode(claims.get("userCode", String.class));
+        principal.setUsername(claims.get("username", String.class));
+        principal.setNickname(claims.get("nickname", String.class));
+        principal.setAvatar(claims.get("avatar", String.class));
+        return principal;
     }
 
     /**
@@ -149,8 +149,8 @@ public class JwtUtil {
      * @throws Exception 刷新异常
      */
     public static String refreshToken(String token, String secretKey) throws JwtValidationException {
-        UserJwt userJwt = parseToken(token, secretKey);
-        return generateToken(userJwt, secretKey);
+        Principal principal = parseToken(token, secretKey);
+        return generateToken(principal, secretKey);
     }
 
     /**
@@ -161,8 +161,8 @@ public class JwtUtil {
      * @throws Exception 刷新异常
      */
     public static String refreshToken(String token, String secretKey, long expiration) throws JwtValidationException {
-        UserJwt userJwt = parseToken(token, secretKey);
-        return generateToken(userJwt, secretKey, expiration);
+        Principal principal = parseToken(token, secretKey);
+        return generateToken(principal, secretKey, expiration);
     }
 
     /**
