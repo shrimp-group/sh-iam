@@ -7,16 +7,16 @@ import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.helper.PasswordHelper;
-import com.wkclz.iam.sdk.bean.enums.AuthType;
-import com.wkclz.iam.sdk.bean.enums.LoginStatus;
-import com.wkclz.iam.sdk.helper.CaptchaHelper;
-import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
-import com.wkclz.iam.sdk.bean.req.LoginReq;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
 import com.wkclz.iam.contract.context.PrincipalContext;
 import com.wkclz.iam.contract.enums.LoginFailType;
 import com.wkclz.iam.contract.facade.SsoFacadeContract;
+import com.wkclz.iam.sdk.bean.enums.AuthType;
+import com.wkclz.iam.sdk.bean.enums.LoginStatus;
+import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
+import com.wkclz.iam.sdk.bean.req.LoginReq;
+import com.wkclz.iam.sdk.helper.CaptchaHelper;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
@@ -87,7 +87,7 @@ public class IamLoginService {
         IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLastLoginIn1Hour(param);
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
-            log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username, lastLoginIn1Hour);
+            log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username);
             loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
             return LoginResp.fail(LoginFailType.CAPTCHA_REQUIRED);
         }
