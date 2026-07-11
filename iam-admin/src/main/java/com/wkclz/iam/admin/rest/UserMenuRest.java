@@ -7,7 +7,7 @@ import com.wkclz.iam.admin.bean.resp.MenuResp;
 import com.wkclz.iam.admin.service.IamUserMenuService;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
-import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.tool.utils.BeanUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +33,7 @@ public class UserMenuRest {
     @Operation(summary = "查询用户菜单列表")
     public R<List<MenuResp>> userMenuList(@Valid UserMenuListReq req) {
         IamMenu entity = BeanUtil.cp(req, IamMenu.class);
-        entity.setUserCode(PrincipalContext.getUserCode());
+        entity.setUserCode(SecurityContext.getUserCode());
         List<IamMenuDto> menus = iamUserMenuService.userMenuList(entity);
         return R.ok(BeanUtil.cp(menus, MenuResp.class));
     }
@@ -42,7 +42,7 @@ public class UserMenuRest {
     @Operation(summary = "查询用户菜单树")
     public R<List<MenuResp>> userMenuTree(@Valid UserMenuListReq req) {
         IamMenu entity = BeanUtil.cp(req, IamMenu.class);
-        entity.setUserCode(PrincipalContext.getUserCode());
+        entity.setUserCode(SecurityContext.getUserCode());
         List<IamMenuDto> menus = iamUserMenuService.userMenuTree(entity);
         return R.ok(BeanUtil.cp(menus, MenuResp.class));
     }

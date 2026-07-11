@@ -2,7 +2,7 @@ package com.wkclz.iam.sso.contract;
 
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.auth.bean.Principal;
-import com.wkclz.iam.contract.bean.RequestLog;
+import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.contract.bean.Session;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
@@ -66,8 +66,8 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     }
 
     @Override
-    public void saveLog(RequestLog log) {
-        // 直接委托，无需转换（iam-sdk RequestLog 已删除，统一用契约层）
+    public void saveLog(RequestRecord log) {
+        // 直接委托，无需转换（已统一用 sh-auth RequestRecord）
         requestLogService.insertLog(log);
     }
 

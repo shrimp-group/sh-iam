@@ -7,8 +7,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.auth.bean.Principal;
-import com.wkclz.iam.contract.bean.RequestLog;
-import com.wkclz.iam.contract.config.FilterOrder;
+import com.wkclz.auth.bean.RequestRecord;
+import com.wkclz.auth.filter.FilterOrder;
 import com.wkclz.iam.contract.context.PrincipalContext;
 import com.wkclz.iam.contract.facade.SsoFacadeContract;
 import com.wkclz.web.helper.IpHelper;
@@ -70,7 +70,7 @@ public class LoggingFilter extends OncePerRequestFilter {
         LocalThreadHelper.set(HttpServletRequest.class.getName(), request);
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
 
-        RequestLog log = new RequestLog();
+        RequestRecord log = new RequestRecord();
         // 请求前，获取相关参数
         fetchRequestLog(request, log);
         String requestBody = getRequestBody(request);
@@ -131,7 +131,7 @@ public class LoggingFilter extends OncePerRequestFilter {
 
 
 
-    private void fetchRequestLog(HttpServletRequest request, RequestLog log) {
+    private void fetchRequestLog(HttpServletRequest request, RequestRecord log) {
         log.setHttpStatus(200);
         log.setMethod(request.getMethod());
         log.setRequestHost(request.getRemoteHost());
@@ -233,7 +233,7 @@ public class LoggingFilter extends OncePerRequestFilter {
         return true;
     }
 
-    private void saveResponseLog(RequestLog log) {
+    private void saveResponseLog(RequestRecord log) {
         if (ssoFacadeContract == null) {
             return;
         }
@@ -247,7 +247,7 @@ public class LoggingFilter extends OncePerRequestFilter {
         });
     }
 
-    private static void subLog(RequestLog log) {
+    private static void subLog(RequestRecord log) {
         if (log == null) {
             return;
         }

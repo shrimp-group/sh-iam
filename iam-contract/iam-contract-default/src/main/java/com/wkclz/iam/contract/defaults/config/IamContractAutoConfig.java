@@ -1,6 +1,6 @@
 package com.wkclz.iam.contract.defaults.config;
 
-import com.wkclz.iam.contract.config.FilterOrder;
+import com.wkclz.auth.filter.FilterOrder;
 import com.wkclz.iam.contract.defaults.facade.DefaultSsoFacadeContract;
 import com.wkclz.iam.contract.defaults.filter.DefaultAuthFilter;
 import com.wkclz.iam.contract.defaults.service.DefaultAkSignContract;

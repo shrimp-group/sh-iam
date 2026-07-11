@@ -9,7 +9,7 @@ import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.helper.PasswordHelper;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
-import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.contract.enums.LoginFailType;
 import com.wkclz.iam.contract.facade.SsoFacadeContract;
 import com.wkclz.iam.sdk.bean.enums.AuthType;
@@ -174,7 +174,7 @@ public class IamLoginService {
 
 
     public void logout(HttpServletRequest request) {
-        String token = PrincipalContext.getToken();
+        String token = SecurityContext.getToken();
         if (StringUtils.isBlank(token)) return;
         ssoFacadeContract.logout(token);
     }
@@ -185,7 +185,7 @@ public class IamLoginService {
         Assert.notNull(request.getOldPassword(), "旧密码不能为空");
         Assert.notNull(request.getNewPassword(), "新密码不能为空");
 
-        String userCode = PrincipalContext.getUserCode();
+        String userCode = SecurityContext.getUserCode();
         String oldPassword = request.getOldPassword();
         String newPassword = request.getNewPassword();
         String privateKey = iamSsoConfig.getPrivateKey();
@@ -231,7 +231,7 @@ public class IamLoginService {
         ssoLoginMapper.insertPasswordHis(his);
 
         // 修改密码成功，使该用户所有会话失效
-        String username = PrincipalContext.getUsername();
+        String username = SecurityContext.getUsername();
         iamSessionService.invalidateAllSessions(username);
         log.info("用户 {} 修改密码成功，所有会话已失效", username);
     }

@@ -2,8 +2,8 @@ package com.wkclz.iam.contract.defaults.service;
 
 import com.wkclz.iam.contract.bean.AuthResult;
 import com.wkclz.iam.contract.context.PrincipalContext;
-import com.wkclz.iam.contract.enums.AuthErrorType;
-import com.wkclz.iam.contract.exception.AuthException;
+import com.wkclz.auth.enums.AuthErrorType;
+import com.wkclz.auth.exception.AuthException;
 import com.wkclz.iam.contract.service.AuthContract;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

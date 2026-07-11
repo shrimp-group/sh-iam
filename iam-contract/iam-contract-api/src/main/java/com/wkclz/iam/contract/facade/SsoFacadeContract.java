@@ -1,6 +1,6 @@
 package com.wkclz.iam.contract.facade;
 
-import com.wkclz.iam.contract.bean.RequestLog;
+import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
 import com.wkclz.iam.contract.context.PrincipalContext;
@@ -32,7 +32,7 @@ public interface SsoFacadeContract {
      *
      * @param log 请求日志
      */
-    void saveLog(RequestLog log);
+    void saveLog(RequestRecord log);
 
     /**
      * 远程登出（指定 token）

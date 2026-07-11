@@ -3,7 +3,7 @@ package com.wkclz.iam.contract.defaults.service;
 import com.wkclz.iam.contract.bean.App;
 import com.wkclz.iam.contract.bean.DataDimension;
 import com.wkclz.iam.contract.bean.FieldPermission;
-import com.wkclz.iam.contract.bean.Menu;
+import com.wkclz.auth.bean.MenuNode;
 import com.wkclz.iam.contract.bean.Principal;
 import com.wkclz.iam.contract.bean.Tenant;
 import com.wkclz.iam.contract.enums.AuthErrorType;
@@ -39,7 +39,7 @@ public class DefaultAuthzContract implements AuthzContract {
     }
 
     @Override
-    public List<Menu> getMenuTree(Principal principal, String appCode) {
+    public List<MenuNode> getMenuTree(Principal principal, String appCode) {
         log.debug("DefaultAuthzContract: getMenuTree 无实现，返回空列表");
         return Collections.emptyList();
     }

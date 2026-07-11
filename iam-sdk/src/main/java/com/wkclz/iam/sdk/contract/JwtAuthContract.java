@@ -2,12 +2,12 @@ package com.wkclz.iam.sdk.contract;
 
 import com.alibaba.fastjson2.JSON;
 import com.wkclz.auth.bean.Principal;
+import com.wkclz.auth.enums.AuthErrorType;
+import com.wkclz.auth.exception.AuthException;
 import com.wkclz.iam.contract.bean.AuthResult;
 import com.wkclz.iam.contract.bean.Session;
 import com.wkclz.iam.contract.config.ContractSettings;
 import com.wkclz.iam.contract.context.PrincipalContext;
-import com.wkclz.iam.contract.enums.AuthErrorType;
-import com.wkclz.iam.contract.exception.AuthException;
 import com.wkclz.iam.contract.service.AuthContract;
 import com.wkclz.core.exception.SystemException;
 import com.wkclz.iam.sdk.bean.UserJwt;

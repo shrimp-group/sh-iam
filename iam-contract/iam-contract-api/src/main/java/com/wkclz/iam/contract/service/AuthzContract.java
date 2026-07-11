@@ -3,7 +3,7 @@ package com.wkclz.iam.contract.service;
 import com.wkclz.iam.contract.bean.App;
 import com.wkclz.iam.contract.bean.DataDimension;
 import com.wkclz.iam.contract.bean.FieldPermission;
-import com.wkclz.iam.contract.bean.Menu;
+import com.wkclz.auth.bean.MenuNode;
 import com.wkclz.iam.contract.bean.Principal;
 import com.wkclz.iam.contract.bean.Tenant;
 import com.wkclz.iam.contract.context.PrincipalContext;
@@ -75,19 +75,19 @@ public interface AuthzContract {
      * @param appCode   应用编码
      * @return 树根节点列表（多根表示多个顶级菜单）
      */
-    List<Menu> getMenuTree(Principal principal, String appCode);
+    List<MenuNode> getMenuTree(Principal principal, String appCode);
 
     /**
      * 查询用户菜单树（上下文重载：Principal + appCode 均从上下文获取）
      */
-    default List<Menu> getMenuTree() {
+    default List<MenuNode> getMenuTree() {
         return getMenuTree(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode());
     }
 
     /**
      * 查询用户菜单树（半上下文重载：Principal 从上下文，appCode 显式传入）
      */
-    default List<Menu> getMenuTree(String appCode) {
+    default List<MenuNode> getMenuTree(String appCode) {
         return getMenuTree(PrincipalContext.getPrincipal(), appCode);
     }
 

@@ -1,6 +1,6 @@
 package com.wkclz.iam.contract.defaults.facade;
 
-import com.wkclz.iam.contract.bean.RequestLog;
+import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
 import com.wkclz.iam.contract.facade.SsoFacadeContract;
@@ -23,7 +23,7 @@ public class DefaultSsoFacadeContract implements SsoFacadeContract {
     }
 
     @Override
-    public void saveLog(RequestLog requestLog) {
+    public void saveLog(RequestRecord requestLog) {
         // 日志丢失不阻断业务，静默跳过
         log.debug("DefaultSsoFacadeContract: saveLog 无实现，静默跳过");
     }

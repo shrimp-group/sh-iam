@@ -1,6 +1,6 @@
 package com.wkclz.iam.contract.defaults.facade;
 
-import com.wkclz.iam.contract.bean.RequestLog;
+import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ class DefaultSsoFacadeContractTest {
     @Test
     void saveLog_doesNotThrow() {
         // 静默跳过，不抛异常
-        RequestLog log = new RequestLog();
+        RequestRecord log = new RequestRecord();
         assertDoesNotThrow(() -> facade.saveLog(log));
     }
 

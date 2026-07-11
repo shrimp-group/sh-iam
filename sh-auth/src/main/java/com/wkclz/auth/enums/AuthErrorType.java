@@ -8,6 +8,7 @@ public enum AuthErrorType {
     ACCOUNT_DISABLED("账号禁用"),
     ACCOUNT_EXPIRED("账号过期"),
     CREDENTIALS_EXPIRED("凭证过期"),
+    TOKEN_MISSING("缺少Token"),
     TOKEN_EXPIRED("Token过期"),
     TOKEN_INVALID("Token无效"),
     CAPTCHA_REQUIRED("需要验证码"),
@@ -24,4 +25,19 @@ public enum AuthErrorType {
     private final String desc;
     AuthErrorType(String desc) { this.desc = desc; }
     public String getDesc() { return desc; }
+
+    /**
+     * 从 JWT 错误码映射为 AuthErrorType
+     * JwtValidationException 错误码常量: JWT_EXPIRED / JWT_MALFORMED / JWT_UNSUPPORTED / JWT_SIGNATURE_ERROR / JWT_ILLEGAL_ARGUMENT
+     */
+    public static AuthErrorType fromJwtErrorCode(String jwtErrorCode) {
+        return switch (jwtErrorCode) {
+            case "JWT_EXPIRED"        -> TOKEN_EXPIRED;
+            case "JWT_MALFORMED"      -> TOKEN_INVALID;
+            case "JWT_UNSUPPORTED"    -> TOKEN_INVALID;
+            case "JWT_SIGNATURE_ERROR"-> TOKEN_INVALID;
+            case "JWT_ILLEGAL_ARGUMENT"-> TOKEN_INVALID;
+            default                   -> TOKEN_INVALID;
+        };
+    }
 }

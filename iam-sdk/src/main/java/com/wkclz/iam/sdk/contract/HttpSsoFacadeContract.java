@@ -5,7 +5,7 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.wkclz.iam.contract.bean.RequestLog;
+import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
 import com.wkclz.iam.contract.config.ContractSettings;
@@ -41,7 +41,7 @@ public class HttpSsoFacadeContract implements SsoFacadeContract {
     }
 
     @Override
-    public void saveLog(RequestLog requestLog) {
+    public void saveLog(RequestRecord requestLog) {
         try {
             postData("/saveLog", requestLog);
         } catch (Exception e) {

@@ -3,7 +3,7 @@ package com.wkclz.iam.contract.defaults.service;
 import com.wkclz.iam.contract.bean.App;
 import com.wkclz.iam.contract.bean.DataDimension;
 import com.wkclz.iam.contract.bean.FieldPermission;
-import com.wkclz.iam.contract.bean.Menu;
+import com.wkclz.auth.bean.MenuNode;
 import com.wkclz.iam.contract.bean.Principal;
 import com.wkclz.iam.contract.bean.Tenant;
 import com.wkclz.iam.contract.enums.AuthErrorType;
@@ -43,7 +43,7 @@ class DefaultAuthzContractTest {
 
     @Test
     void getMenuTree_returnsEmptyList() {
-        List<Menu> result = contract.getMenuTree(principal, "app-001");
+        List<MenuNode> result = contract.getMenuTree(principal, "app-001");
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
