@@ -55,27 +55,27 @@ iam-sso-starter → iam-sso → iam-common
 
 ### iam-sdk (`com.wkclz.iam.sdk`)
 
-| 包         | 类                                                                                                         | 说明                                                         |
-|-----------|-----------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| `config`  | IamSdkConfig                                                                                              | SDK 配置 (appCode, jwtSecretKey, serverUrl, appId/appSecret) |
-| `facade`  | SsoFacade                                                                                                 | 门面接口: `saveLog(RequestLog)`                                |
-| `service` | IamSsoService                                                                                             | SSO 接口: `tokenCheck(token, authIdentifier)`                |
-| `filter`  | IamAuthFilter, LoggingFilter, RequestWrapperFilter                                                        | 鉴权/日志/请求包装过滤器                                              |
-| `helper`  | SessionHelper, AkSignHelper, CaptchaHelper, ResponseHelper                                                | Session/AK签名/验证码/响应工具                                      |
-| `model`   | UserJwt, UserSession, LoginReq, LoginResp, ChangePasswordReq, RegisterReq, PictureCaptchaResp, RequestLog | SDK 公共模型 (均使用 @Schema 注解描述)                                |
-| `enums`   | AuthType, LoginStatus                                                                                     | 认证类型 (PASSWORD/LDAP)、登录状态枚举                                |
-| `util`    | JwtUtil                                                                                                   | JWT 生成/解析/验证/刷新                                            |
-| 根包        | IamSdkAutoConfig                                                                                          | 自动配置 (`@AutoConfiguration` + `@ConditionalOnProperty`)     |
+| 包          | 类                                           | 说明                                                         |
+|------------|---------------------------------------------|------------------------------------------------------------|
+| `config`   | IamSdkConfig                                | SDK 配置 (appCode, jwtSecretKey, serverUrl, appId/appSecret) |
+| `contract` | JwtAuthContract, HttpSsoFacadeContract      | AuthContract + SsoFacadeContract 实现                        |
+| `filter`   | LoggingFilter, RequestWrapperFilter         | 日志/请求包装过滤器                                                 |
+| `helper`   | AkSignHelper, CaptchaHelper, ResponseHelper | AK签名/验证码/响应工具                                              |
+| `model`    | UserJwt                                     | JWT载荷内部模型，仅 JwtUtil 使用                                     |
+| `enums`    | AuthType, LoginStatus                       | 认证类型 (PASSWORD/LDAP)、登录状态枚举                                |
+| `util`     | JwtUtil                                     | JWT 生成/解析/验证/刷新                                            |
+| 根包         | IamSdkAutoConfig                            | 自动配置 (`@AutoConfiguration` + `@ConditionalOnProperty`)     |
 
 ### iam-sso (`com.wkclz.iam.sso`)
 
-| 包         | 类                                                                                                                        | 说明                                                               |
-|-----------|--------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| `config`  | IamSsoConfig                                                                                                             | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
-| `rest`    | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                       | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
-| `service` | IamLoginService, IamSsoServiceImpl, SsoFacadeImpl, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService | SSO 核心业务逻辑                                                       |
-| `mapper`  | SsoLoginMapper, SsoLoginLogMapper, SsoRequestLogMapper, SsoResourceMapper                                                | SSO 数据访问                                                         |
-| 根包        | IamSsoAutoConfig, Route                                                                                                  | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
+| 包          | 类                                                                                                                                                                                     | 说明                                                               |
+|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| `config`   | IamSsoConfig                                                                                                                                                                          | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
+| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                    | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
+| `contract` | LocalSsoFacadeContract                                                                                                                                                                | SSO 门面本地实现                                                       |
+| `service`  | IamLoginService, IamSessionService(createSession, enforceMaxConcurrentSessions, logout, invalidateAllSessions), SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService | SSO 核心业务逻辑                                                       |
+| `mapper`   | SsoLoginMapper, SsoLoginLogMapper, SsoRequestLogMapper, SsoResourceMapper                                                                                                             | SSO 数据访问                                                         |
+| 根包         | IamSsoAutoConfig, Route                                                                                                                                                               | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
@@ -218,15 +218,15 @@ iam_request_log ── 请求日志 (独立)
          9. 记录登录日志 + 更新登录信息
 ```
 
-### 鉴权流程 (IamAuthFilter)
+### 鉴权流程 (JwtAuthContract)
 
 ```
-请求 → RequestWrapperFilter → LoggingFilter → IamAuthFilter:
+请求 → RequestWrapperFilter → LoggingFilter → JwtAuthContract:
   1. 放行 /*/public/** 路径
   2. 从 Header 获取 token (Authorization 或 token)
   3. JWT 验证 + 解析 UserJwt
-  4. IamSsoService.tokenCheck() → Redis 获取 UserSession
-  5. SessionHelper.cacheUserInfo() → 请求上下文
+  4. JwtAuthContract.authenticate() → 验证令牌有效性
+  5. 缓存用户信息到请求上下文
 ```
 
 ### 用户创建流程 (IamUserService.customCreate)
@@ -252,7 +252,7 @@ iam_request_log ── 请求日志 (独立)
 | iam-sso | IamSsoAutoConfig | 无条件 (包含 @ComponentScan + @MapperScan) |
 | iam-admin | IamAdminAutoConfig | 无条件 (包含 @ComponentScan + @MapperScan) |
 
-**SsoFacade 可替换设计**: iam-sdk 中定义 `@Bean @ConditionalOnMissingBean SsoFacade` 默认空实现；iam-sso 中的 `SsoFacadeImpl` 会自动覆盖。
+**契约层可替换设计**: iam-sdk 通过 `contract` 包定义鉴权与门面契约接口；iam-sso 中的 `LocalSsoFacadeContract` 提供本地实现。
 
 ---
 
@@ -290,13 +290,13 @@ iam_request_log ── 请求日志 (独立)
 
 ## 扩展点
 
-| 扩展点 | 模块 | 方式 |
-|--------|------|------|
-| Token 校验逻辑 | iam-sdk | 实现 `IamSsoService` 接口覆盖默认 Bean |
-| 请求日志存储 | iam-sdk | 实现 `SsoFacade` 接口覆盖默认 Bean |
-| 验证码生成 | iam-sso | CaptchaRest 可替换 |
-| API 自动扫描 | iam-admin | RestfulScan 于启动时执行，基于 @Router 注解 |
-| 密码加密策略 | iam-common | PasswordHelper (当前 MD5+salt) |
+| 扩展点        | 模块         | 方式                                     |
+|------------|------------|----------------------------------------|
+| Token 校验逻辑 | iam-sdk    | 实现 `JwtAuthContract` 接口覆盖默认 Bean       |
+| 请求日志存储     | iam-sdk    | 实现 `HttpSsoFacadeContract` 接口覆盖默认 Bean |
+| 验证码生成      | iam-sso    | CaptchaRest 可替换                        |
+| API 自动扫描   | iam-admin  | RestfulScan 于启动时执行，基于 @Router 注解       |
+| 密码加密策略     | iam-common | PasswordHelper (当前 MD5+salt)           |
 
 ---
 
