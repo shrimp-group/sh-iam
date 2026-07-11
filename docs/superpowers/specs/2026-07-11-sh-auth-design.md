@@ -73,7 +73,8 @@ com.wkclz.sh.auth/
 │   │   ├── AuthenticationProvider.java   # 认证提供者（核心扩展点）
 │   │   ├── TokenService.java             # Token 生命周期管理
 │   │   ├── LoginService.java             # 登录编排模板方法
-│   │   ├── LogoutService.java            # 登出编排
+│   │   ├── LogoutService.java            # 登出接口
+│   │   ├── DefaultLogoutService.java      # 登出默认实现
 │   │   ├── PasswordEncoder.java          # 密码编码器
 │   │   ├── PasswordValidator.java        # 密码策略校验器
 │   │   ├── CredentialProvider.java       # 凭证提供者 SPI
@@ -132,6 +133,7 @@ com.wkclz.sh.auth/
 │   └── RateLimitException.java           # 频率限制异常
 └── enums/
     ├── AuthErrorType.java                # 认证错误类型
+    ├── AuthStatus.java                   # 认证状态
     ├── AccountStatus.java                # 账号状态枚举
     ├── TokenType.java                    # Token 类型
     ├── CredentialType.java               # 凭证类型
@@ -194,12 +196,32 @@ public class AuthRequest implements Serializable {
 
 ```java
 public class AuthResult implements Serializable {
-    private boolean success;          // 是否成功
+    private AuthStatus status;        // 整体认证状态（SUCCESS / MFA_REQUIRED / FAILED）
     private AuthErrorType errorType;  // 失败时的错误类型
     private String errorMessage;      // 失败时的错误描述
     private AuthToken token;          // 成功时的认证令牌
     private Principal principal;      // 成功时的用户主体
-    private MfaChallenge mfaChallenge;// MFA 挑战（需要二次验证时）
+    private MfaChallenge mfaChallenge;// MFA 挑战（status=MFA_REQUIRED 时）
+
+    public boolean isSuccess() {
+        return status == AuthStatus.SUCCESS;
+    }
+
+    public static AuthResult success(Principal principal, AuthToken token) {
+        AuthResult r = new AuthResult();
+        r.status = AuthStatus.SUCCESS;
+        r.principal = principal;
+        r.token = token;
+        return r;
+    }
+
+    public static AuthResult fail(AuthErrorType errorType, String message) {
+        AuthResult r = new AuthResult();
+        r.status = AuthStatus.FAILED;
+        r.errorType = errorType;
+        r.errorMessage = message;
+        return r;
+    }
 }
 ```
 
@@ -486,6 +508,7 @@ public abstract class LoginService {
 
     // === 注入的 SPI ===
     protected AuthenticationProvider authProvider;
+    protected TokenService tokenService;
     protected SessionStore sessionStore;
     protected RateLimitChecker rateLimitChecker;
     protected CaptchaService captchaService;
@@ -495,6 +518,7 @@ public abstract class LoginService {
 
     /** 模板方法：统一登录流程 */
     public AuthResult login(AuthRequest request, HttpServletRequest httpRequest) {
+        String identifier = resolveIdentifier(request, httpRequest);
         try {
             // 1. 登录频率检查
             checkRateLimit(request, httpRequest);
@@ -505,6 +529,7 @@ public abstract class LoginService {
             // 3. 调用 AuthenticationProvider 执行认证
             AuthResult result = authProvider.authenticate(request, httpRequest);
             if (!result.isSuccess()) {
+                rateLimitChecker.recordAttempt(identifier, false);
                 recordLoginLog(result, httpRequest);
                 return result;
             }
@@ -515,33 +540,51 @@ public abstract class LoginService {
             // 5. MFA 二次验证（如需要）
             MfaChallenge challenge = checkMfa(result.getPrincipal());
             if (challenge != null) {
+                result.setStatus(AuthStatus.MFA_REQUIRED);
                 result.setMfaChallenge(challenge);
                 return result;
             }
 
-            // 6. 创建会话
-            Session session = createSession(result.getPrincipal(), httpRequest);
+            // 6. 生成 Token 并创建会话
+            AuthToken token = tokenService.generateToken(result.getPrincipal());
+            result.setToken(token);
+            result.setStatus(AuthStatus.SUCCESS);
+
+            Session session = createSession(result.getPrincipal(), token, httpRequest);
             concurrentSessionControl.enforce(session.getSubjectId());
             sessionStore.save(session);
 
             // 7. 记录登录日志
+            rateLimitChecker.recordAttempt(identifier, true);
             recordLoginLog(result, httpRequest);
 
             return result;
+        } catch (AuthenticationException e) {
+            log.warn("认证失败: {}", e.getMessage());
+            rateLimitChecker.recordAttempt(identifier, false);
+            return AuthResult.fail(AuthErrorType.BAD_CREDENTIALS, e.getMessage());
         } catch (RateLimitException e) {
             log.warn("登录频率超限: {}", e.getMessage());
             return AuthResult.fail(AuthErrorType.RATE_LIMITED, e.getMessage());
         } catch (AccountStatusException e) {
             log.warn("账号状态异常: {}", e.getMessage());
             return AuthResult.fail(AuthErrorType.ACCOUNT_DISABLED, e.getMessage());
+        } catch (Exception e) {
+            log.error("登录异常", e);
+            return AuthResult.fail(AuthErrorType.INTERNAL_ERROR, e.getMessage());
         }
+    }
+
+    /** 解析限流标识（默认取 IP，子类可覆盖为用户名） */
+    protected String resolveIdentifier(AuthRequest request, HttpServletRequest httpRequest) {
+        return IpHelper.getClientIp(httpRequest);
     }
 
     /** 子步骤可由子类覆盖 */
     protected abstract void checkRateLimit(AuthRequest request, HttpServletRequest httpRequest);
     protected abstract void checkCaptcha(AuthRequest request);
     protected abstract MfaChallenge checkMfa(Principal principal);
-    protected abstract Session createSession(Principal principal, HttpServletRequest httpRequest);
+    protected abstract Session createSession(Principal principal, AuthToken token, HttpServletRequest httpRequest);
     protected abstract void recordLoginLog(AuthResult result, HttpServletRequest httpRequest);
 }
 ```
@@ -556,6 +599,34 @@ public interface LogoutService {
     void logout(String sessionId);
     /** 使某用户所有会话失效（改密场景） */
     void invalidateAllSessions(String subjectId);
+}
+```
+
+**DefaultLogoutService — 默认登出实现**
+
+sh-auth 提供基于 `SessionStore` 的默认实现，接入方无需重复编写注销逻辑：
+
+```java
+public class DefaultLogoutService implements LogoutService {
+    private final SessionStore sessionStore;
+
+    @Override
+    public void logout() {
+        String token = SecurityContext.getToken();
+        if (token != null) {
+            sessionStore.delete(token);
+        }
+    }
+
+    @Override
+    public void logout(String sessionId) {
+        sessionStore.delete(sessionId);
+    }
+
+    @Override
+    public void invalidateAllSessions(String subjectId) {
+        sessionStore.deleteBySubjectId(subjectId);
+    }
 }
 ```
 
@@ -801,7 +872,7 @@ public interface SecurityHeaderProvider {
 **RequestLogFilter**：
 - 前置：记录请求 URI、方法、IP、UA、headers（token 脱敏）
 - 执行：`chain.doFilter()`
-- 后置（finally）：采集响应状态码、响应体（截断到合理长度）、计算耗时
+- 后置（finally）：采集响应状态码、响应体（截断到合理长度）、计算耗时 → 异步保存 → **`SecurityContext.clear()` 清理 ThreadLocal**
 - 脱敏规则：token 前 8 后 4 截断、password 字段屏蔽
 - 异步保存：通过 `RequestLogger.save()` 异步写入，不阻塞主请求
 - 排除规则：静态资源（可配置后缀正则）、health check 路径（`/public/status`）、debug 模式的完整日志
@@ -849,8 +920,7 @@ sh.auth.white-list.paths:
       → AuthenticationFilter: SecurityContext.setPrincipal() / setToken()
         → AuthorizationFilter: 读取 SecurityContext
       → 业务控制器: SecurityContext.getPrincipal() 可用
-    → RequestLogFilter finally: 保存日志
-  → SecurityContext.clear()（请求结束清理，防止内存泄漏）
+    → RequestLogFilter finally: 保存日志 → SecurityContext.clear() 清理
 ```
 
 ---
@@ -882,6 +952,16 @@ RuntimeException
 ---
 
 ## 8. 枚举定义
+
+### AuthStatus — 认证状态
+
+```java
+public enum AuthStatus {
+    SUCCESS,        // 认证成功（含 MFA）
+    MFA_REQUIRED,   // 需要 MFA 二次验证
+    FAILED          // 认证失败
+}
+```
 
 ### AuthErrorType — 认证错误类型
 
@@ -1094,6 +1174,12 @@ public class ShAuthAutoConfiguration {
         return new SecurityContext();
     }
 
+    @Bean
+    @ConditionalOnMissingBean
+    public DefaultLogoutService defaultLogoutService(SessionStore sessionStore) {
+        return new DefaultLogoutService(sessionStore);
+    }
+
     // 注册过滤器 Bean
     @Bean
     @ConditionalOnMissingBean
@@ -1116,10 +1202,10 @@ public class ShAuthAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public AuthenticationFilter authenticationFilter(
-            List<AuthenticationProvider> authProviders,
             TokenService tokenService,
+            SessionStore sessionStore,
             AuthProperties properties) {
-        return new AuthenticationFilter(authProviders, tokenService, properties);
+        return new AuthenticationFilter(tokenService, sessionStore, properties);
     }
 
     @Bean
