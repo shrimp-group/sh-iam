@@ -2,7 +2,7 @@ package com.wkclz.iam.sso.service;
 
 import com.wkclz.iam.common.entity.IamRequestLog;
 import com.wkclz.iam.common.helper.IpLocalCacheHelper;
-import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.iam.contract.bean.RequestLog;
 import com.wkclz.iam.sso.mapper.SsoRequestLogMapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
