@@ -12,6 +12,7 @@ import java.util.List;
  *
  * @author shrimp
  */
+@Deprecated
 @Data
 @Schema(description = "菜单")
 public class Menu implements Serializable {

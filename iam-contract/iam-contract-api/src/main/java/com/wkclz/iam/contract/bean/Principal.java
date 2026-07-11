@@ -12,6 +12,7 @@ import java.io.Serializable;
  *
  * @author shrimp
  */
+@Deprecated
 @Data
 @Schema(description = "用户主体")
 public class Principal implements Serializable {

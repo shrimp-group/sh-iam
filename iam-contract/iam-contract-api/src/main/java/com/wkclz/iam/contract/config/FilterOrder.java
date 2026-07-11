@@ -9,6 +9,7 @@ import org.springframework.core.Ordered;
  *
  * @author shrimp
  */
+@Deprecated
 public final class FilterOrder {
 
     private FilterOrder() {

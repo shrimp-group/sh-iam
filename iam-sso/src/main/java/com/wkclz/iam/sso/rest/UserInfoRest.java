@@ -3,7 +3,7 @@ package com.wkclz.iam.sso.rest;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.auth.bean.Principal;
-import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.entity.VueRouterMenu;
@@ -37,7 +37,7 @@ public class UserInfoRest {
     @GetMapping(Route.USER_INFO)
     @Operation(summary = "获取用户信息")
     public R<Principal> userInfo(HttpServletRequest request) {
-        Principal principal = PrincipalContext.getPrincipal(request);
+        Principal principal = SecurityContext.getPrincipal(request);
         if (principal == null) {
             return R.error("用户未登录");
         }
@@ -47,7 +47,7 @@ public class UserInfoRest {
     @GetMapping(Route.USER_MENU_TREE)
     @Operation(summary = "获取用户菜单树")
     public R<List<IamMenuDto>> userMenuTree(HttpServletRequest request) {
-        String appCode = PrincipalContext.getAppCode();
+        String appCode = SecurityContext.getAppCode(request);
         if (StringUtils.isBlank(appCode)) {
             return R.error("appCode is blank in Headers");
         }
@@ -58,7 +58,7 @@ public class UserInfoRest {
     @GetMapping(Route.USER_MENU_TREE_RUOYI)
     @Operation(summary = "获取若依格式菜单树")
     public R<List<VueRouterMenu>> userMenuTreeRuoyi(HttpServletRequest request) {
-        String appCode = PrincipalContext.getAppCode();
+        String appCode = SecurityContext.getAppCode(request);
         if (StringUtils.isBlank(appCode)) {
             return R.error("appCode is blank in Headers");
         }

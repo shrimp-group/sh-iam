@@ -9,7 +9,7 @@ import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.auth.filter.FilterOrder;
-import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.contract.facade.SsoFacadeContract;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.LocalThreadHelper;
@@ -85,7 +85,7 @@ public class LoggingFilter extends OncePerRequestFilter {
             throw e;
         } finally {
             // 请求结束后，获取 响应状态，用户信息, 请求体，响应体，计算响应时间
-            Principal principal = PrincipalContext.getPrincipal(request);
+            Principal principal = SecurityContext.getPrincipal(request);
             if (principal != null) {
                 log.setUserCode(principal.getUserCode());
                 log.setUsername(principal.getUsername());
@@ -149,9 +149,9 @@ public class LoggingFilter extends OncePerRequestFilter {
         log.setReferer(request.getHeader("Referer"));
 
         log.setRemoteAddr(IpHelper.getOriginIp(request));
-        log.setToken(PrincipalContext.getToken());
-        log.setTenantCode(PrincipalContext.getTenantCode());
-        log.setAppCode(PrincipalContext.getAppCode());
+        log.setToken(SecurityContext.getToken());
+        log.setTenantCode(SecurityContext.getTenantCode());
+        log.setAppCode(SecurityContext.getAppCode());
 
         if (log.getUserAgent() != null) {
             UserAgent ua = UserAgentUtil.parse(log.getUserAgent());

@@ -9,6 +9,7 @@ import lombok.Getter;
  *
  * @author shrimp
  */
+@Deprecated
 @Getter
 public class AuthException extends RuntimeException {
 

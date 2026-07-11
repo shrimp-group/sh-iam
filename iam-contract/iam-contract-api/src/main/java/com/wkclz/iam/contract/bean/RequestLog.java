@@ -11,6 +11,7 @@ import java.io.Serializable;
  *
  * @author shrimp
  */
+@Deprecated
 @Data
 @Schema(description = "请求日志")
 public class RequestLog implements Serializable {

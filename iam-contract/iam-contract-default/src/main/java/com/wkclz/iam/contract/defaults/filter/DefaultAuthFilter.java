@@ -1,8 +1,9 @@
 package com.wkclz.iam.contract.defaults.filter;
 
 import com.wkclz.iam.contract.bean.AuthResult;
-import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.contract.defaults.config.ContractConfig;
+import com.wkclz.iam.contract.enums.AuthErrorType;
 import com.wkclz.iam.contract.exception.AuthException;
 import com.wkclz.iam.contract.service.AuthContract;
 import jakarta.servlet.FilterChain;
@@ -53,7 +54,7 @@ public class DefaultAuthFilter extends OncePerRequestFilter {
 
         // 2. public 路径放行
         String pattern = contractConfig.getPublicPathPattern();
-        if (PrincipalContext.match(pattern, uri)) {
+        if (SecurityContext.match(pattern, uri)) {
             chain.doFilter(request, response);
             return;
         }
@@ -70,15 +71,20 @@ public class DefaultAuthFilter extends OncePerRequestFilter {
             }
 
             // 4. 缓存到上下文
-            PrincipalContext.cache(request, authResult.getPrincipal(), authResult.getSession());
+            request.setAttribute("PRINCIPAL", authResult.getPrincipal());
+            SecurityContext.setPrincipal(authResult.getPrincipal());
+            request.setAttribute("SESSION", authResult.getSession());
 
             // 5. 放行
             chain.doFilter(request, response);
         } catch (AuthException e) {
             log.warn("DefaultAuthFilter: 认证失败: {} - {}, uri={}", e.getErrorType(), e.getMessage(), uri);
-            response.setStatus(e.getErrorType().getHttpStatus());
+            // ACCESS_DENIED → 403，其余认证错误 → 401
+            response.setStatus(e.getErrorType() == AuthErrorType.ACCESS_DENIED ? 403 : 401);
         } finally {
-            PrincipalContext.clear();
+            SecurityContext.clear();
+            request.removeAttribute("PRINCIPAL");
+            request.removeAttribute("SESSION");
         }
     }
 }

@@ -36,8 +36,6 @@ public class RequestRecord implements Serializable {
     private String userCode;
     private String username;
     private String nickname;
-    private String location;
-    private String isp;
     private Long costTime;
     private LocalDateTime requestTime;
     private String errorMsg;

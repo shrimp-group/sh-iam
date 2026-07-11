@@ -7,6 +7,7 @@ package com.wkclz.iam.contract.enums;
  *
  * @author shrimp
  */
+@Deprecated
 public enum AuthErrorType {
 
     /**

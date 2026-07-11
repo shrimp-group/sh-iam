@@ -16,5 +16,6 @@ public class MenuNode implements Serializable {
     private String component;
     private String buttonCode;
     private String appCode;
+    private String icon;
     private List<MenuNode> children;
 }
