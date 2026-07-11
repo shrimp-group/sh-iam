@@ -7,7 +7,7 @@ import com.wkclz.auth.exception.AuthException;
 import com.wkclz.iam.contract.bean.AuthResult;
 import com.wkclz.iam.contract.bean.Session;
 import com.wkclz.iam.contract.config.ContractSettings;
-import com.wkclz.iam.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.contract.service.AuthContract;
 import com.wkclz.core.exception.SystemException;
 import com.wkclz.iam.sdk.bean.UserJwt;
@@ -29,7 +29,7 @@ public class JwtAuthContract implements AuthContract {
 
     @Override
     public AuthResult authenticate(HttpServletRequest request) {
-        String token = PrincipalContext.getToken();
+        String token = SecurityContext.getToken(request);
         if (!StringUtils.hasText(token)) {
             return null;
         }
