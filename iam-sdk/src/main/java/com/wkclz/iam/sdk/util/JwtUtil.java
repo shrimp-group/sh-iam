@@ -27,6 +27,13 @@ public class JwtUtil {
         return "iam:session:" + identifier + ":" + Md5Tool.md5(token);
     }
 
+    /**
+     * 根据用户名和 tokenMd5 生成 Redis key（用于已知 username + tokenMd5 的场景）
+     */
+    public static String getTokenRedisKeyByName(String username, String tokenMd5) {
+        return "iam:session:" + username + ":" + tokenMd5;
+    }
+
     public static String getSessionListRedisKey(String username) {
         return "iam:session:list:" + username;
     }

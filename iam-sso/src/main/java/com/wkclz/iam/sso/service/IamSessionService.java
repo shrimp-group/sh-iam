@@ -54,7 +54,7 @@ public class IamSessionService {
         if (earliest == null) return;
 
         for (String tokenMd5 : earliest) {
-            String sessionKey = "iam:session:" + username + ":" + tokenMd5;
+            String sessionKey = JwtUtil.getTokenRedisKeyByName(username, tokenMd5);
             redisTemplate.delete(sessionKey);
             redisTemplate.opsForZSet().remove(sessionListKey, tokenMd5);
             log.info("用户 {} 并发会话超限，踢出最早会话, tokenMd5={}", username, tokenMd5);
@@ -94,7 +94,7 @@ public class IamSessionService {
         if (tokenMd5Set != null && !tokenMd5Set.isEmpty()) {
             Collection<String> sessionKeys = new ArrayList<>(tokenMd5Set.size());
             for (String tokenMd5 : tokenMd5Set) {
-                sessionKeys.add("iam:session:" + username + ":" + tokenMd5);
+                sessionKeys.add(JwtUtil.getTokenRedisKeyByName(username, tokenMd5));
             }
             Long deleted = redisTemplate.delete(sessionKeys);
             log.info("用户 {} 批量删除 {} 个会话 key，实际删除 {} 个", username, sessionKeys.size(), deleted);
