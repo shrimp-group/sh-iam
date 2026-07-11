@@ -477,7 +477,6 @@ public class ResolvedAuthorization implements Serializable {
 
 ```java
 public class LoginRecord implements Serializable {
-    private String id;                // 记录 ID
     private String subjectId;         // 主体 ID
     private String username;          // 用户名
     private String authType;          // 认证方式
@@ -493,7 +492,6 @@ public class LoginRecord implements Serializable {
 
 ```java
 public class RequestRecord implements Serializable {
-    private String id;
     private String tenantCode;
     private String appCode;
     private String userAgent;
