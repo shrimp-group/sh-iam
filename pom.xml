@@ -18,6 +18,7 @@
     <name>sh-iam</name>
 
     <modules>
+        <module>sh-auth</module>
         <module>iam-contract</module>
         <module>iam-common</module>
         <module>iam-sso</module>

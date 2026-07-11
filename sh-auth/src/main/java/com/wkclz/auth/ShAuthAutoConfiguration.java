@@ -1,11 +1,13 @@
 package com.wkclz.auth;
 
+import com.wkclz.auth.cache.AuthCacheManager;
 import com.wkclz.auth.config.AuthProperties;
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.auth.contract.auth.DefaultLogoutService;
 import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.auth.contract.auth.TokenService;
 import com.wkclz.auth.contract.authz.AccessControlProvider;
+import com.wkclz.auth.contract.infra.AuthMetadataService;
 import com.wkclz.auth.contract.infra.RequestLogger;
 import com.wkclz.auth.contract.infra.SecurityHeaderProvider;
 import com.wkclz.auth.filter.*;
@@ -96,5 +98,11 @@ public class ShAuthAutoConfiguration {
         reg.setOrder(FilterOrder.AUTHZ);
         reg.setName("authorizationFilter");
         return reg;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AuthCacheManager authCacheManager(AuthMetadataService metadataService) {
+        return new AuthCacheManager(metadataService);
     }
 }
