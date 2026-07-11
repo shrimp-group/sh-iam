@@ -1,7 +1,6 @@
 package com.wkclz.iam.sdk.helper;
 
 import com.wkclz.core.exception.ValidationException;
-import com.wkclz.iam.sdk.config.IamSdkConfig;
 import com.wkclz.tool.tools.Md5Tool;
 import com.wkclz.tool.tools.RsaTool;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +20,6 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class AkSignHelper {
 
-
-    @Autowired
-    private IamSdkConfig config;
     @Autowired(required = false)
     private RedisTemplate redisTemplate;
 
