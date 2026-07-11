@@ -154,7 +154,7 @@ public class Principal implements Serializable {
     private String avatar;        // 头像 URL
     private String tenantCode;    // 租户编码（多租户支持）
     private String appCode;       // 当前应用编码
-    private String externalId;   // 三方标识（如微信 openId，可选）
+    private String authIdentifier;// 认证标识（用户名/手机号/openId，按 authType 区分含义，可选）
 }
 ```
 
@@ -167,7 +167,6 @@ public class Subject implements Serializable {
     private String authIdentifier;    // 认证标识（手机号/邮箱/用户名/unionId）
     private AccountStatus status;     // 账号状态
     private LocalDateTime expireTime; // 账号过期时间
-    private String externalId;   // 三方标识（如微信 openId，可选）
 }
 ```
 
