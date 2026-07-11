@@ -61,7 +61,7 @@ sh-auth (框架公共层)
 ## 3. 包结构
 
 ```
-com.wkclz.sh.auth/
+com.wkclz.auth/
 ├── ShAuthAutoConfiguration.java          # @AutoConfiguration 自动配置入口（唯一）
 ├── config/
 │   ├── AuthProperties.java               # 配置属性类
@@ -120,9 +120,7 @@ com.wkclz.sh.auth/
 │   ├── SecurityHeaders.java              # HTTP 安全头
 │   ├── MfaChallenge.java                 # MFA 挑战
 │   ├── SubjectRole.java                  # 用户-角色关联
-│   ├── RoleMenu.java                     # 角色-菜单关联
 │   ├── RoleDataScope.java                # 角色-数据权限关联
-│   ├── MenuApi.java                      # 菜单-API 关联
 │   └── ApiField.java                     # API-字段权限关联
 ├── exception/
 │   ├── AuthenticationException.java      # 认证异常
@@ -156,6 +154,7 @@ public class Principal implements Serializable {
     private String avatar;        // 头像 URL
     private String tenantCode;    // 租户编码（多租户支持）
     private String appCode;       // 当前应用编码
+    private String externalId;   // 三方标识（如微信 openId，可选）
 }
 ```
 
@@ -168,6 +167,7 @@ public class Subject implements Serializable {
     private String authIdentifier;    // 认证标识（手机号/邮箱/用户名/unionId）
     private AccountStatus status;     // 账号状态
     private LocalDateTime expireTime; // 账号过期时间
+    private String externalId;   // 三方标识（如微信 openId，可选）
 }
 ```
 
@@ -364,15 +364,6 @@ public class SubjectRole implements Serializable {
 }
 ```
 
-#### RoleMenu — 角色-菜单关联
-
-```java
-public class RoleMenu implements Serializable {
-    private String roleCode;          // 角色编码
-    private String menuCode;          // 菜单编码
-}
-```
-
 #### RoleDataScope — 角色-数据权限关联
 
 ```java
@@ -380,15 +371,6 @@ public class RoleDataScope implements Serializable {
     private String roleCode;          // 角色编码
     private String dimensionCode;     // 维度编码
     private String scopeValue;        // 范围值
-}
-```
-
-#### MenuApi — 菜单-API 关联
-
-```java
-public class MenuApi implements Serializable {
-    private String menuCode;          // 菜单编码
-    private String apiCode;           // API 编码
 }
 ```
 
@@ -1164,7 +1146,7 @@ public final class AuthConstants {
 ```java
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "sh.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
-@ComponentScan(basePackages = "com.wkclz.sh.auth")
+@ComponentScan(basePackages = "com.wkclz.auth")
 @EnableConfigurationProperties(AuthProperties.class)
 public class ShAuthAutoConfiguration {
 
@@ -1223,7 +1205,7 @@ public class ShAuthAutoConfiguration {
 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`：
 
 ```
-com.wkclz.sh.auth.ShAuthAutoConfiguration
+com.wkclz.auth.ShAuthAutoConfiguration
 ```
 
 ### SPI 注入策略
