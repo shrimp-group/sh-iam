@@ -6,7 +6,7 @@ import cn.hutool.http.useragent.UserAgentUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.wkclz.iam.sdk.config.IamSdkConfig;
-import com.wkclz.iam.contract.bean.Principal;
+import com.wkclz.auth.bean.Principal;
 import com.wkclz.iam.contract.bean.RequestLog;
 import com.wkclz.iam.contract.config.FilterOrder;
 import com.wkclz.iam.contract.context.PrincipalContext;

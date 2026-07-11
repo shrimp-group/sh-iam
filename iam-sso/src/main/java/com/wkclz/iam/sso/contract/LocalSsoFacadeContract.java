@@ -1,7 +1,7 @@
 package com.wkclz.iam.sso.contract;
 
 import com.wkclz.iam.common.entity.IamLoginLog;
-import com.wkclz.iam.contract.bean.Principal;
+import com.wkclz.auth.bean.Principal;
 import com.wkclz.iam.contract.bean.RequestLog;
 import com.wkclz.iam.contract.bean.Session;
 import com.wkclz.iam.contract.bean.req.SessionCreateReq;

@@ -2,7 +2,7 @@ package com.wkclz.iam.sso.rest;
 
 import com.wkclz.core.base.R;
 import com.wkclz.iam.common.dto.IamMenuDto;
-import com.wkclz.iam.contract.bean.Principal;
+import com.wkclz.auth.bean.Principal;
 import com.wkclz.iam.contract.context.PrincipalContext;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sso.Route;

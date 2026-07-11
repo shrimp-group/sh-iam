@@ -38,6 +38,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- sh-auth 公共认证模块（逐步替代 iam-contract） -->
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>sh-auth</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
