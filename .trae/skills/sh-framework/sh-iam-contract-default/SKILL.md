@@ -36,7 +36,7 @@ com.wkclz.iam.contract.defaults
 | DefaultAuthContract | 无 token 返回 null | 有 token 抛 TOKEN_INVALID | 读宽容（放行 public）验证严格 |
 | DefaultAuthzContract | 返回空列表 / 原字段 | canAccessApi 抛 ACCESS_DENIED | 读不影响启动，验证防裸奔 |
 | DefaultAkSignContract | - | sign/verifySign 抛异常 | 功能性操作不该被调用 |
-| DefaultSsoFacadeContract | saveLog/logout 静默 | login 抛异常 | 日志不阻断业务，login 不该被调用 |
+| DefaultSsoFacadeContract | saveLog/logout 静默 | login 抛 UnsupportedOperationException | 日志不阻断业务，login 未配置实现属系统级错误 |
 
 ### DefaultAuthContract — 认证默认实现
 
@@ -45,9 +45,9 @@ com.wkclz.iam.contract.defaults
 | 方法 | 行为 | 异常/返回 |
 |------|------|----------|
 | `authenticate(request)` | 无 token → 返回 null；有 token → 拒绝 | 返回 null 或抛 `AuthException(TOKEN_INVALID, "无认证实现，请配置 AuthContract")` |
-| `checkToken(token, authIdentifier)` | 直接拒绝 | 抛 `AuthException(TOKEN_MISSING, "无认证实现，请配置 AuthContract")` |
+| `doAuthenticate(token)` | 直接拒绝 | 抛 `AuthException(TOKEN_MISSING, "无认证实现，请配置 AuthContract")` |
 
-设计意图：过滤器据此放行 public 路径（authenticate 返回 null），有 token 但无实现则严格拒绝。
+设计意图：过滤器据此放行 public 路径（authenticate 返回 null），有 token 但无实现则严格拒绝。checkToken 继承自模板方法（token 空值校验 → doAuthenticate → Session 存在性 → authIdentifier 一致性），doAuthenticate 无实现时抛 TOKEN_MISSING。
 
 ### DefaultAuthzContract — 鉴权默认实现
 
@@ -60,6 +60,8 @@ com.wkclz.iam.contract.defaults
 | `canAccessApi` | 抛 `AuthException(ACCESS_DENIED, "无鉴权实现，请配置 AuthzContract")` |
 
 设计意图：读操作返回空不影响启动（菜单/权限列表为空），但接口鉴权必须显式拒绝，防止未授权访问。
+
+> **HTTP 状态码**：`DefaultAuthFilter` 捕获 `AuthException` 后，通过 `e.getErrorType().getHttpStatus()` 设置响应状态码。TOKEN_MISSING / TOKEN_INVALID / TOKEN_EXPIRED / SESSION_EXPIRED / AK_SIGN_* 返回 401，ACCESS_DENIED 返回 403。友好提示通过 `getMessage()` 获取。
 
 ### DefaultAkSignContract — AK 签名默认实现
 
@@ -82,11 +84,13 @@ com.wkclz.iam.contract.defaults
 | `saveLog(log)` | 静默跳过（debug 日志） | 不抛异常 |
 | `logout(token)` | 静默跳过（debug 日志） | 不抛异常 |
 
-设计意图：login 是功能性操作不该被调用；saveLog/logout 失败不阻断业务（日志丢失可容忍）。
+设计意图：login 未配置实现属系统级错误（非业务登录失败），抛 UnsupportedOperationException 而非返回 LoginResp.fail(UNKNOWN)——业务登录失败应由业务方实现的 SsoFacadeContract 通过 LoginResp.fail() 返回。saveLog/logout 失败不阻断业务（日志丢失可容忍）。
+
+> 语义边界：业务登录失败（密码错误/账号锁定等）通过 `LoginResp.fail(failType, failReason)` 返回；系统级错误（SSO 不可达/未配置实现等）抛 RuntimeException。详见 [sh-iam-contract-api](../sh-iam-contract-api/SKILL.md) skill 的 "### login() 语义边界" 章节。
 
 ## DefaultAuthFilter — 鉴权过滤器
 
-位于 `com.wkclz.iam.contract.defaults.filter.DefaultAuthFilter`。继承 `OncePerRequestFilter`，调用 `AuthContract` SPI 完成认证。
+位于 `com.wkclz.iam.contract.defaults.filter.DefaultAuthFilter`。继承 `OncePerRequestFilter`，调用 `AuthContract` SPI 完成认证。认证失败时根据 `AuthErrorType.httpStatus` 返回对应状态码（401/403）。
 
 ### 过滤流程（5 步）
 
@@ -94,7 +98,7 @@ com.wkclz.iam.contract.defaults
 2. **public 路径放行**：使用 `PrincipalContext.match(publicPathPattern, uri)` 匹配，命中则 `chain.doFilter()` 放行
 3. **调用 SPI 认证**：`authContract.authenticate(request)` 返回 `AuthResult`
 4. **认证成功 → 缓存 + 放行**：`authResult != null` → `PrincipalContext.cache(request, principal, session)` → `chain.doFilter()`
-5. **认证失败 → 401**：`authResult == null`（无 token）或抛 `AuthException` → 返回 `401 Unauthorized`
+5. **认证失败 → 动态状态码**：`authResult == null`（无 token）→ 返回 `401 Unauthorized`；抛 `AuthException` → 根据 `e.getErrorType().getHttpStatus()` 返回对应状态码（401/403）
 
 ### finally 块清理
 
@@ -111,7 +115,7 @@ finally {
 通过 `FilterRegistrationBean<DefaultAuthFilter>` 包装注册（`DefaultAuthFilter` 类本身不加 `@Component`）：
 
 - **urlPatterns**：`/*`
-- **order**：`Ordered.HIGHEST_PRECEDENCE + 10`
+- **order**：`FilterOrder.AUTH`（= `Ordered.HIGHEST_PRECEDENCE + 10`）
 - **name**：`defaultAuthFilter`
 - **禁用控制**：`ContractConfig.authFilterEnabled == false` 时，`defaultAuthFilterRegistration()` 返回 null，不注册过滤器
 
@@ -154,7 +158,7 @@ public class IamContractAutoConfig { ... }
 `defaultAuthFilterRegistration(filter, config)` 方法根据 `ContractConfig.authFilterEnabled` 决定是否注册过滤器：
 
 - `authFilterEnabled == false` → 返回 null（不注册）
-- `authFilterEnabled == true` → 返回 `FilterRegistrationBean`，urlPatterns=`/*`，order=`HIGHEST_PRECEDENCE + 10`
+- `authFilterEnabled == true` → 返回 `FilterRegistrationBean`，urlPatterns=`/*`，order=`FilterOrder.AUTH`（= `HIGHEST_PRECEDENCE + 10`）
 
 ### 替换机制
 
@@ -181,7 +185,7 @@ com.wkclz.iam.contract.defaults.config.IamContractAutoConfig
 
 ### 设计要点
 
-- **采用 `@Value` 注入**（非 `@ConfigurationProperties`）
+- **采用 `@Value` 注入**（对齐现有 IamSdkConfig 风格，非 `@ConfigurationProperties`）
 - **`@PostConstruct` 同步到 `ContractSettings`**：将 7 个配置项同步到 `ContractSettings` 静态持有器，供契约接口的 default 方法访问
 
 ### @PostConstruct 初始化
@@ -279,6 +283,8 @@ iam:
 
 ### 示例 1：JwtAuthContract（基于 jjwt + RedisHelper 实现 JWT 认证）
 
+实现方只需实现 `authenticate(request)`（过滤器入口）和 `doAuthenticate(token)`（核心认证），`checkToken` 的通用校验由模板方法自动完成。
+
 ```java
 @Slf4j
 @Component
@@ -292,6 +298,11 @@ public class JwtAuthContract implements AuthContract {
     public AuthResult authenticate(HttpServletRequest request) {
         String token = PrincipalContext.getToken();
         if (token == null) return null; // 无 token，过滤器据此放行 public
+        return doAuthenticate(token); // 委托核心认证逻辑
+    }
+
+    @Override
+    public AuthResult doAuthenticate(String token) {
         try {
             Claims claims = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(ContractSettings.getJwtSecretKey().getBytes()))
@@ -300,7 +311,7 @@ public class JwtAuthContract implements AuthContract {
 
             String sessionJson = redisHelper.get(SESSION_KEY + userCode);
             if (sessionJson == null) {
-                throw new AuthException(AuthException.AuthErrorType.SESSION_EXPIRED, "会话已过期");
+                throw new AuthException(AuthErrorType.SESSION_EXPIRED, "会话已过期");
             }
             Session session = JsonUtil.parse(sessionJson, Session.class);
 
@@ -315,25 +326,9 @@ public class JwtAuthContract implements AuthContract {
             result.setSession(session);
             return result;
         } catch (ExpiredJwtException e) {
-            throw new AuthException(AuthException.AuthErrorType.TOKEN_EXPIRED, "Token 已过期", e);
+            throw new AuthException(AuthErrorType.TOKEN_EXPIRED, "Token 已过期", e);
         } catch (SignatureException e) {
-            throw new AuthException(AuthException.AuthErrorType.TOKEN_INVALID, "签名无效", e);
-        }
-    }
-
-    @Override
-    public Session checkToken(String token, String authIdentifier) {
-        try {
-            Claims claims = Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(ContractSettings.getJwtSecretKey().getBytes()))
-                .build().parseClaimsJws(token).getBody();
-            String sessionJson = redisHelper.get(SESSION_KEY + claims.getSubject());
-            if (sessionJson == null) {
-                throw new AuthException(AuthException.AuthErrorType.SESSION_EXPIRED, "会话已过期");
-            }
-            return JsonUtil.parse(sessionJson, Session.class);
-        } catch (Exception e) {
-            throw new AuthException(AuthException.AuthErrorType.TOKEN_INVALID, "Token 无效", e);
+            throw new AuthException(AuthErrorType.TOKEN_INVALID, "签名无效", e);
         }
     }
 
@@ -440,11 +435,11 @@ public class RsaAkSignContract implements AkSignContract {
     @Override
     public boolean verifySign(String sign, String publicKey, String expectedAppId) {
         if (sign == null) {
-            throw new AuthException(AuthException.AuthErrorType.AK_SIGN_INVALID, "签名不存在");
+            throw new AuthException(AuthErrorType.AK_SIGN_INVALID, "签名不存在");
         }
         String[] parts = sign.split(":");
         if (parts.length != 4) {
-            throw new AuthException(AuthException.AuthErrorType.AK_SIGN_INVALID, "签名格式错误");
+            throw new AuthException(AuthErrorType.AK_SIGN_INVALID, "签名格式错误");
         }
         String appId = parts[0];
         String nonce = parts[1];
@@ -452,18 +447,18 @@ public class RsaAkSignContract implements AkSignContract {
         String signature = parts[3];
 
         if (!appId.equals(expectedAppId)) {
-            throw new AuthException(AuthException.AuthErrorType.AK_SIGN_INVALID, "appId 不匹配");
+            throw new AuthException(AuthErrorType.AK_SIGN_INVALID, "appId 不匹配");
         }
         if (System.currentTimeMillis() - timestamp > 5 * 60_000L) {
-            throw new AuthException(AuthException.AuthErrorType.AK_SIGN_EXPIRED, "签名已过期");
+            throw new AuthException(AuthErrorType.AK_SIGN_EXPIRED, "签名已过期");
         }
         boolean setOk = redisHelper.setIfAbsent(NONCE_KEY + nonce, "1", 5 * 60L);
         if (!setOk) {
-            throw new AuthException(AuthException.AuthErrorType.AK_NONCE_REPLAY, "重放检测命中");
+            throw new AuthException(AuthErrorType.AK_NONCE_REPLAY, "重放检测命中");
         }
         String payload = appId + ":" + nonce + ":" + timestamp;
         if (!RsaTool.verify(payload, signature, publicKey)) {
-            throw new AuthException(AuthException.AuthErrorType.AK_SIGN_INVALID, "签名校验失败");
+            throw new AuthException(AuthErrorType.AK_SIGN_INVALID, "签名校验失败");
         }
         return true;
     }
@@ -537,10 +532,10 @@ sh:
 ## 注意事项
 
 1. **默认实现不含 JWT/Redis 依赖**：`iam-contract-default` 模块仅依赖 `iam-contract-api` + spring-boot-autoconfigure + spring-boot-starter-web，不引入 jjwt / sh-redis 等实现依赖。业务方必须自行实现契约或引入额外依赖（如示例 1 需要 jjwt + sh-redis）
-2. **DefaultAuthFilter order = HIGHEST_PRECEDENCE + 10**：业务方其他过滤器（如 CORS、日志）注意顺序，必要时调整 `order` 或使用 `@Order` 注解
-3. **ContractConfig 用 @Value 注入**（非 `@ConfigurationProperties`）：配置项以 `iam.contract.*` 为前缀（注意不是 `sh.iam.contract.*`，`sh.iam.contract.enabled` 是控制项）
+2. **DefaultAuthFilter order = FilterOrder.AUTH**（`HIGHEST_PRECEDENCE + 10`）：业务方其他过滤器（如 CORS、日志）注意顺序，必要时使用 `FilterOrder.LOGGING` / `FilterOrder.AUTH` / `FilterOrder.AUTHZ` 等常量，或自定义 `@Order` 调整
+3. **ContractConfig 用 @Value 注入**（非 `@ConfigurationProperties`）：对齐现有 IamSdkConfig 风格，配置项以 `iam.contract.*` 为前缀（注意不是 `sh.iam.contract.*`，`sh.iam.contract.enabled` 是控制项）
 4. **替换默认实现后，默认 Bean 不会注册**（`@ConditionalOnMissingBean`）：业务方声明同类型 `@Component` Bean 即可让默认实现失效，无需额外配置
 5. **public-path-pattern 默认 `/*/public/**`**：业务方需自行保证公开路径符合此模式，或修改配置项以匹配实际路径（如 `/api/public/**`）
 6. **ContractSettings 必须在启动时初始化**：`ContractConfig.@PostConstruct` 将配置同步到 `ContractSettings` 静态持有器，契约接口的 default 方法依赖此初始化。若禁用整个自动配置（`sh.iam.contract.enabled=false`），业务方需自行初始化 `ContractSettings`
 7. **RsaTool.sign / RsaTool.verify 的具体方法签名以 sh-tool 实际实现为准**：示例 3 中的 `RsaTool.sign(payload, privateKey)` / `RsaTool.verify(payload, signature, publicKey)` 为示意，实现时若方法签名不一致，调整为 sh-tool 对应方法
-8. **DefaultAuthFilter 的 5 步流程不可绕过**：根路径 403 / public 放行 / 调用 SPI / 缓存上下文 / 401，finally 块清理 PrincipalContext。如需自定义过滤器流程，请实现自己的 `OncePerRequestFilter` 并禁用 DefaultAuthFilter（`iam.contract.auth-filter-enabled=false`）
+8. **DefaultAuthFilter 的 5 步流程不可绕过**：根路径 403 / public 放行 / 调用 SPI / 缓存上下文 / 动态状态码（AuthErrorType.httpStatus），finally 块清理 PrincipalContext。如需自定义过滤器流程，请实现自己的 `OncePerRequestFilter` 并禁用 DefaultAuthFilter（`iam.contract.auth-filter-enabled=false`）
