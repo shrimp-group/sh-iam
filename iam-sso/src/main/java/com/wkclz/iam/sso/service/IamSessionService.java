@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.wkclz.iam.contract.bean.Principal;
 import com.wkclz.iam.contract.bean.Session;
 import com.wkclz.iam.contract.config.ContractSettings;
-import com.wkclz.iam.contract.bean.Principal;
+import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.tool.tools.Md5Tool;
 import com.wkclz.iam.sso.config.IamSsoConfig;
@@ -69,8 +69,8 @@ public class IamSessionService {
 
         String username;
         try {
-            Principal principal = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
-            username = principal.getUsername();
+            UserJwt userJwt = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
+            username = userJwt.getUsername();
         } catch (Exception e) {
             log.warn("logout 解析 JWT 失败，跳过登出处理: {}", e.getMessage());
             return;

@@ -10,6 +10,7 @@ import com.wkclz.iam.contract.enums.AuthErrorType;
 import com.wkclz.iam.contract.exception.AuthException;
 import com.wkclz.iam.contract.service.AuthContract;
 import com.wkclz.core.exception.SystemException;
+import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.exception.JwtValidationException;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,9 +38,9 @@ public class JwtAuthContract implements AuthContract {
 
     @Override
     public AuthResult doAuthenticate(String token) {
-        Principal principal;
+        UserJwt userJwt;
         try {
-            principal = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
+            userJwt = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
         } catch (JwtValidationException e) {
             throw new AuthException(
                     AuthErrorType.fromJwtErrorCode(e.getErrorCode()),
@@ -49,7 +50,7 @@ public class JwtAuthContract implements AuthContract {
             throw new AuthException(AuthErrorType.TOKEN_INVALID, "Token 解析失败", e);
         }
 
-        String username = principal.getUsername();
+        String username = userJwt.getUsername();
         String sessionKey = JwtUtil.getTokenRedisKey(token, username);
         String sessionJson;
         try {
@@ -72,10 +73,10 @@ public class JwtAuthContract implements AuthContract {
         }
 
         Principal result = new Principal();
-        result.setUserCode(principal.getUserCode());
+        result.setUserCode(userJwt.getUserCode());
         result.setUsername(username);
-        result.setNickname(principal.getNickname());
-        result.setAvatar(principal.getAvatar());
+        result.setNickname(userJwt.getNickname());
+        result.setAvatar(userJwt.getAvatar());
         result.setAuthIdentifier(session.getAuthIdentifier());
 
         AuthResult authResult = new AuthResult();

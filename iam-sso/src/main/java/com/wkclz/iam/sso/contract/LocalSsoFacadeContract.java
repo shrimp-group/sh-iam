@@ -8,7 +8,7 @@ import com.wkclz.iam.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.contract.bean.resp.LoginResp;
 import com.wkclz.iam.contract.config.ContractSettings;
 import com.wkclz.iam.contract.facade.SsoFacadeContract;
-import com.wkclz.iam.contract.bean.Principal;
+import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
@@ -36,6 +36,12 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     public LoginResp login(SessionCreateReq req) {
         log.info("SsoFacade 本地创建会话, authIdentifier: {}", req.getAuthIdentifier());
 
+        UserJwt userJwt = new UserJwt();
+        userJwt.setUserCode(req.getUserCode());
+        userJwt.setUsername(req.getUsername());
+        userJwt.setNickname(req.getNickname());
+        userJwt.setAvatar(req.getAvatar());
+
         Principal principal = new Principal();
         principal.setUserCode(req.getUserCode());
         principal.setUsername(req.getUsername());
@@ -48,12 +54,7 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
         session.setAuthType(req.getAuthType());
         session.setAuthIdentifier(req.getAuthIdentifier());
 
-        Principal principal = new Principal();
-        principal.setUserCode(req.getUserCode());
-        principal.setUsername(req.getUsername());
-        principal.setNickname(req.getNickname());
-        principal.setAvatar(req.getAvatar());
-        String token = JwtUtil.generateToken(principal, ContractSettings.getJwtSecretKey());
+        String token = JwtUtil.generateToken(userJwt, ContractSettings.getJwtSecretKey());
 
         iamSessionService.createSession(token, principal, session);
         iamSessionService.enforceMaxConcurrentSessions(req.getUsername());
