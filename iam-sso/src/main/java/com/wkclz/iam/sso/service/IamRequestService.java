@@ -139,17 +139,29 @@ public class IamRequestService implements RequestLogger {
         ssoRequestLogMapper.insertLog(iLog);
     }
 
+    /** 控制台日志（依赖 logback MaskingPatternLayout 对 password 字段脱敏） */
     private void logConsole(RequestRecord r) {
         int status = r.getHttpStatus() != null ? r.getHttpStatus() : 0;
-        String user = r.getUsername() != null ? r.getUsername() : "-";
-        String token = StringUtils.isNotBlank(r.getToken()) ? r.getToken() : "-";
+        String ip = StringUtils.defaultString(r.getRemoteAddr(), "-");
+        String user = StringUtils.defaultString(r.getUsername(), "-");
+        long cost = r.getCostTime() != null ? r.getCostTime() : 0;
+        String method = StringUtils.defaultString(r.getMethod(), "-");
+        String uri = StringUtils.defaultString(r.getRequestUri(), "-");
+        String body = getLogBody(r);
+
         if (r.getErrorMsg() != null) {
-            log.warn("{}ms|{}|{}|{}|{}|{}|error={}", r.getCostTime(), status, r.getMethod(),
-                    r.getRequestUri(), user, token, r.getErrorMsg());
+            log.warn("{} | {} | {}ms | {} | {} | {} | status={} error={}",
+                    ip, user, cost, method, uri, body, status, r.getErrorMsg());
         } else {
-            log.info("{}ms|{}|{}|{}|{}|{}", r.getCostTime(), status, r.getMethod(),
-                    r.getRequestUri(), user, token);
+            log.info("{} | {} | {}ms | {} | {} | {} | status={}",
+                    ip, user, cost, method, uri, body, status);
         }
+    }
+
+    private String getLogBody(RequestRecord r) {
+        // GET 请求用 queryString，POST 用 requestBody
+        String body = "GET".equalsIgnoreCase(r.getMethod()) ? r.getQueryString() : r.getRequestBody();
+        return StringUtils.isNotBlank(body) ? body : "-";
     }
 
     private static String maskPwd(String body) {
