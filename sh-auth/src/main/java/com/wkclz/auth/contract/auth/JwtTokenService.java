@@ -2,9 +2,9 @@ package com.wkclz.auth.contract.auth;
 
 import com.wkclz.auth.bean.AuthToken;
 import com.wkclz.auth.bean.Principal;
+import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.enums.TokenType;
 import com.wkclz.auth.exception.AuthenticationException;
-import com.wkclz.auth.enums.AuthErrorType;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
