@@ -1,10 +1,11 @@
 package com.wkclz.iam.sso.contract;
 
+import com.wkclz.auth.bean.Session;
 import com.wkclz.auth.contract.auth.ConcurrentSessionControl;
+import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.bean.RequestRecord;
-import com.wkclz.iam.sdk.contract.bean.Session;
 import com.wkclz.iam.sdk.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.contract.bean.resp.LoginResp;
 import com.wkclz.iam.sdk.contract.config.ContractSettings;
@@ -14,7 +15,6 @@ import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.service.IamRequestService;
-import com.wkclz.iam.sso.service.IamSessionService;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,12 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Component
 public class LocalSsoFacadeContract implements SsoFacadeContract {
 
     @Autowired
-    private IamSessionService iamSessionService;
+    private SessionStore sessionStore;
     @Autowired
     private IamRequestService iamRequestService;
     @Autowired
@@ -53,13 +55,15 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
         principal.setAuthIdentifier(req.getAuthIdentifier());
 
         Session session = new Session();
-        session.setUserCode(req.getUserCode());
+        String token = JwtUtil.generateToken(userJwt, ContractSettings.getJwtSecretKey());
+        session.setSessionId(token);
+        session.setSubjectId(req.getUsername());
+        session.setPrincipal(principal);
         session.setAuthType(req.getAuthType());
         session.setAuthIdentifier(req.getAuthIdentifier());
+        session.setCreateTime(LocalDateTime.now());
 
-        String token = JwtUtil.generateToken(userJwt, ContractSettings.getJwtSecretKey());
-
-        iamSessionService.createSession(token, principal, session);
+        sessionStore.save(session);
         concurrentSessionControl.enforce(req.getUsername());
 
         recordLoginLog(req);
@@ -76,7 +80,7 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
 
     @Override
     public void logout(String token) {
-        iamSessionService.logout(token);
+        sessionStore.delete(token);
     }
 
     private void recordLoginLog(SessionCreateReq req) {

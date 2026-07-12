@@ -1,5 +1,6 @@
 package com.wkclz.iam.sso.service;
 
+import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamLoginLog;
@@ -54,7 +55,7 @@ public class IamLoginService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
-    private IamSessionService iamSessionService;
+    private SessionStore sessionStore;
 
     /**
      * 1. 用户不存在
@@ -232,7 +233,7 @@ public class IamLoginService {
 
         // 修改密码成功，使该用户所有会话失效
         String username = SecurityContext.getUsername();
-        iamSessionService.invalidateAllSessions(username);
+        sessionStore.deleteBySubjectId(username);
         log.info("用户 {} 修改密码成功，所有会话已失效", username);
     }
 

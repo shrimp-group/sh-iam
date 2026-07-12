@@ -1,5 +1,7 @@
 package com.wkclz.iam.sdk.contract.bean;
 
+import com.wkclz.auth.bean.Principal;
+import com.wkclz.auth.bean.Session;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

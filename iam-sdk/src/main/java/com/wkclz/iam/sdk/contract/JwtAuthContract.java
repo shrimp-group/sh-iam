@@ -5,7 +5,6 @@ import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.exception.AuthException;
 import com.wkclz.iam.sdk.contract.bean.AuthResult;
-import com.wkclz.iam.sdk.contract.bean.Session;
 import com.wkclz.iam.sdk.contract.config.ContractSettings;
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.sdk.contract.service.AuthContract;
@@ -64,20 +63,15 @@ public class JwtAuthContract implements AuthContract {
             throw new AuthException(AuthErrorType.SESSION_EXPIRED, "会话已过期");
         }
 
-        Session session;
+        com.wkclz.auth.bean.Session session;
         try {
-            session = JSON.parseObject(sessionJson, Session.class);
+            session = JSON.parseObject(sessionJson, com.wkclz.auth.bean.Session.class);
         } catch (Exception e) {
             log.error("Session 反序列化失败, username={}", username, e);
             throw new AuthException(AuthErrorType.TOKEN_INVALID, "会话数据损坏", e);
         }
 
-        Principal result = new Principal();
-        result.setUserCode(userJwt.getUserCode());
-        result.setUsername(username);
-        result.setNickname(userJwt.getNickname());
-        result.setAvatar(userJwt.getAvatar());
-        result.setAuthIdentifier(session.getAuthIdentifier());
+        Principal result = session.getPrincipal();
 
         AuthResult authResult = new AuthResult();
         authResult.setPrincipal(result);
