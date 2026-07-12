@@ -1,11 +1,11 @@
-package com.wkclz.iam.sdk.contract;
+package com.wkclz.iam.sso.contract;
 
 import com.wkclz.auth.bean.AuthToken;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.contract.auth.TokenService;
 import com.wkclz.auth.enums.TokenType;
 import com.wkclz.iam.sdk.bean.UserJwt;
-import com.wkclz.iam.sdk.contract.config.ContractSettings;
+import com.wkclz.iam.sso.contract.config.ContractSettings;
 import com.wkclz.iam.sdk.util.JwtUtil;
 import org.springframework.stereotype.Component;
 

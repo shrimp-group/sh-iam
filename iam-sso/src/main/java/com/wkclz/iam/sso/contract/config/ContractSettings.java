@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.contract.config;
+package com.wkclz.iam.sso.contract.config;
 
 /**
  * 契约层静态配置持有器

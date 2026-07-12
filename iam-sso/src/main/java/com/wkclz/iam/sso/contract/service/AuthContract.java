@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.contract.service;
+package com.wkclz.iam.sso.contract.service;
 
 import com.wkclz.auth.bean.Session;
 import com.wkclz.auth.bean.AuthResult;

@@ -1,8 +1,8 @@
-package com.wkclz.iam.sdk.contract.facade;
+package com.wkclz.iam.sso.contract.facade;
 
 import com.wkclz.auth.bean.RequestRecord;
-import com.wkclz.iam.sdk.contract.bean.req.SessionCreateReq;
-import com.wkclz.iam.sdk.contract.bean.resp.LoginResp;
+import com.wkclz.iam.sso.contract.bean.req.SessionCreateReq;
+import com.wkclz.iam.sso.contract.bean.resp.LoginResp;
 import com.wkclz.auth.context.SecurityContext;
 
 /**
