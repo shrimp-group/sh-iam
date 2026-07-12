@@ -12,6 +12,10 @@ import java.util.Base64;
 import java.util.Random;
 import java.util.UUID;
 
+/**
+ * @deprecated 已由 sh-auth CaptchaService + RedisCaptchaService 替代
+ */
+@Deprecated
 public class CaptchaHelper {
 
     // 验证码有效时间：5

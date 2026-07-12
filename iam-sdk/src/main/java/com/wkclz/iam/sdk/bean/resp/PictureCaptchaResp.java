@@ -10,7 +10,11 @@ import java.io.Serializable;
  *
  * @author shrimp
  */
+/**
+ * @deprecated 已由 sh-auth Captcha bean 替代
+ */
 @Data
+@Deprecated
 @Schema(description = "图形验证码响应")
 public class PictureCaptchaResp implements Serializable {
 

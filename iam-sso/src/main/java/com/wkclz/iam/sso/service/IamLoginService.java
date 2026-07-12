@@ -1,5 +1,6 @@
 package com.wkclz.iam.sso.service;
 
+import com.wkclz.auth.contract.auth.CaptchaService;
 import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
@@ -17,7 +18,6 @@ import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sdk.bean.req.LoginReq;
-import com.wkclz.iam.sdk.helper.CaptchaHelper;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
@@ -30,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -53,7 +52,7 @@ public class IamLoginService {
     @Autowired
     private SsoLoginLogMapper ssoLoginLogMapper;
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private CaptchaService captchaService;
     @Autowired
     private SessionStore sessionStore;
 
@@ -95,16 +94,7 @@ public class IamLoginService {
 
         // 验证码校验
         if (StringUtils.isNotBlank(captchaId)) {
-            String redisKey = CaptchaHelper.getCaptchaRedisKey(captchaId);
-            String redisCaptchaCode = redisTemplate.opsForValue().getAndDelete(redisKey);
-
-            // 验证码不存在或已过期
-            if (StringUtils.isBlank(redisCaptchaCode)) {
-                loginLog(loginReq, auth, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
-                return LoginResp.fail(LoginFailType.CAPTCHA_ERROR, "验证码已过期");
-            }
-            // 验证码错误
-            if (!captchaCode.equalsIgnoreCase(redisCaptchaCode)) {
+            if (!captchaService.verify(captchaId, captchaCode)) {
                 loginLog(loginReq, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
                 return LoginResp.fail(LoginFailType.CAPTCHA_ERROR);
             }
