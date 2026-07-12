@@ -25,6 +25,7 @@ public class CaptchaRest {
     @Operation(summary = "获取图形验证码")
     public R<Captcha> getCaptcha() {
         Captcha captcha = captchaService.generate();
+        captcha.setCaptchaCode(null);
         return R.ok(captcha);
     }
 }

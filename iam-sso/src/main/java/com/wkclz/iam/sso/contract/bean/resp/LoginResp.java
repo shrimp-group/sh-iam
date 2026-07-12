@@ -41,26 +41,6 @@ public class LoginResp implements Serializable {
     @Schema(description = "头像")
     private String avatar;
 
-    // ───── 前端兼容字段（计算属性） ─────
-
-    /**
-     * 登录状态码（0=成功，非0=失败）
-     * 前端 loginStatus !== 0 判断登录失败
-     */
-    public int getLoginStatus() {
-        if (Boolean.TRUE.equals(success)) return 0;
-        return failType != null ? failType.getCode() : 1;
-    }
-
-    /**
-     * 登录提示消息
-     */
-    public String getLoginMessage() {
-        if (Boolean.TRUE.equals(success)) return "登录成功";
-        if (failReason != null) return failReason;
-        return failType != null ? failType.getMessage() : "登录失败";
-    }
-
     /**
      * 构造登录成功响应
      * success=true，failType/failReason 为 null

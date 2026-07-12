@@ -81,8 +81,8 @@ function handleLogin() {
       loading.value = true
       // 调用action的登录方法
       userStore.login(loginForm.value).then((res) => {
-        loginMessage.value = res.data?.loginMessage
-        if (res.data?.loginStatus !== 0) {
+        if (!res.data?.success) {
+          loginMessage.value = res.data?.failReason || '登录失败'
           getCode()
           return;
         }
