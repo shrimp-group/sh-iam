@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.contract.bean;
+package com.wkclz.auth.bean;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

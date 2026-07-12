@@ -1,6 +1,6 @@
 package com.wkclz.iam.sdk.contract.bean.resp;
 
-import com.wkclz.iam.sdk.contract.enums.LoginFailType;
+import com.wkclz.auth.enums.AuthErrorType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -21,7 +21,7 @@ public class LoginResp implements Serializable {
     private Boolean success;
 
     @Schema(description = "登录失败类型；成功时为 null")
-    private LoginFailType failType;
+    private AuthErrorType failType;
 
     @Schema(description = "登录失败动态详情；成功时为 null")
     private String failReason;
@@ -60,7 +60,7 @@ public class LoginResp implements Serializable {
      * 构造登录失败响应（无动态详情）
      * success=false，failReason 为 null
      */
-    public static LoginResp fail(LoginFailType failType) {
+    public static LoginResp fail(AuthErrorType failType) {
         LoginResp resp = new LoginResp();
         resp.setSuccess(false);
         resp.setFailType(failType);
@@ -71,7 +71,7 @@ public class LoginResp implements Serializable {
      * 构造登录失败响应（含动态详情）
      * success=false，failReason 为运行时补充（如"请 300 秒后重试"）
      */
-    public static LoginResp fail(LoginFailType failType, String failReason) {
+    public static LoginResp fail(AuthErrorType failType, String failReason) {
         LoginResp resp = new LoginResp();
         resp.setSuccess(false);
         resp.setFailType(failType);

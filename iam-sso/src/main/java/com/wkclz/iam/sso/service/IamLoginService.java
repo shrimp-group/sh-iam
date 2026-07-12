@@ -12,7 +12,7 @@ import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.sdk.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.contract.bean.resp.LoginResp;
 import com.wkclz.auth.context.SecurityContext;
-import com.wkclz.iam.sdk.contract.enums.LoginFailType;
+import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.iam.sdk.contract.facade.SsoFacadeContract;
 import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
@@ -91,14 +91,14 @@ public class IamLoginService {
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username);
             loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.CAPTCHA_REQUIRED);
+            return LoginResp.fail(AuthErrorType.CAPTCHA_REQUIRED);
         }
 
         // 验证码校验
         if (StringUtils.isNotBlank(captchaId)) {
             if (!captchaService.verify(captchaId, captchaCode)) {
                 loginLog(loginReq, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
-                return LoginResp.fail(LoginFailType.CAPTCHA_ERROR);
+                return LoginResp.fail(AuthErrorType.CAPTCHA_ERROR);
             }
         }
 
@@ -106,31 +106,31 @@ public class IamLoginService {
         // 1. 用户不存在
         if (auth ==  null) {
             loginLog(loginReq, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.USERNAME_OR_PASSWORD_ERROR);
+            return LoginResp.fail(AuthErrorType.USERNAME_OR_PASSWORD_ERROR);
         }
 
         // 2. 登录方式已禁用
         if (auth.getAuthStatus().equals(0)) {
             loginLog(loginReq, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.ACCOUNT_DISABLED);
+            return LoginResp.fail(AuthErrorType.ACCOUNT_DISABLED);
         }
 
         // 3. 用户已锁定
         if (auth.getUserStatus().equals(3)) {
             loginLog(loginReq, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.ACCOUNT_LOCKED);
+            return LoginResp.fail(AuthErrorType.ACCOUNT_LOCKED);
         }
 
         // 4. 用户已禁用
         if (auth.getUserStatus().equals(2)) {
             loginLog(loginReq, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.ACCOUNT_DISABLED);
+            return LoginResp.fail(AuthErrorType.ACCOUNT_DISABLED);
         }
 
         // 5. 密码错误
         if (!passwordEncoder.matches(password, auth.getSalt(), auth.getPassword())) {
             loginLog(loginReq, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.USERNAME_OR_PASSWORD_ERROR);
+            return LoginResp.fail(AuthErrorType.USERNAME_OR_PASSWORD_ERROR);
         }
 
         // 6. 密码已过期
@@ -141,7 +141,7 @@ public class IamLoginService {
         long passwordExpireAt = timestamp + passwordExpireDays * 24 * 60 * 60 * 1000L;
         if (passwordExpireAt < System.currentTimeMillis()) {
             loginLog(loginReq, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
-            return LoginResp.fail(LoginFailType.CREDENTIALS_EXPIRED);
+            return LoginResp.fail(AuthErrorType.CREDENTIALS_EXPIRED);
         }
 
         // 7. 登录成功，通过 SsoFacade 创建会话

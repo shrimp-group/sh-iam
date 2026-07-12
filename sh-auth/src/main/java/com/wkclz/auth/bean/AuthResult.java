@@ -13,6 +13,7 @@ public class AuthResult implements Serializable {
     private String errorMessage;
     private AuthToken token;
     private Principal principal;
+    private Session session;
     private MfaChallenge mfaChallenge;
 
     public boolean isSuccess() {
