@@ -13,7 +13,7 @@ import com.wkclz.iam.common.entity.IamUser;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
+import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
 import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
@@ -46,6 +46,8 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
     @Autowired
     private IamUserAuthPasswordMapper iamUserAuthPasswordMapper;
+    @Autowired
+    private Md5PasswordEncoder passwordEncoder;
 
     public PageData<IamUser> userPage(IamUser entity) {
         return PageQuery.page(entity, mapper::getUserList);
@@ -105,7 +107,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         IamUserAuthPassword pwd = new IamUserAuthPassword();
         pwd.setUserCode(dto.getUserCode());
         pwd.setSalt(SecretUtil.getKey());
-        pwd.setPassword(PasswordHelper.generatePassword(dto.getPassword(), pwd.getSalt()));
+        pwd.setPassword(passwordEncoder.encode(dto.getPassword(), pwd.getSalt()));
         pwd.setLastChangedTime(LocalDateTime.now());
         iamUserAuthPasswordMapper.insert(pwd);
 

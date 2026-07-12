@@ -7,7 +7,7 @@ import com.wkclz.iam.admin.mapper.IamUserAuthPasswordMapper;
 import com.wkclz.iam.admin.mapper.IamUserPasswordHisMapper;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
+import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.tool.utils.SecretUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +29,9 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
 
     @Autowired
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
+
+    @Autowired
+    private Md5PasswordEncoder passwordEncoder;
 
     public IamUserAuthPassword create(IamUserAuthPassword entity) {
         duplicateCheck(entity);
@@ -95,12 +98,12 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
         }
 
         List<IamUserPasswordHis> historyList = iamUserPasswordHisMapper.selectByUserCodeOrderByCreateTimeDesc(userCode, 3);
-        if (PasswordHelper.isPasswordInHistory(newPassword, historyList)) {
+        if (isPasswordInHistory(newPassword, historyList)) {
             throw UserException.of("新密码不能与最近3次使用过的密码相同");
         }
 
         String newSalt = SecretUtil.getKey();
-        String encryptedPassword = PasswordHelper.generatePassword(newPassword, newSalt);
+        String encryptedPassword = passwordEncoder.encode(newPassword, newSalt);
 
         IamUserAuthPassword updatePwd = new IamUserAuthPassword();
         updatePwd.setId(currentPwd.getId());
@@ -118,5 +121,16 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
     }
 
 
+    private boolean isPasswordInHistory(String newPassword, List<IamUserPasswordHis> historyList) {
+        if (newPassword == null || historyList == null || historyList.isEmpty()) {
+            return false;
+        }
+        for (IamUserPasswordHis his : historyList) {
+            if (passwordEncoder.matches(newPassword, his.getSalt(), his.getPassword())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 

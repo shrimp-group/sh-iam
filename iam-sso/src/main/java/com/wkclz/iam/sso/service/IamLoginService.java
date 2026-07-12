@@ -1,6 +1,7 @@
 package com.wkclz.iam.sso.service;
 
 import com.wkclz.auth.contract.auth.CaptchaService;
+import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
 import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.iam.common.dto.IamUserAuthDto;
@@ -8,7 +9,6 @@ import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
 import com.wkclz.iam.sdk.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.contract.bean.resp.LoginResp;
 import com.wkclz.auth.context.SecurityContext;
@@ -55,6 +55,8 @@ public class IamLoginService {
     private CaptchaService captchaService;
     @Autowired
     private SessionStore sessionStore;
+    @Autowired
+    private Md5PasswordEncoder passwordEncoder;
 
     /**
      * 1. 用户不存在
@@ -126,7 +128,7 @@ public class IamLoginService {
         }
 
         // 5. 密码错误
-        if (!PasswordHelper.validatePassword(password, auth.getSalt(), auth.getPassword())) {
+        if (!passwordEncoder.matches(password, auth.getSalt(), auth.getPassword())) {
             loginLog(loginReq, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
             return LoginResp.fail(LoginFailType.USERNAME_OR_PASSWORD_ERROR);
         }
@@ -194,17 +196,17 @@ public class IamLoginService {
             throw UserException.of("用户密码记录不存在");
         }
 
-        if (!PasswordHelper.validatePassword(oldPassword, currentPwd.getSalt(), currentPwd.getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, currentPwd.getSalt(), currentPwd.getPassword())) {
             throw UserException.of("旧密码错误");
         }
 
         List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, 3);
-        if (PasswordHelper.isPasswordInHistory(newPassword, historyList)) {
+        if (isPasswordInHistory(newPassword, historyList)) {
             throw UserException.of("新密码不能与最近3次使用过的密码相同");
         }
 
         String newSalt = SecretUtil.getKey();
-        String encryptedPassword = PasswordHelper.generatePassword(newPassword, newSalt);
+        String encryptedPassword = passwordEncoder.encode(newPassword, newSalt);
 
         IamUserAuthPassword updatePwd = new IamUserAuthPassword();
         updatePwd.setUserCode(userCode);
@@ -254,4 +256,15 @@ public class IamLoginService {
     }
 
 
+    private boolean isPasswordInHistory(String newPassword, List<IamUserPasswordHis> historyList) {
+        if (newPassword == null || historyList == null || historyList.isEmpty()) {
+            return false;
+        }
+        for (IamUserPasswordHis his : historyList) {
+            if (passwordEncoder.matches(newPassword, his.getSalt(), his.getPassword())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
