@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 请求日志过滤器（最外层，确保任何请求都记录）
  * <p>
@@ -44,6 +46,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         } finally {
             try {
                 RequestRecord record = buildRecord(request, responseWrapper, startTime);
+                logConsole(record);
                 for (RequestLogger logger : requestLoggers) {
                     try {
                         logger.save(record);
@@ -121,5 +124,29 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         }
 
         return record;
+    }
+
+    /** 控制台日志（密码脱敏依赖 logback MaskingPatternLayout） */
+    private void logConsole(RequestRecord r) {
+        int status = r.getHttpStatus() != null ? r.getHttpStatus() : 0;
+        String ip = StringUtils.defaultString(r.getRemoteAddr(), "-");
+        String user = StringUtils.defaultString(r.getUsername(), "-");
+        long cost = r.getCostTime() != null ? r.getCostTime() : 0;
+        String method = StringUtils.defaultString(r.getMethod(), "-");
+        String uri = StringUtils.defaultString(r.getRequestUri(), "-");
+        String body = getLogBody(r);
+
+        if (r.getErrorMsg() != null) {
+            log.warn("{} | {} | {}ms | {} | {} | {} | status={} error={}",
+                    ip, user, cost, method, uri, body, status, r.getErrorMsg());
+        } else {
+            log.info("{} | {} | {}ms | {} | {} | {} | status={}",
+                    ip, user, cost, method, uri, body, status);
+        }
+    }
+
+    private String getLogBody(RequestRecord r) {
+        String body = "GET".equalsIgnoreCase(r.getMethod()) ? r.getQueryString() : r.getRequestBody();
+        return StringUtils.isNotBlank(body) ? body : "-";
     }
 }

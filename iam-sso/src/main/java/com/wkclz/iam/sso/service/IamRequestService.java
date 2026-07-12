@@ -88,9 +88,6 @@ public class IamRequestService implements RequestLogger {
         log.setToken(maskToken(log.getToken()));
         log.setRequestBody(maskPwd(log.getRequestBody()));
 
-        // ─── 控制台日志（已脱敏） ───
-        logConsole(log);
-
         // ─── 持久化 ───
         IamRequestLog iLog = new IamRequestLog();
         iLog.setTenantCode(log.getTenantCode());
@@ -137,31 +134,6 @@ public class IamRequestService implements RequestLogger {
             iLog.setUpdateBy(iLog.getUserCode());
         }
         ssoRequestLogMapper.insertLog(iLog);
-    }
-
-    /** 控制台日志（依赖 logback MaskingPatternLayout 对 password 字段脱敏） */
-    private void logConsole(RequestRecord r) {
-        int status = r.getHttpStatus() != null ? r.getHttpStatus() : 0;
-        String ip = StringUtils.defaultString(r.getRemoteAddr(), "-");
-        String user = StringUtils.defaultString(r.getUsername(), "-");
-        long cost = r.getCostTime() != null ? r.getCostTime() : 0;
-        String method = StringUtils.defaultString(r.getMethod(), "-");
-        String uri = StringUtils.defaultString(r.getRequestUri(), "-");
-        String body = getLogBody(r);
-
-        if (r.getErrorMsg() != null) {
-            log.warn("{} | {} | {}ms | {} | {} | {} | status={} error={}",
-                    ip, user, cost, method, uri, body, status, r.getErrorMsg());
-        } else {
-            log.info("{} | {} | {}ms | {} | {} | {} | status={}",
-                    ip, user, cost, method, uri, body, status);
-        }
-    }
-
-    private String getLogBody(RequestRecord r) {
-        // GET 请求用 queryString，POST 用 requestBody
-        String body = "GET".equalsIgnoreCase(r.getMethod()) ? r.getQueryString() : r.getRequestBody();
-        return StringUtils.isNotBlank(body) ? body : "-";
     }
 
     private static String maskPwd(String body) {
