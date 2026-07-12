@@ -88,6 +88,9 @@ public class IamRequestService implements RequestLogger {
         log.setToken(maskToken(log.getToken()));
         log.setRequestBody(maskPwd(log.getRequestBody()));
 
+        // ─── 控制台日志（已脱敏） ───
+        logConsole(log);
+
         // ─── 持久化 ───
         IamRequestLog iLog = new IamRequestLog();
         iLog.setTenantCode(log.getTenantCode());
@@ -134,6 +137,19 @@ public class IamRequestService implements RequestLogger {
             iLog.setUpdateBy(iLog.getUserCode());
         }
         ssoRequestLogMapper.insertLog(iLog);
+    }
+
+    private void logConsole(RequestRecord r) {
+        int status = r.getHttpStatus() != null ? r.getHttpStatus() : 0;
+        String user = r.getUsername() != null ? r.getUsername() : "-";
+        String token = StringUtils.isNotBlank(r.getToken()) ? r.getToken() : "-";
+        if (r.getErrorMsg() != null) {
+            log.warn("{}ms|{}|{}|{}|{}|{}|error={}", r.getCostTime(), status, r.getMethod(),
+                    r.getRequestUri(), user, token, r.getErrorMsg());
+        } else {
+            log.info("{}ms|{}|{}|{}|{}|{}", r.getCostTime(), status, r.getMethod(),
+                    r.getRequestUri(), user, token);
+        }
     }
 
     private static String maskPwd(String body) {
