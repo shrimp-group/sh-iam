@@ -133,7 +133,7 @@ public class IamLoginService {
         }
 
         // 6. 密码已过期
-        Integer passwordExpireDays = iamSsoConfig.getPasswordExpireDays();
+        int passwordExpireDays = iamSsoConfig.getPasswordExpireDays();
 
         ZonedDateTime zonedDateTime = auth.getLastChangedTime().atZone(ZoneId.systemDefault());
         long timestamp = zonedDateTime.toInstant().toEpochMilli();

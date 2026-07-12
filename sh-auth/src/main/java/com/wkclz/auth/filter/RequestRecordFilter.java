@@ -116,7 +116,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
         // ─── 响应体 ───
         byte[] respBody = response.getContentAsByteArray();
-        if (respBody != null && respBody.length > 0) {
+        if (respBody.length > 0) {
             record.setResponseBody(new String(respBody));
         }
 

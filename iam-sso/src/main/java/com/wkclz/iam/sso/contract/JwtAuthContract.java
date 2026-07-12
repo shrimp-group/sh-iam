@@ -6,7 +6,7 @@ import com.wkclz.auth.bean.Session;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.exception.AuthException;
 import com.wkclz.auth.bean.AuthResult;
-import com.wkclz.iam.sso.contract.config.ContractSettings;
+import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.sso.contract.service.AuthContract;
 import com.wkclz.core.exception.SystemException;
@@ -27,6 +27,9 @@ public class JwtAuthContract implements AuthContract {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
+    @Autowired
+    private IamSsoConfig iamSsoConfig;
+
     @Override
     public AuthResult authenticate(HttpServletRequest request) {
         String token = SecurityContext.getToken(request);
@@ -40,7 +43,7 @@ public class JwtAuthContract implements AuthContract {
     public AuthResult doAuthenticate(String token) {
         UserJwt userJwt;
         try {
-            userJwt = JwtUtil.parseToken(token, ContractSettings.getJwtSecretKey());
+            userJwt = JwtUtil.parseToken(token, iamSsoConfig.getJwtSecretKey());
         } catch (JwtValidationException e) {
             throw new AuthException(
                     AuthErrorType.fromJwtErrorCode(e.getErrorCode()),

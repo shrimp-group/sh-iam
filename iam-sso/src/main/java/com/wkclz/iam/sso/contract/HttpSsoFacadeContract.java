@@ -8,12 +8,13 @@ import com.alibaba.fastjson2.JSONObject;
 import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.sso.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sso.contract.bean.resp.LoginResp;
-import com.wkclz.iam.sso.contract.config.ContractSettings;
+import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.contract.facade.SsoFacadeContract;
 import com.wkclz.iam.sdk.helper.AkSignHelper;
 import com.wkclz.core.exception.SystemException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
@@ -24,9 +25,12 @@ public class HttpSsoFacadeContract implements SsoFacadeContract {
 
     private static final String URI_PREFIX = "/sign";
 
+    @Autowired
+    private IamSsoConfig iamSsoConfig;
+
     @Override
     public LoginResp login(SessionCreateReq req) {
-        String serverUrl = ContractSettings.getServerUrl();
+        String serverUrl = iamSsoConfig.getServerUrl();
         if (StringUtils.isBlank(serverUrl)) {
             throw SystemException.of("iam.contract.server-url 未配置，无法远程登录，请配置 SSO 服务端地址");
         }
@@ -61,10 +65,10 @@ public class HttpSsoFacadeContract implements SsoFacadeContract {
 
     private void postData(String uri, Object data) {
         if (StringUtils.isBlank(uri) || data == null) return;
-        String url = ContractSettings.getServerUrl() + URI_PREFIX + uri;
-        String sign = AkSignHelper.sign(ContractSettings.getAppId(), ContractSettings.getAppSecret());
+        String url = iamSsoConfig.getServerUrl() + URI_PREFIX + uri;
+        String sign = AkSignHelper.sign(iamSsoConfig.getAppId(), iamSsoConfig.getAppSecret());
         HttpRequest post = HttpUtil.createPost(url);
-        post.header("app-id", ContractSettings.getAppId());
+        post.header("app-id", iamSsoConfig.getAppId());
         post.header("sign", sign);
         post.body(JSONObject.toJSONString(data));
         HttpResponse execute = post.execute();
@@ -76,10 +80,10 @@ public class HttpSsoFacadeContract implements SsoFacadeContract {
     private String postDataWithResponse(String uri, Object data) {
         if (StringUtils.isBlank(uri)) throw SystemException.of("uri 不能为空");
         if (data == null) throw SystemException.of("data 不能为空");
-        String url = ContractSettings.getServerUrl() + URI_PREFIX + uri;
-        String sign = AkSignHelper.sign(ContractSettings.getAppId(), ContractSettings.getAppSecret());
+        String url = iamSsoConfig.getServerUrl() + URI_PREFIX + uri;
+        String sign = AkSignHelper.sign(iamSsoConfig.getAppId(), iamSsoConfig.getAppSecret());
         HttpRequest post = HttpUtil.createPost(url);
-        post.header("app-id", ContractSettings.getAppId());
+        post.header("app-id", iamSsoConfig.getAppId());
         post.header("sign", sign);
         post.body(JSONObject.toJSONString(data));
         HttpResponse execute = post.execute();

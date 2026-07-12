@@ -5,8 +5,9 @@ import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.contract.auth.TokenService;
 import com.wkclz.auth.enums.TokenType;
 import com.wkclz.iam.sdk.bean.UserJwt;
-import com.wkclz.iam.sso.contract.config.ContractSettings;
+import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sdk.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -14,11 +15,14 @@ import java.time.LocalDateTime;
 @Component
 public class JwtTokenService implements TokenService {
 
+    @Autowired
+    private IamSsoConfig iamSsoConfig;
+
     @Override
     public AuthToken generateToken(Principal principal) {
         UserJwt userJwt = toUserJwt(principal);
 
-        String tokenValue = JwtUtil.generateToken(userJwt, ContractSettings.getJwtSecretKey());
+        String tokenValue = JwtUtil.generateToken(userJwt, iamSsoConfig.getJwtSecretKey());
 
         AuthToken authToken = new AuthToken();
         authToken.setType(TokenType.JWT);
@@ -30,7 +34,7 @@ public class JwtTokenService implements TokenService {
 
     @Override
     public Principal parseToken(String tokenValue) {
-        UserJwt userJwt = JwtUtil.parseToken(tokenValue, ContractSettings.getJwtSecretKey());
+        UserJwt userJwt = JwtUtil.parseToken(tokenValue, iamSsoConfig.getJwtSecretKey());
         return toPrincipal(userJwt);
     }
 
