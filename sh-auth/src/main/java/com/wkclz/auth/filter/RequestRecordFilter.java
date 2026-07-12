@@ -19,6 +19,9 @@ import java.util.List;
 
 /**
  * 请求日志过滤器（最外层，确保任何请求都记录）
+ * <p>
+ * 职责：采集原始请求/响应数据，填充 RequestRecord。
+ * 数据加工（UA 解析、脱敏、截断等）由 RequestLogger 实现方负责。
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -34,64 +37,89 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
         try {
             filterChain.doFilter(request, responseWrapper);
+        } catch (Exception e) {
+            // 异常信息暂存，由 buildRecord 读取
+            request.setAttribute("sh.auth.errorMsg", e.getMessage());
+            throw e;
         } finally {
             try {
                 RequestRecord record = buildRecord(request, responseWrapper, startTime);
                 for (RequestLogger logger : requestLoggers) {
                     try {
                         logger.save(record);
-                    } catch (Exception e) {
-                        log.error("保存请求日志失败", e);
+                    } catch (Exception ex) {
+                        log.error("保存请求日志失败", ex);
                     }
                 }
                 SecurityContext.clear();
-            } catch (Exception e) {
-                log.error("请求日志采集异常", e);
+            } catch (Exception ex) {
+                log.error("请求日志采集异常", ex);
             } finally {
                 responseWrapper.copyBodyToResponse();
             }
         }
     }
 
-    private RequestRecord buildRecord(HttpServletRequest request, ContentCachingResponseWrapper response,
+    private RequestRecord buildRecord(HttpServletRequest request,
+                                       ContentCachingResponseWrapper response,
                                        long startTime) {
         RequestRecord record = new RequestRecord();
-        record.setRequestUri(request.getRequestURI());
+
+        // ─── 基本信息 ───
         record.setMethod(request.getMethod());
+        record.setRequestUri(request.getRequestURI());
+        record.setQueryString(request.getQueryString());
+        record.setHttpProtocol(request.getProtocol());
+        record.setCharacterEncoding(request.getCharacterEncoding());
+        record.setRequestHost(request.getRemoteHost());
         record.setRemoteAddr(request.getRemoteAddr());
+
+        // ─── 请求头（原始值，加工由 RequestLogger 实现方负责） ───
         record.setUserAgent(request.getHeader("User-Agent"));
+        record.setAccept(request.getHeader("Accept"));
+        record.setAcceptLanguage(request.getHeader("Accept-Language"));
+        record.setAcceptEncoding(request.getHeader("Accept-Encoding"));
+        record.setCookie(request.getHeader("Cookie"));
+        record.setOrigin(request.getHeader("Origin"));
+        record.setReferer(request.getHeader("Referer"));
+
+        // ─── 响应状态、耗时 ───
         record.setHttpStatus(response.getStatus());
         record.setCostTime(System.currentTimeMillis() - startTime);
         record.setRequestTime(LocalDateTime.now());
+
+        // ─── 安全上下文 ───
+        record.setToken(SecurityContext.getToken());
+        record.setTenantCode(SecurityContext.getTenantCode());
+        record.setAppCode(SecurityContext.getAppCode());
 
         Principal principal = SecurityContext.getPrincipal();
         if (principal != null) {
             record.setUserCode(principal.getUserCode());
             record.setUsername(principal.getUsername());
+            record.setNickname(principal.getNickname());
         }
 
+        // ─── 异常信息 ───
+        Object errorMsg = request.getAttribute("sh.auth.errorMsg");
+        if (errorMsg != null) {
+            record.setErrorMsg(errorMsg.toString());
+        }
+
+        // ─── 请求体 ───
         if (request instanceof EagerContentCachingRequestWrapper wrapper) {
             byte[] body = wrapper.getCachedBody();
             if (body != null && body.length > 0) {
-                record.setRequestBody(maskSensitive(new String(body), 4096));
+                record.setRequestBody(new String(body));
             }
         }
 
+        // ─── 响应体 ───
         byte[] respBody = response.getContentAsByteArray();
         if (respBody != null && respBody.length > 0) {
-            record.setResponseBody(truncate(new String(respBody), 4096));
+            record.setResponseBody(new String(respBody));
         }
 
         return record;
-    }
-
-    private String maskSensitive(String body, int maxLen) {
-        String masked = body.replaceAll("\"password\"\\s*:\\s*\"[^\"]*\"", "\"password\":\"******\"");
-        return truncate(masked, maxLen);
-    }
-
-    private String truncate(String str, int maxLen) {
-        if (str == null) return null;
-        return str.length() > maxLen ? str.substring(0, maxLen) + "...(truncated)" : str;
     }
 }
