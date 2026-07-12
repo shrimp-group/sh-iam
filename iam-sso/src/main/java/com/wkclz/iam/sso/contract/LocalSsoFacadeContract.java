@@ -1,5 +1,6 @@
 package com.wkclz.iam.sso.contract;
 
+import com.wkclz.auth.contract.auth.ConcurrentSessionControl;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.bean.RequestRecord;
@@ -31,6 +32,8 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     private IamRequestService requestLogService;
     @Autowired
     private SsoLoginLogMapper ssoLoginLogMapper;
+    @Autowired
+    private ConcurrentSessionControl concurrentSessionControl;
 
     @Override
     public LoginResp login(SessionCreateReq req) {
@@ -57,7 +60,7 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
         String token = JwtUtil.generateToken(userJwt, ContractSettings.getJwtSecretKey());
 
         iamSessionService.createSession(token, principal, session);
-        iamSessionService.enforceMaxConcurrentSessions(req.getUsername());
+        concurrentSessionControl.enforce(req.getUsername());
 
         recordLoginLog(req);
 
@@ -68,7 +71,7 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     @Override
     public void saveLog(RequestRecord log) {
         // 直接委托，无需转换（已统一用 sh-auth RequestRecord）
-        requestLogService.insertLog(log);
+        requestLogService.save(log);
     }
 
     @Override

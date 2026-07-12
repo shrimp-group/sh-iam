@@ -1,5 +1,6 @@
 package com.wkclz.iam.sso.service;
 
+import com.wkclz.auth.contract.infra.RequestLogger;
 import com.wkclz.iam.common.entity.IamRequestLog;
 import com.wkclz.iam.common.helper.IpLocalCacheHelper;
 import com.wkclz.auth.bean.RequestRecord;
@@ -7,16 +8,14 @@ import com.wkclz.iam.sso.mapper.SsoRequestLogMapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
-/**
- * @author shrimp
- */
 @Service
-public class IamRequestService {
+public class IamRequestService implements RequestLogger {
 
     @Resource
     private SsoRequestLogMapper ssoRequestLogMapper;
 
-    public void insertLog(RequestRecord log) {
+    @Override
+    public void save(RequestRecord log) {
         if (log == null) {
             return;
         }
