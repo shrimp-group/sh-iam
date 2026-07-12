@@ -14,7 +14,7 @@ import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
-import com.wkclz.iam.sdk.bean.enums.AuthType;
+import com.wkclz.auth.enums.CredentialType;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
@@ -97,7 +97,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         // 认证账号入库
         IamUserAuth auth = new IamUserAuth();
         auth.setUserCode(dto.getUserCode());
-        auth.setAuthType(AuthType.PASSWORD.name());
+        auth.setAuthType(CredentialType.PASSWORD.name());
         auth.setAuthIdentifier(dto.getUsername());
         auth.setAuthStatus(1);
         auth.setLoginCount(0);

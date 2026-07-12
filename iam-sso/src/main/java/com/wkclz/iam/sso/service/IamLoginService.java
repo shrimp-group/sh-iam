@@ -14,8 +14,7 @@ import com.wkclz.iam.sso.contract.bean.resp.LoginResp;
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.iam.sso.contract.facade.SsoFacadeContract;
-import com.wkclz.iam.sdk.bean.enums.AuthType;
-import com.wkclz.iam.sdk.bean.enums.LoginStatus;
+import com.wkclz.auth.enums.CredentialType;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sdk.bean.req.LoginReq;
 import com.wkclz.iam.sso.config.IamSsoConfig;
@@ -85,19 +84,19 @@ public class IamLoginService {
         // 0. 需要验证码
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
-        param.setAuthType(AuthType.PASSWORD.name());
+        param.setAuthType(CredentialType.PASSWORD.name());
         IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLastLoginIn1Hour(param);
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username);
-            loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.CAPTCHA_REQUIRED, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.CAPTCHA_REQUIRED);
         }
 
         // 验证码校验
         if (StringUtils.isNotBlank(captchaId)) {
             if (!captchaService.verify(captchaId, captchaCode)) {
-                loginLog(loginReq, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
+                loginLog(loginReq, auth, AuthErrorType.CAPTCHA_ERROR, CredentialType.PASSWORD);
                 return LoginResp.fail(AuthErrorType.CAPTCHA_ERROR);
             }
         }
@@ -105,31 +104,31 @@ public class IamLoginService {
 
         // 1. 用户不存在
         if (auth ==  null) {
-            loginLog(loginReq, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.USER_NOT_FOUND, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.USERNAME_OR_PASSWORD_ERROR);
         }
 
         // 2. 登录方式已禁用
         if (auth.getAuthStatus().equals(0)) {
-            loginLog(loginReq, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.ACCOUNT_EXPIRED, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.ACCOUNT_DISABLED);
         }
 
         // 3. 用户已锁定
         if (auth.getUserStatus().equals(3)) {
-            loginLog(loginReq, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.ACCOUNT_LOCKED, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.ACCOUNT_LOCKED);
         }
 
         // 4. 用户已禁用
         if (auth.getUserStatus().equals(2)) {
-            loginLog(loginReq, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.ACCOUNT_DISABLED, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.ACCOUNT_DISABLED);
         }
 
         // 5. 密码错误
         if (!passwordEncoder.matches(password, auth.getSalt(), auth.getPassword())) {
-            loginLog(loginReq, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.BAD_CREDENTIALS, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.USERNAME_OR_PASSWORD_ERROR);
         }
 
@@ -140,7 +139,7 @@ public class IamLoginService {
         long timestamp = zonedDateTime.toInstant().toEpochMilli();
         long passwordExpireAt = timestamp + passwordExpireDays * 24 * 60 * 60 * 1000L;
         if (passwordExpireAt < System.currentTimeMillis()) {
-            loginLog(loginReq, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
+            loginLog(loginReq, auth, AuthErrorType.CREDENTIALS_EXPIRED, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.CREDENTIALS_EXPIRED);
         }
 
@@ -230,7 +229,7 @@ public class IamLoginService {
     }
 
 
-    private void loginLog(LoginReq loginReq, IamUserAuthDto auth, LoginStatus loginStatus, AuthType loginType) {
+    private void loginLog(LoginReq loginReq, IamUserAuthDto auth, AuthErrorType loginStatus, CredentialType loginType) {
         IamLoginLog log = new IamLoginLog();
         log.setAuthIdentifier(loginReq.getUsername());
         log.setAuthType(loginType.name());

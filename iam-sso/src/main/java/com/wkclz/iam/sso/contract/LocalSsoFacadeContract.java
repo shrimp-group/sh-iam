@@ -11,7 +11,6 @@ import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.sso.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sso.contract.bean.resp.LoginResp;
 import com.wkclz.iam.sso.contract.facade.SsoFacadeContract;
-import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.service.IamRequestService;
 import com.wkclz.web.helper.IpHelper;
@@ -84,8 +83,8 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
         IamLoginLog loginLog = new IamLoginLog();
         loginLog.setAuthIdentifier(req.getAuthIdentifier());
         loginLog.setAuthType(req.getAuthType());
-        loginLog.setLoginStatus(LoginStatus.SUCCESS.getCode());
-        loginLog.setMessage(LoginStatus.SUCCESS.getMessage());
+        loginLog.setLoginStatus(0);
+        loginLog.setMessage("登录成功");
         loginLog.setUserCode(req.getUserCode());
         loginLog.setUsername(req.getAuthIdentifier());
         loginLog.setCreateBy(req.getAuthIdentifier());
