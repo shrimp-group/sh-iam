@@ -29,7 +29,7 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     @Autowired
     private IamSessionService iamSessionService;
     @Autowired
-    private IamRequestService requestLogService;
+    private IamRequestService iamRequestService;
     @Autowired
     private SsoLoginLogMapper ssoLoginLogMapper;
     @Autowired
@@ -71,7 +71,7 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     @Override
     public void saveLog(RequestRecord log) {
         // 直接委托，无需转换（已统一用 sh-auth RequestRecord）
-        requestLogService.save(log);
+        iamRequestService.save(log);
     }
 
     @Override
