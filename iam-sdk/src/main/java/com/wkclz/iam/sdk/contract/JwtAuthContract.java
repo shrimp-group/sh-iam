@@ -2,6 +2,7 @@ package com.wkclz.iam.sdk.contract;
 
 import com.alibaba.fastjson2.JSON;
 import com.wkclz.auth.bean.Principal;
+import com.wkclz.auth.bean.Session;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.exception.AuthException;
 import com.wkclz.iam.sdk.contract.bean.AuthResult;
@@ -63,9 +64,9 @@ public class JwtAuthContract implements AuthContract {
             throw new AuthException(AuthErrorType.SESSION_EXPIRED, "会话已过期");
         }
 
-        com.wkclz.auth.bean.Session session;
+        Session session;
         try {
-            session = JSON.parseObject(sessionJson, com.wkclz.auth.bean.Session.class);
+            session = JSON.parseObject(sessionJson, Session.class);
         } catch (Exception e) {
             log.error("Session 反序列化失败, username={}", username, e);
             throw new AuthException(AuthErrorType.TOKEN_INVALID, "会话数据损坏", e);
