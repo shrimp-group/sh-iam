@@ -1,18 +1,17 @@
 package com.wkclz.iam.sso.contract;
 
+import com.wkclz.auth.bean.AuthToken;
 import com.wkclz.auth.bean.Session;
 import com.wkclz.auth.contract.auth.ConcurrentSessionControl;
 import com.wkclz.auth.contract.auth.SessionStore;
+import com.wkclz.auth.contract.auth.TokenService;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.sdk.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.contract.bean.resp.LoginResp;
-import com.wkclz.iam.sdk.contract.config.ContractSettings;
 import com.wkclz.iam.sdk.contract.facade.SsoFacadeContract;
-import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
-import com.wkclz.iam.sdk.util.JwtUtil;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.service.IamRequestService;
 import com.wkclz.web.helper.IpHelper;
@@ -29,6 +28,8 @@ import java.time.LocalDateTime;
 public class LocalSsoFacadeContract implements SsoFacadeContract {
 
     @Autowired
+    private TokenService tokenService;
+    @Autowired
     private SessionStore sessionStore;
     @Autowired
     private IamRequestService iamRequestService;
@@ -41,12 +42,6 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
     public LoginResp login(SessionCreateReq req) {
         log.info("SsoFacade 本地创建会话, authIdentifier: {}", req.getAuthIdentifier());
 
-        UserJwt userJwt = new UserJwt();
-        userJwt.setUserCode(req.getUserCode());
-        userJwt.setUsername(req.getUsername());
-        userJwt.setNickname(req.getNickname());
-        userJwt.setAvatar(req.getAvatar());
-
         Principal principal = new Principal();
         principal.setUserCode(req.getUserCode());
         principal.setUsername(req.getUsername());
@@ -54,8 +49,10 @@ public class LocalSsoFacadeContract implements SsoFacadeContract {
         principal.setAvatar(req.getAvatar());
         principal.setAuthIdentifier(req.getAuthIdentifier());
 
+        AuthToken authToken = tokenService.generateToken(principal);
+        String token = authToken.getTokenValue();
+
         Session session = new Session();
-        String token = JwtUtil.generateToken(userJwt, ContractSettings.getJwtSecretKey());
         session.setSessionId(token);
         session.setSubjectId(req.getUsername());
         session.setPrincipal(principal);
