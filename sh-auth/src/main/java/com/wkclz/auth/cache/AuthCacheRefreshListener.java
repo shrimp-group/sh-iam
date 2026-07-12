@@ -2,15 +2,17 @@ package com.wkclz.auth.cache;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * 缓存刷新事件监听器
+ * 缓存刷新事件监听器（仅当 AuthCacheManager Bean 存在时启用）
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean(AuthCacheManager.class)
 public class AuthCacheRefreshListener {
 
     private final AuthCacheManager cacheManager;
