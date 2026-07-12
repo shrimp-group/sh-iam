@@ -1,6 +1,7 @@
 package com.wkclz.auth.contract.auth;
 
 import com.wkclz.tool.tools.Md5Tool;
+import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -15,6 +16,7 @@ import java.util.Base64;
  * 兼容现有盐值分离存储（重载方法，不破坏接口契约）：
  * - encode(raw, salt) / matches(raw, salt, encoded)
  */
+@Component
 public class Md5PasswordEncoder implements PasswordEncoder {
 
     private static final String PREFIX = "{MD5}";
