@@ -44,23 +44,27 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = resolveToken(request);
             if (token == null || token.isEmpty()) {
+                log.warn("请求缺少 Token: uri={}, ip={}", request.getRequestURI(), request.getRemoteAddr());
                 sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "缺少认证 Token");
                 return;
             }
 
             Principal principal = tokenService.parseToken(token);
             if (principal == null) {
+                log.warn("Token 解析失败: uri={}, token={}...", request.getRequestURI(), token.substring(0, Math.min(8, token.length())));
                 sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Token 解析失败");
                 return;
             }
 
             if (!tokenService.validateToken(token)) {
+                log.warn("Token 无效或已过期: uri={}", request.getRequestURI());
                 sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Token 无效或已过期");
                 return;
             }
 
             Session session = sessionStore.get(token);
             if (session == null) {
+                log.warn("会话不存在或已过期: uri={}, user={}", request.getRequestURI(), principal.getUsername());
                 sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "会话不存在或已过期");
                 return;
             }
