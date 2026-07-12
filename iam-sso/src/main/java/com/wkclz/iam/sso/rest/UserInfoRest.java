@@ -4,7 +4,7 @@ import com.wkclz.core.base.R;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.context.SecurityContext;
-import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
+import com.wkclz.iam.sso.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.entity.VueRouterMenu;
 import com.wkclz.iam.sso.service.IamLoginService;

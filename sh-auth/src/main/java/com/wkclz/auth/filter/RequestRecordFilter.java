@@ -137,11 +137,9 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         String body = getLogBody(r);
 
         if (r.getErrorMsg() != null) {
-            log.warn("{} | {} | {}ms | {} | {} | {} | status={} error={}",
-                    ip, user, cost, method, uri, body, status, r.getErrorMsg());
+            log.warn("{} | {} | {} | {}ms | {} | {} | {} | error={}", ip, user, status, cost, method, uri, body, r.getErrorMsg());
         } else {
-            log.info("{} | {} | {}ms | {} | {} | {} | status={}",
-                    ip, user, cost, method, uri, body, status);
+            log.info("{} | {} | {} | {}ms | {} | {} | {}", ip, user, status, cost, method, uri, body);
         }
     }
 

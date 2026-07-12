@@ -1,7 +1,7 @@
 package com.wkclz.iam.sso.rest;
 
 import com.wkclz.core.base.R;
-import com.wkclz.iam.sdk.bean.req.RegisterReq;
+import com.wkclz.iam.sso.bean.req.RegisterReq;
 import com.wkclz.iam.sso.Route;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

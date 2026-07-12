@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.bean.req;
+package com.wkclz.iam.sso.bean.req;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

@@ -12,8 +12,8 @@ import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
-import com.wkclz.iam.sdk.bean.req.LoginReq;
+import com.wkclz.iam.sso.bean.req.ChangePasswordReq;
+import com.wkclz.iam.sso.bean.req.LoginReq;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sso.contract.bean.resp.LoginResp;
@@ -85,9 +85,8 @@ public class IamLoginService {
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
         param.setAuthType(CredentialType.PASSWORD.name());
-        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLastLoginIn1Hour(param);
-        if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
-                && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
+        IamLoginLog ll = ssoLoginLogMapper.getLastLoginIn1Hour(param);
+        if (ll != null && ll.getLoginStatus() != 0 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username);
             loginLog(loginReq, auth, AuthErrorType.CAPTCHA_REQUIRED, CredentialType.PASSWORD);
             return LoginResp.fail(AuthErrorType.CAPTCHA_REQUIRED);
