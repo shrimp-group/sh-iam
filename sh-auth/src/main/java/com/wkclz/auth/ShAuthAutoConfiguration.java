@@ -12,6 +12,7 @@ import com.wkclz.auth.contract.infra.RequestLogger;
 import com.wkclz.auth.contract.infra.SecurityHeaderProvider;
 import com.wkclz.auth.filter.*;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -90,6 +91,7 @@ public class ShAuthAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnBean(AccessControlProvider.class)
     public FilterRegistrationBean<AuthorizationFilter> authorizationFilterReg(
             List<AccessControlProvider> accessControlProviders, AuthProperties properties) {
         FilterRegistrationBean<AuthorizationFilter> reg = new FilterRegistrationBean<>();
@@ -102,6 +104,7 @@ public class ShAuthAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnBean(AuthMetadataService.class)
     public AuthCacheManager authCacheManager(AuthMetadataService metadataService) {
         return new AuthCacheManager(metadataService);
     }
