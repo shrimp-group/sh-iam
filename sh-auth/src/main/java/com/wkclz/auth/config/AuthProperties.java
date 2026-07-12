@@ -62,6 +62,7 @@ public class AuthProperties {
     public static class WhiteList {
         private List<String> paths = List.of(
             "/public/**",
+            "/**/public/**",
             "/actuator/**",
             "/error"
         );
