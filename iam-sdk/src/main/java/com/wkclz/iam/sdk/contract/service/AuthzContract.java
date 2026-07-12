@@ -6,7 +6,7 @@ import com.wkclz.iam.sdk.contract.bean.FieldPermission;
 import com.wkclz.auth.bean.MenuNode;
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.iam.sdk.contract.bean.Tenant;
-import com.wkclz.iam.sdk.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
@@ -38,7 +38,7 @@ public interface AuthzContract {
      * 查询用户可访问的租户列表（上下文重载）
      */
     default List<Tenant> listTenants() {
-        return listTenants(PrincipalContext.getPrincipal());
+        return listTenants(SecurityContext.getPrincipal());
     }
 
     // ── 2. 应用 ──
@@ -56,14 +56,14 @@ public interface AuthzContract {
      * 查询用户可访问的应用列表（上下文重载：tenantCode 从请求头获取）
      */
     default List<App> listApps() {
-        return listApps(PrincipalContext.getPrincipal(), PrincipalContext.getTenantCode());
+        return listApps(SecurityContext.getPrincipal(), SecurityContext.getTenantCode());
     }
 
     /**
      * 查询用户可访问的应用列表（半上下文重载：Principal 从上下文，tenantCode 显式传入）
      */
     default List<App> listApps(String tenantCode) {
-        return listApps(PrincipalContext.getPrincipal(), tenantCode);
+        return listApps(SecurityContext.getPrincipal(), tenantCode);
     }
 
     // ── 3. 菜单树 ──
@@ -81,14 +81,14 @@ public interface AuthzContract {
      * 查询用户菜单树（上下文重载：Principal + appCode 均从上下文获取）
      */
     default List<MenuNode> getMenuTree() {
-        return getMenuTree(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode());
+        return getMenuTree(SecurityContext.getPrincipal(), SecurityContext.getAppCode());
     }
 
     /**
      * 查询用户菜单树（半上下文重载：Principal 从上下文，appCode 显式传入）
      */
     default List<MenuNode> getMenuTree(String appCode) {
-        return getMenuTree(PrincipalContext.getPrincipal(), appCode);
+        return getMenuTree(SecurityContext.getPrincipal(), appCode);
     }
 
     // ── 4. 接口鉴权 ──
@@ -108,14 +108,14 @@ public interface AuthzContract {
      * 接口鉴权（上下文重载：Principal + appCode 从上下文获取，apiUri/apiMethod 显式传入）
      */
     default boolean canAccessApi(String apiUri, String apiMethod) {
-        return canAccessApi(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode(), apiUri, apiMethod);
+        return canAccessApi(SecurityContext.getPrincipal(), SecurityContext.getAppCode(), apiUri, apiMethod);
     }
 
     /**
      * 接口鉴权（从当前请求自动获取 apiUri/apiMethod，过滤器场景）
      */
     default boolean canAccessApi(HttpServletRequest request) {
-        return canAccessApi(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode(),
+        return canAccessApi(SecurityContext.getPrincipal(), SecurityContext.getAppCode(),
             request.getRequestURI(), request.getMethod());
     }
 
@@ -135,7 +135,7 @@ public interface AuthzContract {
      * 查询字段权限（上下文重载）
      */
     default List<FieldPermission> listFieldPermissions(String menuCode) {
-        return listFieldPermissions(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode(), menuCode);
+        return listFieldPermissions(SecurityContext.getPrincipal(), SecurityContext.getAppCode(), menuCode);
     }
 
     /**
@@ -153,7 +153,7 @@ public interface AuthzContract {
      * 字段过滤（上下文重载）
      */
     default List<String> filterFields(String menuCode, List<String> fields) {
-        return filterFields(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode(), menuCode, fields);
+        return filterFields(SecurityContext.getPrincipal(), SecurityContext.getAppCode(), menuCode, fields);
     }
 
     // ── 6. 数据权限 ──
@@ -171,13 +171,13 @@ public interface AuthzContract {
      * 查询数据权限维度（上下文重载）
      */
     default List<DataDimension> getDataDimensions() {
-        return getDataDimensions(PrincipalContext.getPrincipal(), PrincipalContext.getAppCode());
+        return getDataDimensions(SecurityContext.getPrincipal(), SecurityContext.getAppCode());
     }
 
     /**
      * 查询数据权限维度（半上下文重载）
      */
     default List<DataDimension> getDataDimensions(String appCode) {
-        return getDataDimensions(PrincipalContext.getPrincipal(), appCode);
+        return getDataDimensions(SecurityContext.getPrincipal(), appCode);
     }
 }

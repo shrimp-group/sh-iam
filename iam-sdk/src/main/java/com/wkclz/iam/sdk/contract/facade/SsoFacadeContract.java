@@ -3,7 +3,7 @@ package com.wkclz.iam.sdk.contract.facade;
 import com.wkclz.auth.bean.RequestRecord;
 import com.wkclz.iam.sdk.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.contract.bean.resp.LoginResp;
-import com.wkclz.iam.sdk.contract.context.PrincipalContext;
+import com.wkclz.auth.context.SecurityContext;
 
 /**
  * SSO RPC 门面契约
@@ -45,6 +45,6 @@ public interface SsoFacadeContract {
      * 远程登出（从 PrincipalContext 获取 token）
      */
     default void logout() {
-        logout(PrincipalContext.getToken());
+        logout(SecurityContext.getToken());
     }
 }

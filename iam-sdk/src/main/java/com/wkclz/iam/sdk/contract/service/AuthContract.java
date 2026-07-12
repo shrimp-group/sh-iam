@@ -1,7 +1,7 @@
 package com.wkclz.iam.sdk.contract.service;
 
+import com.wkclz.auth.bean.Session;
 import com.wkclz.iam.sdk.contract.bean.AuthResult;
-import com.wkclz.iam.sdk.contract.bean.Session;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.exception.AuthException;
 import jakarta.servlet.http.HttpServletRequest;
