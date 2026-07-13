@@ -92,7 +92,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         record.setRequestTime(LocalDateTime.now());
 
         // ─── 安全上下文 ───
-        record.setToken(SecurityContext.getToken());
+        record.setToken(maskToken(SecurityContext.getToken()));
         record.setTenantCode(SecurityContext.getTenantCode());
         record.setAppCode(SecurityContext.getAppCode());
 
@@ -146,5 +146,15 @@ public class RequestRecordFilter extends OncePerRequestFilter {
     private String getLogBody(RequestRecord r) {
         String body = "GET".equalsIgnoreCase(r.getMethod()) ? r.getQueryString() : r.getRequestBody();
         return StringUtils.isNotBlank(body) ? body : "-";
+    }
+
+    /**
+     * Token 截断，仅保留前 8 + 后 4 位，防日志/DB 泄露后会话劫持
+     */
+    private static String maskToken(String token) {
+        if (token == null || token.length() <= 16) {
+            return token == null ? null : token.substring(0, Math.min(4, token.length())) + "***";
+        }
+        return token.substring(0, 8) + "***" + token.substring(token.length() - 4);
     }
 }

@@ -44,7 +44,8 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
         Principal principal = SecurityContext.getPrincipal();
         if (principal == null) {
-            filterChain.doFilter(request, response);
+            log.warn("鉴权时 Principal 为空，拒绝访问: uri={}", request.getRequestURI());
+            sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "未认证");
             return;
         }
 
