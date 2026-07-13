@@ -36,12 +36,9 @@ public class SsoResourceService {
      * 获取若依格式的菜单树
      */
     public List<VueRouterMenu> getUserMenuTreeRuoyi(List<IamMenuDto> menus) {
-        log.info("开始构建若依格式菜单树，菜单数量: {}", menus.size());
         Map<String, List<String>> buttonsMap = new HashMap<>();
         Map<String, Integer> namesCount = new HashMap<>();
-        List<VueRouterMenu> vueRouterMenus = menuTreeVueRouterTree(menus, null, buttonsMap, namesCount);
-        log.info("若依格式菜单树构建完成，路由数量: {}", vueRouterMenus.size());
-        return vueRouterMenus;
+        return menuTreeVueRouterTree(menus, null, buttonsMap, namesCount);
     }
 
     private static List<IamMenuDto> makeTree(List<IamMenuDto> dtos) {

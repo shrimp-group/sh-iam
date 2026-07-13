@@ -20,13 +20,6 @@
             <artifactId>iam-common</artifactId>
             <version>${revision}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.wkclz.iam</groupId>
-            <artifactId>iam-sdk</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
         <dependency>
             <groupId>com.wkclz.framework</groupId>
             <artifactId>sh-mybatis</artifactId>
@@ -39,6 +32,11 @@
         <dependency>
             <groupId>com.wkclz.framework</groupId>
             <artifactId>sh-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.wkclz.framework</groupId>
+            <artifactId>sh-auth</artifactId>
+            <version>5.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.wkclz.microapp</groupId>
