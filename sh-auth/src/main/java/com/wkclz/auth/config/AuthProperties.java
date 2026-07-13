@@ -84,12 +84,21 @@ public class AuthProperties {
         );
     }
 
+    /**
+     * CORS 配置（默认开启；若 CORS 由 Nginx/网关层处理，设置为 false 关闭）
+     */
     @Data
     public static class Cors {
-        private boolean enabled = false;
-        private String allowedOrigins = "*";
+        private boolean enabled = true;
+        /**
+         * 允许的来源域名（多个用逗号分隔），启用 CORS 时必须配置具体值，不可使用 *
+         */
+        private String allowedOrigins = "";
         private String allowedMethods = "GET,POST,PUT,DELETE,OPTIONS";
-        private String allowedHeaders = "*";
+        /**
+         * 允许的请求头，建议配置具体值而非 *
+         */
+        private String allowedHeaders = "Content-Type,Authorization";
         private long maxAge = 3600;
     }
 }

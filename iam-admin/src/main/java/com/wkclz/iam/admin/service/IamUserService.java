@@ -13,7 +13,7 @@ import com.wkclz.iam.common.entity.IamUser;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
+import com.wkclz.auth.contract.auth.PasswordEncoder;
 import com.wkclz.auth.enums.CredentialType;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
@@ -47,7 +47,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
     @Autowired
     private IamUserAuthPasswordMapper iamUserAuthPasswordMapper;
     @Autowired
-    private Md5PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     public PageData<IamUser> userPage(IamUser entity) {
         return PageQuery.page(entity, mapper::getUserList);

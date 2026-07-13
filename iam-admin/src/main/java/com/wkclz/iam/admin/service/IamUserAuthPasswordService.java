@@ -7,7 +7,7 @@ import com.wkclz.iam.admin.mapper.IamUserAuthPasswordMapper;
 import com.wkclz.iam.admin.mapper.IamUserPasswordHisMapper;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
+import com.wkclz.auth.contract.auth.PasswordEncoder;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.tool.utils.SecretUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
 
     @Autowired
-    private Md5PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     public IamUserAuthPassword create(IamUserAuthPassword entity) {
         duplicateCheck(entity);

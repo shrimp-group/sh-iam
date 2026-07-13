@@ -2,7 +2,7 @@ package com.wkclz.iam.sso.service;
 
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.auth.contract.auth.CaptchaService;
-import com.wkclz.auth.contract.auth.Md5PasswordEncoder;
+import com.wkclz.auth.contract.auth.PasswordEncoder;
 import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.enums.CredentialType;
@@ -55,7 +55,7 @@ public class IamLoginService {
     @Autowired
     private SessionStore sessionStore;
     @Autowired
-    private Md5PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     /**
      * 1. 用户不存在
