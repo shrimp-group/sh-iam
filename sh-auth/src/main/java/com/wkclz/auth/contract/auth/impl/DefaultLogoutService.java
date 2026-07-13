@@ -1,7 +1,9 @@
-package com.wkclz.auth.contract.auth;
+package com.wkclz.auth.contract.auth.impl;
 
 import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.context.SecurityContext;
+import com.wkclz.auth.contract.auth.LogoutService;
+import com.wkclz.auth.contract.auth.SessionStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,8 +1,9 @@
-package com.wkclz.auth.contract.auth;
+package com.wkclz.auth.contract.auth.impl;
 
 import com.wkclz.auth.bean.Captcha;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.wkclz.auth.contract.auth.CaptchaService;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

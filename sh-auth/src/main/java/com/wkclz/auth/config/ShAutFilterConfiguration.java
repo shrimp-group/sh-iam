@@ -1,19 +1,14 @@
 package com.wkclz.auth.config;
 
-import com.wkclz.auth.cache.AuthCacheManager;
-import com.wkclz.auth.context.SecurityContext;
-import com.wkclz.auth.contract.auth.DefaultLogoutService;
 import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.auth.contract.auth.TokenService;
 import com.wkclz.auth.contract.authz.AccessControlProvider;
-import com.wkclz.auth.contract.infra.AuthMetadataService;
 import com.wkclz.auth.contract.infra.RequestLogger;
 import com.wkclz.auth.contract.infra.SecurityHeaderProvider;
 import com.wkclz.auth.filter.*;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 

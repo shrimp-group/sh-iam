@@ -1,7 +1,8 @@
-package com.wkclz.auth.contract.auth;
+package com.wkclz.auth.contract.auth.impl;
 
 import com.wkclz.auth.bean.AuthToken;
 import com.wkclz.auth.bean.Principal;
+import com.wkclz.auth.contract.auth.TokenService;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.enums.TokenType;
 import com.wkclz.auth.exception.AuthenticationException;

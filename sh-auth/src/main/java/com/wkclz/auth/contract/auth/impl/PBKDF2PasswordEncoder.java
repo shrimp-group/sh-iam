@@ -1,4 +1,6 @@
-package com.wkclz.auth.contract.auth;
+package com.wkclz.auth.contract.auth.impl;
+
+import com.wkclz.auth.contract.auth.PasswordEncoder;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;

@@ -2,7 +2,7 @@ package com.wkclz.auth.config;
 
 import com.wkclz.auth.cache.AuthCacheManager;
 import com.wkclz.auth.context.SecurityContext;
-import com.wkclz.auth.contract.auth.DefaultLogoutService;
+import com.wkclz.auth.contract.auth.impl.DefaultLogoutService;
 import com.wkclz.auth.contract.auth.SessionStore;
 import com.wkclz.auth.contract.infra.AuthMetadataService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

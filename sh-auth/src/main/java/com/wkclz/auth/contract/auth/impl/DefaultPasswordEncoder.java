@@ -1,5 +1,6 @@
-package com.wkclz.auth.contract.auth;
+package com.wkclz.auth.contract.auth.impl;
 
+import com.wkclz.auth.contract.auth.PasswordEncoder;
 import com.wkclz.tool.tools.Md5Tool;
 import org.springframework.stereotype.Component;
 
