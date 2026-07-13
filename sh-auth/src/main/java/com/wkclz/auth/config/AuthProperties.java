@@ -15,11 +15,6 @@ import java.util.List;
 @ConfigurationProperties(prefix = "sh.auth")
 public class AuthProperties {
 
-    /**
-     * 是否启用完整 IAM 认证授权（过滤器链等），默认关闭，需显式配置为 true
-     */
-    private boolean enabled = false;
-
     /** 会话配置 */
     private Session session = new Session();
 
