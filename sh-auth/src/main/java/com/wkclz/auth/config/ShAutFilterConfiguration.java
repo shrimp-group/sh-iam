@@ -1,7 +1,6 @@
-package com.wkclz.auth;
+package com.wkclz.auth.config;
 
 import com.wkclz.auth.cache.AuthCacheManager;
-import com.wkclz.auth.config.AuthProperties;
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.auth.contract.auth.DefaultLogoutService;
 import com.wkclz.auth.contract.auth.SessionStore;
@@ -15,35 +14,19 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 
 import java.util.List;
 
 /**
- * sh-auth 自动配置
+ * sh-auth 过滤器 & 服务 Bean 注册。
+ * <p>
+ * 仅在 sh.auth.enabled=true 时生效。
  */
 @AutoConfiguration
-@ConditionalOnProperty(prefix = "sh.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
-@ComponentScan(basePackages = "com.wkclz.auth")
-@EnableConfigurationProperties(AuthProperties.class)
-public class ShAuthAutoConfiguration {
+public class ShAutFilterConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean
-    public SecurityContext securityContext() {
-        return new SecurityContext();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public DefaultLogoutService defaultLogoutService(SessionStore sessionStore) {
-        return new DefaultLogoutService(sessionStore);
-    }
-
-    // ===== FilterRegistrationBean 注册 =====
 
     @Bean
     public FilterRegistrationBean<RequestWrapperFilter> requestWrapperFilterReg() {
@@ -102,10 +85,4 @@ public class ShAuthAutoConfiguration {
         return reg;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(AuthMetadataService.class)
-    public AuthCacheManager authCacheManager(AuthMetadataService metadataService) {
-        return new AuthCacheManager(metadataService);
-    }
 }

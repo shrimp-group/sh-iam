@@ -3,6 +3,7 @@ package com.wkclz.auth.config;
 import com.wkclz.auth.enums.MfaType;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
@@ -10,11 +11,14 @@ import java.util.List;
  * sh-auth 配置属性
  */
 @Data
+@Configuration
 @ConfigurationProperties(prefix = "sh.auth")
 public class AuthProperties {
 
-    /** 是否启用 */
-    private boolean enabled = true;
+    /**
+     * 是否启用完整 IAM 认证授权（过滤器链等），默认关闭，需显式配置为 true
+     */
+    private boolean enabled = false;
 
     /** 会话配置 */
     private Session session = new Session();
