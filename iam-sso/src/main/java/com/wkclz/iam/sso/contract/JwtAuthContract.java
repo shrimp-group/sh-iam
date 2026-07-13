@@ -5,14 +5,12 @@ import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.bean.Session;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.exception.AuthException;
+import com.wkclz.auth.exception.AuthenticationException;
 import com.wkclz.auth.bean.AuthResult;
-import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.auth.context.SecurityContext;
 import com.wkclz.iam.sso.contract.service.AuthContract;
 import com.wkclz.core.exception.SystemException;
-import com.wkclz.iam.sdk.bean.UserJwt;
-import com.wkclz.iam.sdk.exception.JwtValidationException;
-import com.wkclz.iam.sdk.util.JwtUtil;
+import com.wkclz.tool.tools.Md5Tool;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +26,7 @@ public class JwtAuthContract implements AuthContract {
     private RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    private IamSsoConfig iamSsoConfig;
+    private JwtTokenService jwtTokenService;
 
     @Override
     public AuthResult authenticate(HttpServletRequest request) {
@@ -41,20 +39,18 @@ public class JwtAuthContract implements AuthContract {
 
     @Override
     public AuthResult doAuthenticate(String token) {
-        UserJwt userJwt;
+        Principal principal;
         try {
-            userJwt = JwtUtil.parseToken(token, iamSsoConfig.getJwtSecretKey());
-        } catch (JwtValidationException e) {
-            throw new AuthException(
-                    AuthErrorType.fromJwtErrorCode(e.getErrorCode()),
-                    e.getMessage(), e);
+            principal = jwtTokenService.parseToken(token);
+        } catch (AuthenticationException e) {
+            throw new AuthException(e.getErrorType(), e.getMessage(), e);
         } catch (RuntimeException e) {
             log.error("JWT 解析发生未知异常", e);
             throw new AuthException(AuthErrorType.TOKEN_INVALID, "Token 解析失败", e);
         }
 
-        String username = userJwt.getUsername();
-        String sessionKey = JwtUtil.getTokenRedisKey(token, username);
+        String username = principal.getUsername();
+        String sessionKey = "iam:session:" + username + ":" + Md5Tool.md5(token);
         String sessionJson;
         try {
             sessionJson = redisTemplate.opsForValue().get(sessionKey);

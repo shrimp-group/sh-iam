@@ -1,4 +1,4 @@
-package com.wkclz.iam.sdk.helper;
+package com.wkclz.auth.helper;
 
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.tool.tools.Md5Tool;
@@ -12,8 +12,12 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-
 /**
+ * AK 签名工具 — 用于客户端生成签名、服务端验签及防重放。
+ * <p>
+ * 签名流程：客户端用 RSA 私钥对 appId/nonce/timestamp 签名 → 服务端用 RSA 公钥解密验签。
+ * 防重放：通过 Redis SETNX 对 nonce 做唯一性校验，TTL 与签名有效期一致（5 分钟）。
+ *
  * @author shrimp
  */
 @Slf4j
@@ -21,20 +25,25 @@ import java.util.concurrent.TimeUnit;
 public class AkSignHelper {
 
     @Autowired(required = false)
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String, String> redisTemplate;
 
     /**
-     * TD-003: AK 签名有效期 5 分钟
+     * AK 签名有效期 5 分钟（毫秒）
      */
     public static final long SIGN_VALIDITY_MS = 5 * 60 * 1000L;
+    /** AK 签名有效期 5 分钟（秒），用于 Redis TTL */
     public static final long SIGN_VALIDITY_SECONDS = 5 * 60L;
-    /**
-     * TD-003: nonce 防重放 Redis Key 前缀，与签名有效期一致
-     */
+    /** nonce 防重放 Redis Key 前缀 */
     public static final String NONCE_REDIS_KEY_PREFIX = "iam:ak:nonce:";
 
     /**
-     * 获取签名
+     * 生成 AK 签名。
+     * <p>
+     * 将 appId / nonce / timestamp 按 key 排序后拼接，使用 RSA 私钥加密。
+     *
+     * @param appId     应用 ID
+     * @param appSecret RSA 私钥
+     * @return 签名字符串
      */
     public static String sign(String appId, String appSecret) {
         if (StringUtils.isBlank(appId)) {
@@ -46,33 +55,25 @@ public class AkSignHelper {
         long timestamp = System.currentTimeMillis();
         String nonce = Md5Tool.md5(UUID.randomUUID().toString() + timestamp);
 
-        // 生成签名
-        Map<String, String> data = new HashMap<>();
+        Map<String, String> data = new LinkedHashMap<>();
         data.put("appId", appId);
         data.put("nonce", nonce);
-        data.put("timestamp", timestamp + "");
-        Set<String> keySet = data.keySet();
-        String[] keyArray = keySet.toArray(new String[keySet.size()]);
-        // 排序
-        Arrays.sort(keyArray);
+        data.put("timestamp", String.valueOf(timestamp));
+
         StringBuilder sb = new StringBuilder();
-        for (String k : keyArray) {
-            // 参数值为空，则不参与签名
-            if (!data.get(k).trim().isEmpty()) {
-                sb.append(k).append("=").append(data.get(k).trim()).append("&");
-            }
+        for (Map.Entry<String, String> entry : data.entrySet()) {
+            sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
         }
-        return RsaTool.encryptByPrivateKey(sb.substring(0, sb.length() - 1), appSecret);
+        String raw = sb.substring(0, sb.length() - 1);
+        return RsaTool.encryptByPrivateKey(raw, appSecret);
     }
 
     /**
-     * <p>
-     * 与 {@link #sign(String, String)} 对应：sign 使用 RSA 私钥加密，deSign 使用 RSA 公钥解密。
+     * 解密签名 — 使用 RSA 公钥解密签名字符串，提取参数 Map。
      *
-     * @param sign     签名字符串（请求头 sign 字段）
-     * @param publicKey 服务端配置的 RSA 公钥
+     * @param sign      签名字符串
+     * @param publicKey RSA 公钥
      * @return 解析出的参数 Map，包含 appId / nonce / timestamp
-     * @throws ValidationException 解密失败或参数缺失时抛出
      */
     public static Map<String, String> deSign(String sign, String publicKey) {
         if (StringUtils.isBlank(sign)) {
@@ -96,8 +97,7 @@ public class AkSignHelper {
 
         // 解析 appId=xxx&nonce=xxx&timestamp=xxx
         Map<String, String> data = new HashMap<>();
-        String[] pairs = decrypted.split("&");
-        for (String pair : pairs) {
+        for (String pair : decrypted.split("&")) {
             int idx = pair.indexOf('=');
             if (idx > 0) {
                 data.put(pair.substring(0, idx), pair.substring(idx + 1));
@@ -107,6 +107,7 @@ public class AkSignHelper {
     }
 
     /**
+     * 完整验签流程：
      * <ol>
      *   <li>RSA 公钥解密签名，解析参数</li>
      *   <li>校验签名中的 appId 与请求头 app-id 一致</li>
@@ -115,9 +116,9 @@ public class AkSignHelper {
      * </ol>
      *
      * @param sign          请求头中的签名
-     * @param publicKey     服务端配置的 RSA 公钥
+     * @param publicKey     RSA 公钥
      * @param expectedAppId 请求头中的 app-id（用于与签名内容比对）
-     * @return 验签通过返回 true；失败抛 ValidationException
+     * @return 验签通过时返回 true；失败时抛出 ValidationException
      */
     public boolean verifySign(String sign, String publicKey, String expectedAppId) {
         Map<String, String> data = deSign(sign, publicKey);

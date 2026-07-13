@@ -24,7 +24,6 @@
         <module>iam-sso-starter</module>
         <module>iam-admin</module>
         <module>iam-admin-starter</module>
-        <module>iam-sdk</module>
     </modules>
 
     <properties>

@@ -10,7 +10,7 @@ import com.wkclz.iam.sso.contract.bean.req.SessionCreateReq;
 import com.wkclz.iam.sso.contract.bean.resp.LoginResp;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.contract.facade.SsoFacadeContract;
-import com.wkclz.iam.sdk.helper.AkSignHelper;
+import com.wkclz.auth.helper.AkSignHelper;
 import com.wkclz.core.exception.SystemException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
