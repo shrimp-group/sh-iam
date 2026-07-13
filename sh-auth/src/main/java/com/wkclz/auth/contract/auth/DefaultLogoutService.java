@@ -1,5 +1,6 @@
 package com.wkclz.auth.contract.auth;
 
+import com.wkclz.auth.bean.Principal;
 import com.wkclz.auth.context.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,14 +15,15 @@ public class DefaultLogoutService implements LogoutService {
         String token = SecurityContext.getToken();
         if (token != null) {
             sessionStore.delete(token);
-            log.debug("已登出当前会话: {}", token);
+            Principal principal = SecurityContext.getPrincipal();
+            log.debug("已登出当前会话: user={}", principal != null ? principal.getUsername() : "unknown");
         }
     }
 
     @Override
     public void logout(String sessionId) {
         sessionStore.delete(sessionId);
-        log.debug("已踢出会话: {}", sessionId);
+        log.debug("已踢出会话: sessionId={}", sessionId);
     }
 
     @Override

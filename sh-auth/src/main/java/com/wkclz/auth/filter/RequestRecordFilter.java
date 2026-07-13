@@ -16,6 +16,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -126,7 +128,14 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         return record;
     }
 
-    /** 控制台日志（密码脱敏依赖 logback MaskingPatternLayout） */
+    /**
+     * 密码字段脱敏正则
+     */
+    private static final Pattern PWD_MASK = Pattern.compile("\"password\"\\s*:\\s*\"(.*?)\"", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * 控制台日志（代码层脱敏 + logback MaskingPatternLayout 双重保障）
+     */
     private void logConsole(RequestRecord r) {
         int status = r.getHttpStatus() != null ? r.getHttpStatus() : 0;
         String ip = StringUtils.defaultString(r.getRemoteAddr(), "-");
@@ -134,7 +143,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         long cost = r.getCostTime() != null ? r.getCostTime() : 0;
         String method = StringUtils.defaultString(r.getMethod(), "-");
         String uri = StringUtils.defaultString(r.getRequestUri(), "-");
-        String body = getLogBody(r);
+        String body = maskSensitiveFields(getLogBody(r));
 
         if (r.getErrorMsg() != null) {
             log.warn("{} | {} | {} | {}ms | {} | {} | {} | error={}", ip, user, status, cost, method, uri, body, r.getErrorMsg());
@@ -146,6 +155,22 @@ public class RequestRecordFilter extends OncePerRequestFilter {
     private String getLogBody(RequestRecord r) {
         String body = "GET".equalsIgnoreCase(r.getMethod()) ? r.getQueryString() : r.getRequestBody();
         return StringUtils.isNotBlank(body) ? body : "-";
+    }
+
+    /**
+     * 代码层脱敏，对 body 中 password 等敏感字段进行掩码
+     */
+    private String maskSensitiveFields(String body) {
+        if (StringUtils.isBlank(body)) {
+            return body;
+        }
+        Matcher m = PWD_MASK.matcher(body);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            m.appendReplacement(sb, "\"password\":\"***\"");
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     /**

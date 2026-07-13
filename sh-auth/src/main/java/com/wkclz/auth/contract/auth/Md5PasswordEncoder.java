@@ -8,6 +8,7 @@ import com.wkclz.tool.tools.Md5Tool;
  * 非 Spring Bean，供外部按需使用。IAM 内部统一使用 {@link DefaultPasswordEncoder}。
  * salt 由调用方传入，与密码分开存储。
  */
+@Deprecated
 public class Md5PasswordEncoder implements PasswordEncoder {
 
     @Override
