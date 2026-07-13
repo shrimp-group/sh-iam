@@ -54,10 +54,10 @@ public class RequestRecordFilter extends OncePerRequestFilter {
                         log.error("保存请求日志失败", ex);
                     }
                 }
-                SecurityContext.clear();
             } catch (Exception ex) {
                 log.error("请求日志采集异常", ex);
             } finally {
+                SecurityContext.clear();
                 responseWrapper.copyBodyToResponse();
             }
         }

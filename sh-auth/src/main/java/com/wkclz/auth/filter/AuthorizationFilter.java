@@ -68,6 +68,11 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     private void sendError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":" + status + ",\"message\":\"" + message + "\"}");
+        response.getWriter().write("{\"code\":" + status + ",\"message\":\"" + escapeJson(message) + "\"}");
+    }
+
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

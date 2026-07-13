@@ -79,6 +79,9 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         } catch (SessionExpiredException e) {
             log.warn("会话过期: {}", e.getMessage());
             sendError(response, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+        } catch (Exception e) {
+            log.error("认证过滤器异常", e);
+            sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "认证服务异常");
         }
     }
 
@@ -98,6 +101,11 @@ public class AuthenticationFilter extends OncePerRequestFilter {
     private void sendError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":" + status + ",\"message\":\"" + message + "\"}");
+        response.getWriter().write("{\"code\":" + status + ",\"message\":\"" + escapeJson(message) + "\"}");
+    }
+
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

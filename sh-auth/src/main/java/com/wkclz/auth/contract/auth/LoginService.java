@@ -63,7 +63,7 @@ public abstract class LoginService {
             return AuthResult.fail(AuthErrorType.ACCOUNT_DISABLED, e.getMessage());
         } catch (Exception e) {
             log.error("登录异常", e);
-            return AuthResult.fail(AuthErrorType.INTERNAL_ERROR, e.getMessage());
+            return AuthResult.fail(AuthErrorType.INTERNAL_ERROR, "系统繁忙，请稍后重试");
         }
     }
 

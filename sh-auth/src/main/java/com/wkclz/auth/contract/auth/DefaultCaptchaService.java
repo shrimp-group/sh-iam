@@ -11,8 +11,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -64,7 +64,7 @@ public class DefaultCaptchaService implements CaptchaService {
     // ===== 验证码生成 =====
 
     private String generateCaptchaCode() {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < CAPTCHA_LENGTH; i++) {
             sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
@@ -91,7 +91,7 @@ public class DefaultCaptchaService implements CaptchaService {
     }
 
     private void drawInterferenceLines(Graphics2D g) {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         g.setColor(Color.LIGHT_GRAY);
         for (int i = 0; i < 5; i++) {
             int x1 = random.nextInt(WIDTH);
@@ -103,7 +103,7 @@ public class DefaultCaptchaService implements CaptchaService {
     }
 
     private void drawNoisePoints(Graphics2D g) {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         for (int i = 0; i < 50; i++) {
             int x = random.nextInt(WIDTH);
             int y = random.nextInt(HEIGHT);
@@ -114,7 +114,7 @@ public class DefaultCaptchaService implements CaptchaService {
     }
 
     private void drawCharacters(Graphics2D g, String captchaCode) {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         int charWidth = WIDTH / captchaCode.length();
         for (int i = 0; i < captchaCode.length(); i++) {
             g.setColor(new Color(random.nextInt(100), random.nextInt(100), random.nextInt(100)));
