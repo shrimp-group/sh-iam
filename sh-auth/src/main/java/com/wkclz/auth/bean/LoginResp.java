@@ -1,4 +1,4 @@
-package com.wkclz.iam.sso.contract.bean.resp;
+package com.wkclz.auth.bean;
 
 import com.wkclz.auth.enums.AuthErrorType;
 import io.swagger.v3.oas.annotations.media.Schema;

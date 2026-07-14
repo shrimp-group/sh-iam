@@ -15,13 +15,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class LoginService {
 
-    protected AuthenticationProvider authProvider;
+    protected MfaService mfaService;
     protected TokenService tokenService;
     protected SessionStore sessionStore;
-    protected RateLimitChecker rateLimitChecker;
     protected CaptchaService captchaService;
+    protected RateLimitChecker rateLimitChecker;
     protected AccountStatusChecker accountStatusChecker;
-    protected MfaService mfaService;
+    protected AuthenticationProvider authenticationProvider;
     protected ConcurrentSessionControl concurrentSessionControl;
 
     public AuthResult login(AuthRequest request, HttpServletRequest httpRequest) {
@@ -29,7 +29,7 @@ public abstract class LoginService {
         try {
             checkRateLimit(request, httpRequest);
             checkCaptcha(request);
-            AuthResult result = authProvider.authenticate(request, httpRequest);
+            AuthResult result = authenticationProvider.authenticate(request, httpRequest);
             if (!result.isSuccess()) {
                 rateLimitChecker.recordAttempt(identifier, false);
                 recordLoginLog(result, httpRequest);
