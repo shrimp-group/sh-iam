@@ -19,6 +19,9 @@ public interface SsoLoginMapper {
 
     Integer updateUserLoginInfo(IamUserAuth entity);
 
+    void updateUserLoginInfoByUserCode(@Param("userCode") String userCode,
+                                       @Param("lastLoginIp") String lastLoginIp);
+
     List<IamUser> batchGetNicknamesByUserCodes(@Param("userCodes") List<String> userCodes);
 
     IamUserAuthPassword getPasswordByUserCode(@Param("userCode") String userCode);

@@ -8,6 +8,5 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = {"com.wkclz.iam.sso"})
 @MapperScan(basePackages = {"com.wkclz.iam.sso.mapper"})
 public class IamSsoAutoConfig {
+
 }
-
-

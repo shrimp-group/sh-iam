@@ -202,32 +202,50 @@ iam_request_log ── 请求日志 (独立)
 
 ## 核心流程
 
-### SSO 登录流程
+### SSO 登录流程（重构后 — 模块化分层）
 
 ```
-前端 → CaptchaRest (获取验证码，Redis 存储 5min)
+前端 → CaptchaRest (获取验证码)
      → LoginRest (提交登录)
+     ── iam-sso 层 (SSO 专属) ──
      → IamLoginService.loginByUsernameAndPassword():
          1. RSA 解密前端密码
-         2. 检查是否需要验证码 (1h 内失败次数)
-         3. 验证码校验 (Redis)
-         4. SsoLoginMapper 跨三表 JOIN 查用户
-         5. 用户不存在 / 禁用 / 锁定 → 返回对应状态
-         6. 密码校验: MD5(password + salt)
-         7. 密码过期检查 (默认 180 天)
-         8. 生成 JWT (HS256) + Redis Session
-         9. 记录登录日志 + 更新登录信息
+         2. 1h 失败历史 → 需验证码判断
+         ── sh-auth 层 (标准认证) ──
+         3. 构建 AuthRequest → LoginService.login() [模板方法]:
+            a. IamLoginPipeline.checkRateLimit()     [no-op, IAM 用验证码代替]
+            b. IamLoginPipeline.checkCaptcha()       [验证码校验]
+            c. IamPasswordAuthenticationProvider.authenticate()
+               - 三表 JOIN 查用户
+               - 账号状态校验 (禁用/锁定/禁用认证)
+               - 密码匹配 (DefaultPasswordEncoder PBKDF2/MD5)
+               - 密码过期检查
+            d. AccountStatusChecker.checkStatus()    [no-op, 已在 authenticate 中校验]
+            e. IamLoginPipeline.checkMfa()           [no-op, 暂不支持]
+            f. StandardLoginPipeline.execute()       [Token → Session → 持久化 → 并发控制]
+            g. IamLoginPipeline.recordLoginLog()     [写入 iam_login_log 表]
+         ── iam-sso 层 (SSO 专属后处理) ──
+         4. 更新最后登录 IP (updateUserLoginInfoByUserCode)
+         5. 转换 AuthResult → LoginResp 返回前端
 ```
 
-### 鉴权流程 (JwtAuthContract)
+### 模块职责边界
+
+| 模块             | 职责                                                                                                                                                                                             |
+|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **sh-auth**    | `LoginService` 模板方法编排标准流程；`StandardLoginPipeline` 会话创建；`PasswordEncoder`/`TokenService`/`SessionStore` SPI 接口                                                                                  |
+| **iam-sso**    | RSA 解密、1h 验证码需求判断、IP 更新 (SSO 专属)；`IamPasswordAuthenticationProvider` (IAM 凭证校验)；`IamLoginPipeline` (IAM 抽象方法实现)；SPI 实现 (`JwtTokenService`/`RedisSessionStore`/`RedisConcurrentSessionControl`) |
+| **iam-common** | `IamUserAuthDto` 数据传输；`SsoLoginMapper`/`SsoLoginLogMapper` 数据访问                                                                                                                                |
+
+### 鉴权流程 (AuthenticationFilter)
 
 ```
-请求 → RequestWrapperFilter → LoggingFilter → JwtAuthContract:
-  1. 放行 /*/public/** 路径
-  2. 从 Header 获取 token (Authorization 或 token)
-  3. JWT 验证 + 解析 UserJwt
-  4. JwtAuthContract.authenticate() → 验证令牌有效性
-  5. 缓存用户信息到请求上下文
+请求 → RequestWrapperFilter → RequestRecordFilter → SecurityHeaderFilter → AuthenticationFilter:
+  1. 放行 /public/** 路径
+  2. 从 Header 获取 token (Authorization Bearer 或 token)
+  3. JWT 验证 + 解析 Principal
+  4. SessionStore.get(token) → 验证会话有效性
+  5. 设置 SecurityContext (Principal + Token)
 ```
 
 ### 用户创建流程 (IamUserService.customCreate)
@@ -398,18 +416,18 @@ iam_request_log ── 请求日志 (独立)
 
 ### SSO 登录认证模块 (iam-sso)
 
-| Story ID  | 故事名称             | 优先级 | 文档                                                             |
-|-----------|------------------|-----|----------------------------------------------------------------|
-| STORY-015 | ✅ 用户名密码登录        | P0  | [STORY-015](docs/stories/STORY-015-username-password-login.md) |
-| STORY-016 | ✅ 图形验证码接口        | P0  | [STORY-016](docs/stories/STORY-016-captcha-rest.md)            |
-| STORY-017 | ⚠️ 用户注册接口（空占位实现） | P2  | [STORY-017](docs/stories/STORY-017-user-register.md)           |
-| STORY-018 | ✅ 用户登出           | P0  | [STORY-018](docs/stories/STORY-018-user-logout.md)             |
-| STORY-019 | ✅ 用户信息与菜单资源查询    | P0  | [STORY-019](docs/stories/STORY-019-user-info-menu-resource.md) |
-| STORY-020 | ✅ 若依格式菜单树适配      | P1  | [STORY-020](docs/stories/STORY-020-ruoyi-menu-tree.md)         |
-| STORY-021 | ✅ Token 校验服务实现   | P0  | [STORY-021](docs/stories/STORY-021-token-check-service.md)     |
-| STORY-022 | ✅ 请求日志持久化服务      | P1  | [STORY-022](docs/stories/STORY-022-request-log-persistence.md) |
-| STORY-023 | ✅ 用户名缓存服务        | P1  | [STORY-023](docs/stories/STORY-023-username-cache-service.md)  |
-| STORY-024 | ✅ SSO 配置与自动装配    | P0  | [STORY-024](docs/stories/STORY-024-sso-auto-config.md)         |
+| Story ID  | 故事名称              | 优先级 | 文档                                                             |
+|-----------|-------------------|-----|----------------------------------------------------------------|
+| STORY-015 | ✅ 用户名密码登录（含模块关系图） | P0  | [STORY-015](docs/stories/SSO登录/015-用户名密码登录.md)                 |
+| STORY-016 | ✅ 图形验证码接口         | P0  | [STORY-016](docs/stories/STORY-016-captcha-rest.md)            |
+| STORY-017 | ⚠️ 用户注册接口（空占位实现）  | P2  | [STORY-017](docs/stories/STORY-017-user-register.md)           |
+| STORY-018 | ✅ 用户登出            | P0  | [STORY-018](docs/stories/STORY-018-user-logout.md)             |
+| STORY-019 | ✅ 用户信息与菜单资源查询     | P0  | [STORY-019](docs/stories/STORY-019-user-info-menu-resource.md) |
+| STORY-020 | ✅ 若依格式菜单树适配       | P1  | [STORY-020](docs/stories/STORY-020-ruoyi-menu-tree.md)         |
+| STORY-021 | ✅ Token 校验服务实现    | P0  | [STORY-021](docs/stories/STORY-021-token-check-service.md)     |
+| STORY-022 | ✅ 请求日志持久化服务       | P1  | [STORY-022](docs/stories/STORY-022-request-log-persistence.md) |
+| STORY-023 | ✅ 用户名缓存服务         | P1  | [STORY-023](docs/stories/STORY-023-username-cache-service.md)  |
+| STORY-024 | ✅ SSO 配置与自动装配     | P0  | [STORY-024](docs/stories/STORY-024-sso-auto-config.md)         |
 
 ### 管理后台模块 (iam-admin)
 

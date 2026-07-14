@@ -44,9 +44,14 @@ class LoginServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 创建 StandardLoginPipeline mock，返回预置结果
+        StandardLoginPipeline pipeline = new StandardLoginPipeline(
+            tokenService, sessionStore, concurrentSessionControl);
+
         loginService = new TestLoginService(
                 authProvider, tokenService, sessionStore, rateLimitChecker,
-                captchaService, accountStatusChecker, mfaService, concurrentSessionControl);
+            captchaService, accountStatusChecker, mfaService, concurrentSessionControl,
+            pipeline);
 
         principal = new Principal();
         principal.setUserCode("user_001");
@@ -129,11 +134,12 @@ class LoginServiceTest {
         assertNotNull(result.getMfaChallenge());
     }
 
-    // Test 子类实现
+    // Test 子类实现 — 通过 StandardLoginPipeline 间接使用 tokenService/sessionStore/concurrentSessionControl
     static class TestLoginService extends LoginService {
         TestLoginService(AuthenticationProvider ap, TokenService ts, SessionStore ss,
                          RateLimitChecker rlc, CaptchaService cs, AccountStatusChecker asc,
-                         MfaService ms, ConcurrentSessionControl csc) {
+                         MfaService ms, ConcurrentSessionControl csc,
+                         StandardLoginPipeline pipeline) {
             this.authProvider = ap;
             this.tokenService = ts;
             this.sessionStore = ss;
@@ -142,6 +148,7 @@ class LoginServiceTest {
             this.accountStatusChecker = asc;
             this.mfaService = ms;
             this.concurrentSessionControl = csc;
+            this.pipeline = pipeline;
         }
 
         @Override
@@ -161,13 +168,7 @@ class LoginServiceTest {
         }
 
         @Override
-        protected Session createSession(Principal principal, AuthToken token, HttpServletRequest httpRequest) {
-            Session session = new Session();
-            session.setSubjectId(principal.getUserCode());
-            return session;
+        protected void recordLoginLog(AuthResult result, AuthRequest request, HttpServletRequest httpRequest) {
         }
-
-        @Override
-        protected void recordLoginLog(AuthResult result, HttpServletRequest httpRequest) {}
     }
 }
