@@ -52,31 +52,6 @@ public class IamLoginPipeline extends LoginService {
         this.ssoLoginLogMapper = ssoLoginLogMapper;
     }
 
-    /**
-     * 限流校验 — IAM 不使用独立限流，验证码机制（1h 失败次数）在 SSO 侧 IamLoginService 中提前判断
-     */
-    @Override
-    protected void checkRateLimit(AuthRequest request, HttpServletRequest httpRequest) {
-        // no-op: IAM 用验证码机制代替独立限流
-    }
-
-    /**
-     * 验证码校验 — 若请求携带 captchaId，则从 Redis 校验
-     */
-    @Override
-    protected void checkCaptcha(AuthRequest request) {
-        Credential credential = request.getCredential();
-        if (credential == null) return;
-        String captchaId = credential.getCaptchaId();
-        String captchaCode = credential.getCaptchaCode();
-        if (StringUtils.isNotBlank(captchaId)) {
-            if (!captchaService.verify(captchaId, captchaCode)) {
-                log.warn("验证码错误, captchaId={}", captchaId);
-                throw new AuthException(AuthErrorType.CAPTCHA_ERROR, "验证码错误");
-            }
-            log.debug("验证码校验通过, captchaId={}", captchaId);
-        }
-    }
 
     /**
      * MFA 检查 — 暂不支持

@@ -28,11 +28,12 @@ public class AuthResult implements Serializable {
         return r;
     }
 
-    public static AuthResult fail(AuthErrorType errorType, String message) {
+    public static AuthResult fail(AuthErrorType errorType) {
         AuthResult r = new AuthResult();
         r.status = AuthStatus.FAILED;
         r.errorType = errorType;
-        r.errorMessage = message;
+        r.errorMessage = errorType.getMessage();
         return r;
     }
+
 }

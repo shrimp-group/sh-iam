@@ -1,9 +1,9 @@
 package com.wkclz.iam.sso.rest;
 
+import com.wkclz.auth.bean.resp.LoginResp;
 import com.wkclz.core.base.R;
-import com.wkclz.iam.sso.bean.req.LoginReq;
-import com.wkclz.auth.bean.LoginResp;
 import com.wkclz.iam.sso.Route;
+import com.wkclz.iam.sso.bean.req.LoginReq;
 import com.wkclz.iam.sso.service.IamLoginService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,8 +25,8 @@ public class LoginRest {
     @PostMapping(Route.PUBLIC_SSO_LOGIN)
     @Operation(summary = "用户登录")
     public R<LoginResp> publicSsoLogin(HttpServletRequest request, @Valid @RequestBody LoginReq loginReq) {
-        LoginResp response = iamLoginService.loginByUsernameAndPassword(request, loginReq);
-        return R.ok(response);
+        LoginResp resp = iamLoginService.loginByUsernameAndPassword(request, loginReq);
+        return R.ok(resp);
     }
 
     @GetMapping(Route.PUBLIC_SSO_LOGOUT)

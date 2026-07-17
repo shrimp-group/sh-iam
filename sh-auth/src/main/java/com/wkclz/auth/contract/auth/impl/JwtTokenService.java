@@ -22,16 +22,12 @@ import java.util.Map;
 /**
  * 基于 jjwt HS256 的 TokenService 默认实现
  */
-@Slf4j
+@Component
 public class JwtTokenService implements TokenService {
 
-    private final String secretKey;
-    private final long sessionTtlSeconds;
+    private String secretKey;
+    private long sessionTtlSeconds;
 
-    public JwtTokenService(String secretKey, long sessionTtlSeconds) {
-        this.secretKey = secretKey;
-        this.sessionTtlSeconds = sessionTtlSeconds;
-    }
 
     @Override
     public AuthToken generateToken(Principal principal) {
@@ -39,10 +35,6 @@ public class JwtTokenService implements TokenService {
         claims.put("userCode", principal.getUserCode());
         claims.put("username", principal.getUsername());
         claims.put("nickname", principal.getNickname());
-        claims.put("avatar", principal.getAvatar());
-        if (principal.getAppCode() != null) {
-            claims.put("appCode", principal.getAppCode());
-        }
         if (principal.getAuthIdentifier() != null) {
             claims.put("authIdentifier", principal.getAuthIdentifier());
         }
@@ -123,12 +115,12 @@ public class JwtTokenService implements TokenService {
 
     // ===== private =====
 
-    private SecretKey getSigningKey() {
+    private static SecretKey getSigningKey() {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private Claims parseClaims(String tokenValue) {
+    private static Claims parseClaims(String tokenValue) {
         try {
             SecretKey signingKey = getSigningKey();
             return Jwts.parser()

@@ -151,10 +151,6 @@ class LoginServiceTest {
             this.pipeline = pipeline;
         }
 
-        @Override
-        protected void checkRateLimit(AuthRequest request, HttpServletRequest httpRequest) {
-            rateLimitChecker.check(httpRequest.getRemoteAddr());
-        }
 
         @Override
         protected void checkCaptcha(AuthRequest request) {}

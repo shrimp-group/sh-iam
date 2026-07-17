@@ -1,13 +1,12 @@
 package com.wkclz.iam.sso.service;
 
-import com.wkclz.auth.bean.*;
-import com.wkclz.auth.contract.auth.LoginService;
-import com.wkclz.auth.contract.auth.PasswordEncoder;
-import com.wkclz.auth.contract.auth.SessionStore;
-import com.wkclz.auth.context.SecurityContext;
+import com.wkclz.auth.bean.resp.LoginResp;
 import com.wkclz.auth.enums.AuthErrorType;
 import com.wkclz.auth.enums.CredentialType;
+import com.wkclz.auth.helper.PasswordHelper;
+import com.wkclz.core.base.Principal;
 import com.wkclz.core.exception.UserException;
+import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
@@ -29,13 +28,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * IAM 登录服务 — 处理 SSO 专属逻辑（RSA 解密、验证码需求判断、登录 IP 更新），
- * 标准认证流程委托 sh-auth {@link LoginService} 处理。
  *
  * @author shrimp
  */
@@ -44,6 +43,8 @@ public class IamLoginService {
 
     private static final Logger log = LoggerFactory.getLogger(IamLoginService.class);
 
+    @Autowired
+    private PicCaptchaService picCaptchaService;
     @Autowired
     private LoginService loginService;
     @Autowired
@@ -54,8 +55,6 @@ public class IamLoginService {
     private SsoLoginLogMapper ssoLoginLogMapper;
     @Autowired
     private SessionStore sessionStore;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     /**
      * 用户名密码登录 — SSO 专属处理 + 标准认证委托
@@ -66,7 +65,6 @@ public class IamLoginService {
      *   <li>1h 失败历史 → 需验证码判断（SSO 专属）</li>
      *   <li>构建 AuthRequest → 委托 sh-auth LoginService.login()</li>
      *   <li>登录成功 → 更新最后登录 IP（SSO 专属）</li>
-     *   <li>转换 AuthResult → LoginResp</li>
      * </ol>
      * </p>
      */
@@ -79,7 +77,11 @@ public class IamLoginService {
         String password = loginReq.getPassword();
         String privateKey = iamSsoConfig.getPrivateKey();
         if (StringUtils.isNotBlank(privateKey) && password != null && password.length() > 32) {
-            password = RsaTool.decryptByPrivateKey(password, privateKey);
+            try {
+                password = RsaTool.decryptByPrivateKey(password, privateKey);
+            } catch (Exception e) {
+                return LoginResp.fail(AuthErrorType.BAD_CREDENTIALS);
+            }
         }
 
         // SSO 专属: 1h 失败历史 → 需要验证码
@@ -90,24 +92,85 @@ public class IamLoginService {
         if (lastLogin != null && lastLogin.getLoginStatus() != null && lastLogin.getLoginStatus() != 0
             && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username);
-            recordCaptchaRequiredLog(loginReq);
+            recordCaptchaRequiredLog(loginReq, AuthErrorType.CAPTCHA_REQUIRED);
             return LoginResp.fail(AuthErrorType.CAPTCHA_REQUIRED);
         }
 
-        // 构建标准 AuthRequest → 委托 sh-auth 标准登录流程
-        AuthRequest authRequest = buildAuthRequest(loginReq, password);
-        log.info("用户 {} 开始标准登录流程", username);
+        // 验证码
+        if (StringUtils.isNotBlank(captchaCode) && StringUtils.isNotBlank(captchaId)) {
+            boolean verify = picCaptchaService.verify(captchaId, captchaCode);
+            if (!verify) {
+                log.warn("验证码错误: {}", username);
+                recordCaptchaRequiredLog(loginReq, AuthErrorType.CAPTCHA_ERROR);
+                return LoginResp.fail(AuthErrorType.CAPTCHA_ERROR);
+            }
+        }
 
-        AuthResult result = loginService.login(authRequest, request);
+        // 用户信息获取
+        IamUserAuthDto auth = ssoLoginMapper.getUserAuth4PasswordByUsername(username);
+        // 用户不存在
+        if (auth == null) {
+            log.warn("用户不存在: {}", username);
+            return LoginResp.fail(AuthErrorType.USERNAME_OR_PASSWORD_ERROR);
+        }
+
+        // 登录方式已禁用
+        if (auth.getAuthStatus() != null && auth.getAuthStatus().equals(0)) {
+            log.warn("登录方式已禁用: {}", username);
+            return LoginResp.fail(AuthErrorType.ACCOUNT_DISABLED);
+        }
+
+        // 用户已锁定
+        if (auth.getUserStatus() != null && auth.getUserStatus().equals(3)) {
+            log.warn("用户已锁定: {}", username);
+            return LoginResp.fail(AuthErrorType.ACCOUNT_LOCKED);
+        }
+
+        // 用户已禁用
+        if (auth.getUserStatus() != null && auth.getUserStatus().equals(2)) {
+            log.warn("用户已禁用: {}", username);
+            return LoginResp.fail(AuthErrorType.ACCOUNT_DISABLED);
+        }
+        // 密码过期
+        int passwordExpireDays = iamSsoConfig.getPasswordExpireDays();
+        long passwordExpireAt = auth.getLastChangedTime()
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+            + passwordExpireDays * 24L * 60 * 60 * 1000;
+        if (passwordExpireAt < System.currentTimeMillis()) {
+            log.warn("密码已过期: {}", username);
+            return LoginResp.fail(AuthErrorType.CREDENTIALS_EXPIRED);
+        }
+
+        // 密码错误
+        if (!PasswordHelper.matches(password, auth.getSalt(), auth.getPassword())) {
+            log.warn("密码错误: {}", username);
+            return LoginResp.fail(AuthErrorType.USERNAME_OR_PASSWORD_ERROR);
+        }
+
+        // 构建 Principal
+        Principal principal = new Principal();
+        principal.setUserCode(auth.getUserCode());
+        principal.setUsername(auth.getUsername());
+        principal.setNickname(auth.getNickname());
+        principal.setAvatar(auth.getAvatar());
+        principal.setAuthIdentifier(auth.getAuthIdentifier());
+        log.info("IAM 密码认证成功, userCode={}, username={}", auth.getUserCode(), auth.getUsername());
+
+        // 生成 token 相关
+
+        AuthResult result = new AuthResult();
+        result.setStatus(AuthStatus.SUCCESS);
+        result.setPrincipal(principal);
+
 
         // SSO 专属: 登录成功 → 更新最后登录 IP
         if (result.isSuccess()) {
-            Principal principal = result.getPrincipal();
             ssoLoginMapper.updateUserLoginInfoByUserCode(principal.getUserCode(), IpHelper.getOriginIp(request));
             log.info("用户 {} 登录成功，已更新最后登录 IP", principal.getUsername());
         }
-
-        return toLoginResp(result);
+        return result;
     }
 
     public void logout(HttpServletRequest request) {
@@ -192,26 +255,13 @@ public class IamLoginService {
         return authRequest;
     }
 
-    private LoginResp toLoginResp(AuthResult result) {
-        if (result.isSuccess()) {
-            Principal principal = result.getPrincipal();
-            return LoginResp.success(
-                result.getToken().getTokenValue(),
-                principal.getUserCode(),
-                principal.getUsername(),
-                principal.getNickname(),
-                principal.getAvatar()
-            );
-        }
-        return LoginResp.fail(result.getErrorType(), result.getErrorMessage());
-    }
 
-    private void recordCaptchaRequiredLog(LoginReq loginReq) {
+    private void recordCaptchaRequiredLog(LoginReq loginReq, AuthErrorType errorType) {
         IamLoginLog log = new IamLoginLog();
         log.setAuthIdentifier(loginReq.getUsername());
         log.setAuthType(CredentialType.PASSWORD.name());
-        log.setLoginStatus(AuthErrorType.CAPTCHA_REQUIRED.getCode());
-        log.setMessage(AuthErrorType.CAPTCHA_REQUIRED.getMessage());
+        log.setLoginStatus(errorType.getCode());
+        log.setMessage(errorType.getDesc());
         HttpServletRequest request = RequestHelper.getRequest();
         if (request != null) {
             log.setIpAddress(IpHelper.getOriginIp(request));

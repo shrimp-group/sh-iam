@@ -1,7 +1,6 @@
 package com.wkclz.iam.sso.service;
 
-import com.wkclz.auth.bean.Captcha;
-import com.wkclz.auth.contract.auth.CaptchaService;
+import com.wkclz.auth.bean.entity.PicCaptcha;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class RedisCaptchaService implements CaptchaService {
+public class PicCaptchaService {
 
     private static final long CAPTCHA_TTL_MINUTES = 5;
     private static final int CAPTCHA_LENGTH = 4;
@@ -31,8 +30,7 @@ public class RedisCaptchaService implements CaptchaService {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Override
-    public Captcha generate() {
+    public PicCaptcha generate() {
         String captchaCode = generateCaptchaCode();
         String captchaId = UUID.randomUUID().toString().replace("-", "");
         String base64Image = generateCaptchaImage(captchaCode);
@@ -40,14 +38,13 @@ public class RedisCaptchaService implements CaptchaService {
         String redisKey = REDIS_KEY_PREFIX + captchaId;
         redisTemplate.opsForValue().set(redisKey, captchaCode, CAPTCHA_TTL_MINUTES, TimeUnit.MINUTES);
 
-        Captcha captcha = new Captcha();
+        PicCaptcha captcha = new PicCaptcha();
         captcha.setCaptchaId(captchaId);
         captcha.setCaptchaImage(base64Image);
         captcha.setExpireTime(LocalDateTime.now().plusMinutes(CAPTCHA_TTL_MINUTES));
         return captcha;
     }
 
-    @Override
     public boolean verify(String captchaId, String captchaCode) {
         if (captchaId == null || captchaCode == null) {
             return false;
@@ -60,9 +57,9 @@ public class RedisCaptchaService implements CaptchaService {
         return stored.equalsIgnoreCase(captchaCode);
     }
 
-    // ===== 以下图形生成逻辑提取自 CaptchaHelper =====
+    // ===== 图形生成逻辑 =====
 
-    private String generateCaptchaCode() {
+    private static String generateCaptchaCode() {
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < CAPTCHA_LENGTH; i++) {
@@ -71,7 +68,7 @@ public class RedisCaptchaService implements CaptchaService {
         return sb.toString();
     }
 
-    private String generateCaptchaImage(String captchaCode) {
+    private static String generateCaptchaImage(String captchaCode) {
         BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
         g.setColor(Color.WHITE);
@@ -88,7 +85,7 @@ public class RedisCaptchaService implements CaptchaService {
         return "data:image/png;base64," + imageToBase64(image);
     }
 
-    private void drawInterferenceLines(Graphics2D g) {
+    private static void drawInterferenceLines(Graphics2D g) {
         Random random = new Random();
         g.setColor(Color.LIGHT_GRAY);
         for (int i = 0; i < 5; i++) {
@@ -97,7 +94,7 @@ public class RedisCaptchaService implements CaptchaService {
         }
     }
 
-    private void drawNoisePoints(Graphics2D g) {
+    private static void drawNoisePoints(Graphics2D g) {
         Random random = new Random();
         for (int i = 0; i < 50; i++) {
             int x = random.nextInt(WIDTH);
@@ -107,7 +104,7 @@ public class RedisCaptchaService implements CaptchaService {
         }
     }
 
-    private void drawCharacters(Graphics2D g, String captchaCode) {
+    private static void drawCharacters(Graphics2D g, String captchaCode) {
         Random random = new Random();
         int charWidth = WIDTH / captchaCode.length();
         for (int i = 0; i < captchaCode.length(); i++) {
@@ -119,7 +116,7 @@ public class RedisCaptchaService implements CaptchaService {
         }
     }
 
-    private String imageToBase64(BufferedImage image) {
+    private static String imageToBase64(BufferedImage image) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             ImageIO.write(image, "png", baos);
             return Base64.getEncoder().encodeToString(baos.toByteArray());

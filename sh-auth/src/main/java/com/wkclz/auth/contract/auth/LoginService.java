@@ -57,8 +57,6 @@ public abstract class LoginService {
     public AuthResult login(AuthRequest request, HttpServletRequest httpRequest) {
         String identifier = httpRequest.getRemoteAddr();
         try {
-            // 限流校验
-            checkRateLimit(request, httpRequest);
             // 验证码校验
             checkCaptcha(request);
             // 校验用户信息
@@ -109,16 +107,6 @@ public abstract class LoginService {
         }
     }
 
-
-    /**
-     * 限流校验（子类实现具体策略）
-     */
-    protected abstract void checkRateLimit(AuthRequest request, HttpServletRequest httpRequest);
-
-    /**
-     * 验证码校验（子类实现具体策略）
-     */
-    protected abstract void checkCaptcha(AuthRequest request);
 
     /**
      * MFA 多因素认证检查（子类实现具体策略）

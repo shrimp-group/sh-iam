@@ -18,7 +18,6 @@
     <name>sh-iam</name>
 
     <modules>
-        <module>sh-auth</module>
         <module>iam-common</module>
         <module>iam-sso</module>
         <module>iam-sso-starter</module>

@@ -1,9 +1,9 @@
 package com.wkclz.iam.sso.rest;
 
-import com.wkclz.auth.bean.Captcha;
-import com.wkclz.auth.contract.auth.CaptchaService;
+import com.wkclz.auth.bean.entity.PicCaptcha;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.sso.Route;
+import com.wkclz.iam.sso.service.PicCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class CaptchaRest {
 
     @Autowired
-    private CaptchaService captchaService;
+    private PicCaptchaService picCaptchaService;
 
     @GetMapping(Route.PUBLIC_CAPTCHA_CHART)
     @Operation(summary = "获取图形验证码")
-    public R<Captcha> getCaptcha() {
-        Captcha captcha = captchaService.generate();
+    public R<PicCaptcha> getCaptcha() {
+        PicCaptcha captcha = picCaptchaService.generate();
         captcha.setCaptchaCode(null);
         return R.ok(captcha);
     }
+
 }

@@ -24,7 +24,6 @@
             <groupId>com.wkclz.framework</groupId>
             <artifactId>sh-mybatis</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.wkclz.framework</groupId>
             <artifactId>sh-redis</artifactId>
