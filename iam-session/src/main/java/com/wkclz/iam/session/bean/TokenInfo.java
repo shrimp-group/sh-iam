@@ -25,4 +25,14 @@ public class TokenInfo implements Serializable {
      */
     private String nickname;
 
+    /**
+     * JWT 签发时间戳（毫秒），用于快速判断 Redis 是否必然未过期
+     */
+    private Long issuedAt;
+
+    /**
+     * JWT 过期时间戳（毫秒）
+     */
+    private Long expireAt;
+
 }

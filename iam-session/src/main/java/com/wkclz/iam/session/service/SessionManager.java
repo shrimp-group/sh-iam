@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.wkclz.core.identity.UserIdentity;
 import com.wkclz.iam.session.bean.Session;
 import com.wkclz.iam.session.bean.SessionCreateResult;
+import com.wkclz.iam.session.bean.TokenInfo;
 import com.wkclz.iam.session.config.IamSessionConfig;
 import com.wkclz.iam.session.enums.AuthType;
 import com.wkclz.tool.tools.Md5Tool;
@@ -14,16 +15,20 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
- * 会话管理器 — 会话创建与并发会话控制。
+ * 会话管理器 — 会话创建、验证、续期与并发会话控制。
  *
- * <p>认证方式无关的会话创建入口。职责：
+ * <p>认证方式无关的会话管理入口。职责：
  * <ul>
- *   <li>调用 TokenService 生成 JWT</li>
+ *   <li>调用 TokenService 生成/验证 JWT</li>
  *   <li>构建 Session 对象（sessionId = MD5(token)）</li>
  *   <li>并发会话控制（可选，通过 iam.session.max-concurrent 配置）</li>
+ *   <li>会话验证与滑窗续期（validateAndRefresh）</li>
+ *   <li>活跃会话查询（getActiveSessions）</li>
  *   <li>通过 SessionStore 持久化到 Redis</li>
  * </ul>
  */
@@ -68,7 +73,8 @@ public class SessionManager {
 
         // 3. 构建 Session
         long now = System.currentTimeMillis();
-        long ttl = iamSessionConfig.getTtl() != null ? iamSessionConfig.getTtl() : 86400L;
+        long ttl = iamSessionConfig.getTtl() != null ? iamSessionConfig.getTtl() : 172800L;
+        long redisTtl = iamSessionConfig.getRedisTtl() != null ? iamSessionConfig.getRedisTtl() : 86400L;
         Session session = new Session();
         session.setSessionId(sessionId);
         session.setSubjectId(userIdentity.getUserCode());
@@ -76,6 +82,8 @@ public class SessionManager {
         session.setToken(token);
         session.setCreateTime(now);
         session.setExpireTime(now + ttl * 1000);
+        session.setRedisExpireTime(now + redisTtl * 1000);
+        session.setLastRenewalTime(now);
 
         // 序列化 UserIdentity 为 JSON（含 nickname/avatar/attributes 等扩展字段）
         session.setUserIdentity(JSON.toJSONString(userIdentity));
@@ -86,8 +94,8 @@ public class SessionManager {
             enforceMaxConcurrent(userIdentity.getUserCode(), maxConcurrent);
         }
 
-        // 5. 持久化
-        sessionStore.save(session, ttl);
+        // 5. 持久化（使用 redisTtl 控制 Redis Key 过期时间）
+        sessionStore.save(session, redisTtl);
 
         log.info("Session created: subjectId={}, sessionId={}, authType={}", userIdentity.getUserCode(), sessionId, authType);
 
@@ -95,6 +103,101 @@ public class SessionManager {
         SessionCreateResult result = new SessionCreateResult();
         result.setToken(token);
         result.setSession(session);
+        return result;
+    }
+
+    // ========== 会话验证与续期 ==========
+
+    /**
+     * 验证 Token 并执行滑窗续期。
+     *
+     * <ol>
+     *   <li>TokenService.verifyToken() 校验 JWT 签名/过期</li>
+     *   <li>MD5(token) 得到 sessionId</li>
+     *   <li>SessionStore.get(sessionId) 查 Redis</li>
+     *   <li>Session 不存在或 Redis 已过期 → 返回 null</li>
+     *   <li>续期判断：剩余 TTL < threshold && 距上次续期 > interval && JWT 还有空间</li>
+     *   <li>续期只操作 Redis（HSET + EXPIRE），不重新签发 JWT</li>
+     * </ol>
+     *
+     * @param token JWT Token
+     * @return 有效的 Session，无效时返回 null
+     */
+    public Session validateAndRefresh(String token) {
+        // 1. JWT 校验（签名/过期，由 JJWT 库处理）
+        TokenInfo tokenInfo = tokenService.verifyToken(token);
+        long now = System.currentTimeMillis();
+
+        // 2. 快速路径：若 Token 签发时间到 Redis 过期还有大量剩余，跳过 Redis 读取
+        long redisTtlSec = iamSessionConfig.getRedisTtl() != null ? iamSessionConfig.getRedisTtl() : 86400L;
+        long thresholdSec = iamSessionConfig.getRenewalThreshold() != null ? iamSessionConfig.getRenewalThreshold() : 1800L;
+        Long issuedAt = tokenInfo.getIssuedAt();
+        if (issuedAt != null && now < issuedAt + (redisTtlSec - thresholdSec) * 1000) {
+            log.debug("Session fast-path: Redis expiry is far away, skip read. sessionId={}", Md5Tool.md5(token));
+            return null;
+        }
+
+        // 3. sessionId = MD5(token)
+        String sessionId = Md5Tool.md5(token);
+
+        // 4. 查 Redis
+        Session session = sessionStore.get(sessionId);
+        if (session == null) {
+            log.warn("Session not found in Redis: sessionId={}", sessionId);
+            return null;
+        }
+
+        // 5. Redis 已过期
+        if (session.getRedisExpireTime() < now) {
+            log.warn("Session Redis expired: sessionId={}, redisExpireTime={}", sessionId, session.getRedisExpireTime());
+            return null;
+        }
+
+        // 6. 续期判断
+        long thresholdMs = thresholdSec * 1000;
+        long intervalMs = (iamSessionConfig.getRenewalInterval() != null ? iamSessionConfig.getRenewalInterval() : 300L) * 1000;
+        long remaining = session.getRedisExpireTime() - now;
+        long lastRenewalAgo = now - session.getLastRenewalTime();
+
+        if (remaining < thresholdMs && lastRenewalAgo > intervalMs) {
+            long jwtExpireAt = tokenInfo.getExpireAt() != null ? tokenInfo.getExpireAt() : Long.MAX_VALUE;
+            if (jwtExpireAt > now + thresholdMs) {
+                long newRedisExpire = Math.min(now + thresholdMs, jwtExpireAt);
+                sessionStore.renewSession(sessionId, newRedisExpire);
+                session.setRedisExpireTime(newRedisExpire);
+                session.setLastRenewalTime(now);
+                log.info("Session renewed: sessionId={}, newRedisExpireTime={}", sessionId, newRedisExpire);
+            } else {
+                log.debug("Session renewal skipped (JWT near expiry): sessionId={}, jwtExpireAt={}", sessionId, jwtExpireAt);
+            }
+        }
+
+        return session;
+    }
+
+    // ========== 活跃会话查询 ==========
+
+    /**
+     * 查询用户所有活跃会话。
+     *
+     * <p>通过 SessionStore 获取所有 sessionId，批量读取后按 redisExpireTime 过滤已过期的。</p>
+     *
+     * @param subjectId 用户标识（userCode）
+     * @return 活跃 Session 列表，无活跃会话时返回空列表
+     */
+    public List<Session> getActiveSessions(String subjectId) {
+        List<String> sessionIds = sessionStore.getSessionIds(subjectId);
+        if (sessionIds.isEmpty()) {
+            return List.of();
+        }
+        long now = System.currentTimeMillis();
+        List<Session> result = new ArrayList<>();
+        for (String sid : sessionIds) {
+            Session session = sessionStore.get(sid);
+            if (session != null && session.getRedisExpireTime() >= now) {
+                result.add(session);
+            }
+        }
         return result;
     }
 

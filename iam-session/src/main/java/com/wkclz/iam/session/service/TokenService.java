@@ -71,6 +71,8 @@ public class TokenService {
         tokenInfo.setUserCode(claims.getSubject());
         tokenInfo.setUsername(claims.get("username", String.class));
         tokenInfo.setNickname(claims.get("nickname", String.class));
+        tokenInfo.setIssuedAt(claims.getIssuedAt().getTime());
+        tokenInfo.setExpireAt(claims.getExpiration().getTime());
         return tokenInfo;
     }
 

@@ -48,9 +48,19 @@ public class Session implements Serializable {
     private long createTime;
 
     /**
-     * 过期时间戳（毫秒）
+     * 过期时间戳（毫秒）— JWT 过期时间
      */
     private long expireTime;
+
+    /**
+     * Redis Key 实际过期时间戳（毫秒），初始 = now + redisTtl * 1000，续期时更新
+     */
+    private long redisExpireTime;
+
+    /**
+     * 上次续期时间戳（毫秒），初始 = createTime，续期时更新
+     */
+    private long lastRenewalTime;
 
     /**
      * 扩展属性

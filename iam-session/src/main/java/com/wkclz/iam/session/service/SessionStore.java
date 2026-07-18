@@ -54,6 +54,8 @@ public class SessionStore {
         }
         fields.put("createTime", String.valueOf(session.getCreateTime()));
         fields.put("expireTime", String.valueOf(session.getExpireTime()));
+        fields.put("redisExpireTime", String.valueOf(session.getRedisExpireTime()));
+        fields.put("lastRenewalTime", String.valueOf(session.getLastRenewalTime()));
         redisTemplate.opsForHash().putAll(key, fields);
 
         // Pipeline: EXPIRE + ZADD 批量执行
@@ -94,6 +96,8 @@ public class SessionStore {
         session.setUserIdentity(str(entries.get("userIdentity")));
         session.setCreateTime(longVal(entries.get("createTime")));
         session.setExpireTime(longVal(entries.get("expireTime")));
+        session.setRedisExpireTime(longVal(entries.get("redisExpireTime")));
+        session.setLastRenewalTime(longVal(entries.get("lastRenewalTime")));
         return session;
     }
 
@@ -136,6 +140,37 @@ public class SessionStore {
     public void refresh(String sessionId, long ttlSeconds) {
         String key = KEY_PREFIX + sessionId;
         redisTemplate.expire(key, java.time.Duration.ofSeconds(ttlSeconds));
+    }
+
+    /**
+     * 续期会话：更新 Hash 中的 redisExpireTime + lastRenewalTime，同时更新 Key 的 TTL。
+     *
+     * <p>通过 Pipeline 原子执行 HSET + EXPIRE。</p>
+     *
+     * @param sessionId          会话 ID
+     * @param newRedisExpireTime 新的 Redis 过期时间戳（毫秒）
+     */
+    public void renewSession(String sessionId, long newRedisExpireTime) {
+        String key = KEY_PREFIX + sessionId;
+        long now = System.currentTimeMillis();
+        long ttlSeconds = (newRedisExpireTime - now) / 1000;
+        if (ttlSeconds <= 0) {
+            return;
+        }
+        redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            connection.hashCommands().hSet(
+                key.getBytes(),
+                "redisExpireTime".getBytes(),
+                String.valueOf(newRedisExpireTime).getBytes()
+            );
+            connection.hashCommands().hSet(
+                key.getBytes(),
+                "lastRenewalTime".getBytes(),
+                String.valueOf(now).getBytes()
+            );
+            connection.keyCommands().expire(key.getBytes(), ttlSeconds);
+            return null;
+        });
     }
 
     /**
