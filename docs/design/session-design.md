@@ -36,22 +36,24 @@
 │   └──────────┬───────────┘                               │
 │              │ 依赖                                       │
 │   ┌──────────▼───────────┐                               │
-│   │  用户获取契约层         │  ← 最底层，仅获取用户身份        │
-│   │  (iam-identity)      │    Principal、SecurityContext  │
+│   │  sh-core（框架层）     │  ← 最底层，仅获取用户身份        │
+│   │  (com.wkclz.core     │    UserIdentity + IdentityCtx │
+│   │   .identity)         │                               │
 │   └──────────────────────┘                               │
 │                                                          │
 │   ★ 三方依赖方向：上层 → 下层，下层不知上层存在               │
-│   ★ 未来小程序登录：依赖会话管理层 + 用户获取契约层即可        │
+│   ★ 未来小程序登录：依赖会话管理层 + sh-core 即可            │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 三、模块 1：用户获取契约层（iam-identity）
+## 三、模块 1：用户获取契约层（sh-core `com.wkclz.core.identity`）
 
 > 定位：整个体系中最低层、最稳定的契约。**仅负责"当前请求是谁"这一个问题。**
 > 越简单越好 — 不包含任何存储、校验、业务逻辑。
+> 已从独立模块 `iam-identity` 迁移至框架层 `sh-core`，仅 2 个类。
 
 ### 3.1 功能点
 
@@ -70,32 +72,36 @@
 - 不做权限判断
 - 不做用户信息数据库查询
 
-### 3.3 契约接口（概念）
+### 3.3 契约（已实现）
 
 ```java
-// 用户身份 — 最精简的信息集
-interface UserIdentity {
-    String getUserCode();
-
-    String getUsername();
-
-    String getNickname();
-
-    String getAvatar();
-
-    // 扩展属性（小程序 openid 等场景使用）
-    Map<String, Object> getAttributes();
+// 用户身份 — 简单实体类（@Data + Serializable）
+public class UserIdentity implements Serializable {
+    private String userCode;
+    private String username;
+    private String nickname;
+    private String avatar;
+    private Map<String, Object> attributes = Collections.emptyMap();
+    // addAttribute(key, value) 便捷方法
 }
 
-// 身份上下文 — 请求级，纯 ThreadLocal，零外部依赖
-interface IdentityContext {
-    void set(UserIdentity identity, String token);
-
-    UserIdentity get();
-
-    String getToken();
-
-    void clear();
+// 身份上下文 — final 类，全部 static 方法，ThreadLocal 实现
+public final class IdentityContext {
+    // 身份
+    public static void set(UserIdentity identity, String token);
+    public static UserIdentity get();
+    public static String getToken();
+    public static String getUserCode();
+    public static String getUsername();
+    public static String getNickname();
+    public static String getAvatar();
+    // 应用/租户（独立于 UserIdentity，线程变量）
+    public static void setAppCode(String appCode);
+    public static String getAppCode();
+    public static void setTenantCode(String tenantCode);
+    public static String getTenantCode();
+    // 清理
+    public static void clear();
 }
 ```
 
@@ -124,9 +130,9 @@ interface IdentityContext {
 | **SES-12** | 活跃会话查询      | 按用户查询所有活跃 Session 列表（含 sessionId、创建时间、IP、UA 等元数据）                                                                                                    | 现状 #11 补齐              |
 | **SES-13** | 会话事件 SPI    | `SessionEventListener` 接口（onCreated / onDestroyed / onExpired），由会话层定义，SSO 层提供审计实现；Spring EventBus 做消息路由                                              | **新增**                 |
 | **SES-14** | Token 刷新    | 基于旧 Token 签发新 Token（新 iat/exp），同步更新 Session 中的 Token 绑定                                                                                              | 现状 #9（未集成，需补齐 G9）      |
-| **SES-15** | Token 提取    | 从 HTTP 请求中提取 token 的 SPI（默认：`Authorization: Bearer xxx` 头 > `token` 自定义头）                                                                            | 从 iam-identity 下沉      |
-| **SES-16** | 白名单路径匹配     | 定义哪些路径不需要身份验证（Ant 风格路径匹配，默认 `/public/**`），提供 `isWhiteListed(uri)` 方法                                                                                 | 从 iam-identity 下沉      |
-| **SES-17** | 身份上下文清理     | 请求结束后在 Filter/Interceptor 的 finally 块中调用 `IdentityContext.clear()`，防止内存泄漏                                                                            | 从 iam-identity 下沉      |
+| **SES-15** | Token 提取    | 从 HTTP 请求中提取 token 的 SPI（默认：`Authorization: Bearer xxx` 头 > `token` 自定义头）                                                                            | 从 sh-core 下沉           |
+| **SES-16** | 白名单路径匹配     | 定义哪些路径不需要身份验证（Ant 风格路径匹配，默认 `/public/**`），提供 `isWhiteListed(uri)` 方法                                                                                 | 从 sh-core 下沉           |
+| **SES-17** | 身份上下文清理     | 请求结束后在 Filter/Interceptor 的 finally 块中调用 `IdentityContext.clear()`，防止内存泄漏                                                                            | 从 sh-core 下沉           |
 
 ### 4.2 明确不包含
 
@@ -281,45 +287,45 @@ interface PasswordEncoder {
 
 以下将从现状分析中梳理出的全部功能点重新分配到新模块，并标注新增项。
 
-| #  | 功能点                              | 归属模块         | 状态              |
-|----|----------------------------------|--------------|-----------------|
-| 1  | 用户身份模型 (UserIdentity)            | iam-identity | 重构              |
-| 2  | 请求级身份上下文 (IdentityContext)       | iam-identity | 重构              |
-| 3  | Token 提取 (TokenResolver)         | iam-session  | 下沉              |
-| 4  | 白名单路径匹配                          | iam-session  | 下沉              |
-| 5  | 身份上下文自动清理                        | iam-session  | 下沉              |
-| 6  | 会话模型 (Session)                   | iam-session  | 重构              |
-| 7  | 会话创建                             | iam-session  | 重构              |
-| 8  | Token 生成 (JWT HS256)             | iam-session  | 保留              |
-| 9  | Token 验证 (签名+过期)                 | iam-session  | 保留              |
-| 10 | 会话持久化 SPI (SessionStore)         | iam-session  | 保留              |
-| 11 | Redis 会话存储实现                     | iam-session  | 重构（合并 Hash Key） |
-| 12 | 会话验证（存在+未过期）                     | iam-session  | 保留              |
-| 13 | 会话 TTL 滑窗续期                      | iam-session  | **新增**          |
-| 14 | 会话主动销毁（单个）                       | iam-session  | 保留              |
-| 15 | 会话批量销毁（按用户）                      | iam-session  | 保留              |
-| 16 | 并发会话控制                           | iam-session  | 保留              |
-| 17 | 活跃会话查询                           | iam-session  | 补齐              |
-| 18 | 会话事件 (Created/Destroyed/Expired) | iam-session  | **新增**          |
-| 19 | Token 刷新                         | iam-session  | 补齐              |
-| 20 | 密码登录端点                           | iam-sso      | 保留              |
-| 21 | RSA 密码解密                         | iam-sso      | 保留              |
-| 22 | 密码凭证校验 SPI                       | iam-sso      | 重构              |
-| 23 | 密码匹配 (PBKDF2+MD5兼容)              | iam-sso      | 保留              |
-| 24 | 账号状态校验                           | iam-sso      | 保留              |
-| 25 | 密码过期检查                           | iam-sso      | 保留              |
-| 26 | 验证码触发判断                          | iam-sso      | 保留              |
-| 27 | 验证码生成                            | iam-sso      | 保留              |
-| 28 | 验证码校验                            | iam-sso      | 保留              |
-| 29 | 登录成功编排                           | iam-sso      | 重构              |
-| 30 | 登录失败处理                           | iam-sso      | 保留              |
-| 31 | 登录审计事件                           | iam-sso      | **新增**          |
-| 32 | 登出端点                             | iam-sso      | 保留              |
-| 33 | 登出审计事件                           | iam-sso      | **新增**          |
-| 34 | 修改密码 + 全会话失效                     | iam-sso      | 保留              |
-| 35 | 密码修改事件                           | iam-sso      | **新增**          |
-| 36 | 管理员重置密码 → 全会话失效                  | iam-sso      | **新增**（事件监听）    |
-| 37 | 用户状态变更 → 全会话失效                   | iam-sso      | **新增**（事件监听）    |
+| #  | 功能点                              | 归属模块        | 状态              |
+|----|----------------------------------|-------------|-----------------|
+| 1  | 用户身份模型 (UserIdentity)            | sh-core     | 已完成             |
+| 2  | 请求级身份上下文 (IdentityContext)       | sh-core     | 已完成             |
+| 3  | Token 提取 (TokenResolver)         | iam-session | 下沉              |
+| 4  | 白名单路径匹配                          | iam-session | 下沉              |
+| 5  | 身份上下文自动清理                        | iam-session | 下沉              |
+| 6  | 会话模型 (Session)                   | iam-session | 重构              |
+| 7  | 会话创建                             | iam-session | 重构              |
+| 8  | Token 生成 (JWT HS256)             | iam-session | 保留              |
+| 9  | Token 验证 (签名+过期)                 | iam-session | 保留              |
+| 10 | 会话持久化 SPI (SessionStore)         | iam-session | 保留              |
+| 11 | Redis 会话存储实现                     | iam-session | 重构（合并 Hash Key） |
+| 12 | 会话验证（存在+未过期）                     | iam-session | 保留              |
+| 13 | 会话 TTL 滑窗续期                      | iam-session | **新增**          |
+| 14 | 会话主动销毁（单个）                       | iam-session | 保留              |
+| 15 | 会话批量销毁（按用户）                      | iam-session | 保留              |
+| 16 | 并发会话控制                           | iam-session | 保留              |
+| 17 | 活跃会话查询                           | iam-session | 补齐              |
+| 18 | 会话事件 (Created/Destroyed/Expired) | iam-session | **新增**          |
+| 19 | Token 刷新                         | iam-session | 补齐              |
+| 20 | 密码登录端点                           | iam-sso     | 保留              |
+| 21 | RSA 密码解密                         | iam-sso     | 保留              |
+| 22 | 密码凭证校验 SPI                       | iam-sso     | 重构              |
+| 23 | 密码匹配 (PBKDF2+MD5兼容)              | iam-sso     | 保留              |
+| 24 | 账号状态校验                           | iam-sso     | 保留              |
+| 25 | 密码过期检查                           | iam-sso     | 保留              |
+| 26 | 验证码触发判断                          | iam-sso     | 保留              |
+| 27 | 验证码生成                            | iam-sso     | 保留              |
+| 28 | 验证码校验                            | iam-sso     | 保留              |
+| 29 | 登录成功编排                           | iam-sso     | 重构              |
+| 30 | 登录失败处理                           | iam-sso     | 保留              |
+| 31 | 登录审计事件                           | iam-sso     | **新增**          |
+| 32 | 登出端点                             | iam-sso     | 保留              |
+| 33 | 登出审计事件                           | iam-sso     | **新增**          |
+| 34 | 修改密码 + 全会话失效                     | iam-sso     | 保留              |
+| 35 | 密码修改事件                           | iam-sso     | **新增**          |
+| 36 | 管理员重置密码 → 全会话失效                  | iam-sso     | **新增**（事件监听）    |
+| 37 | 用户状态变更 → 全会话失效                   | iam-sso     | **新增**（事件监听）    |
 
 **未纳入新三模块的功能（暂时保留现状，待下一步决策）：**
 
@@ -405,7 +411,7 @@ sequenceDiagram
     participant Resolver as iam-session<br/>TokenResolver
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
-    participant Identity as iam-identity<br/>IdentityContext
+    participant Identity as sh-core<br/>IdentityContext
     participant Controller as 业务 Controller
     Note over Client, Controller: === 阶段1：请求日志开始 ===
     Client ->> ReqLog: 请求 (Header: Authorization Bearer xxx)
@@ -451,7 +457,7 @@ sequenceDiagram
     autonumber
     participant Client as 前端
     participant SSO as iam-sso<br/>PasswordLoginService
-    participant Identity as iam-identity<br/>IdentityContext
+    participant Identity as sh-core<br/>IdentityContext
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
     participant Listener as iam-sso<br/>SessionEventListenerImpl
@@ -532,7 +538,7 @@ sequenceDiagram
         participant Store as SessionStore
     end
 
-    box iam-identity 用户获取契约层
+    box sh-core 用户获取契约层
         participant Ctx as IdentityContext
     end
 
@@ -552,7 +558,7 @@ sequenceDiagram
     Manager ->> Listener: onCreated(session)
     Listener ->> DB: INSERT 登录日志
     SSO -->> Client: LoginResp { token, ... }
-    Note over Client, DB: ═══ 请求验证（iam-session → iam-identity） ═══
+    Note over Client, DB: ═══ 请求验证（iam-session → sh-core） ═══
     Client ->> ReqLog: HTTP Request + Bearer token
     ReqLog ->> Filter: chain.doFilter()
     Filter ->> Manager: validateAndRefresh(token)
@@ -565,7 +571,7 @@ sequenceDiagram
     Note over Filter, ReqLog: 业务 Controller 通过 Ctx.get() 获取用户 ...
     Filter ->> Ctx: clear()
     ReqLog ->> DB: INSERT 请求日志 (异步)
-    Note over Client, DB: ═══ 登出（iam-sso → iam-session → iam-identity） ═══
+    Note over Client, DB: ═══ 登出（iam-sso → iam-session → sh-core） ═══
     Client ->> SSO: GET /iam-sso/logout
     SSO ->> Ctx: getToken()
     SSO ->> Manager: destroySession(token)
@@ -600,15 +606,15 @@ sequenceDiagram
 │        └───────┬────────┘                  │
 │                │ 依赖                       │
 │        ┌───────▼────────┐                  │
-│        │  iam-identity   │                  │
+│        │  sh-core        │                  │
 │        │  用户获取契约     │                  │
-│        │  (仅 UserIdentity│                  │
+│        │  (UserIdentity   │                  │
 │        │   + IdentityCtx) │                  │
 │        └────────────────┘                  │
 │                                            │
 │   ★ 三者无循环依赖                            │
-│   ★ iam-identity 零外部依赖（仅 JDK）         │
-│   ★ iam-session 依赖 iam-identity + Servlet  │
+│   ★ sh-core 仅 JDK 依赖（框架层）              │
+│   ★ iam-session 依赖 sh-core + Servlet      │
 │   ★ iam-sso 依赖 iam-session + DB + Redis    │
 │                                            │
 └────────────────────────────────────────────┘
@@ -623,7 +629,7 @@ sequenceDiagram
 | 模块划分              | sh-auth（框架）→ iam-sso（实现），边界模糊                                        | 三层独立：identity → session → sso，职责明确                                             |
 | LoginService 模板方法 | 抽象类包含 7 步，子类继承实现 4 个钩子                                               | 撤销模板方法，登录流程在 iam-sso 中自行编排，会话创建委托 SessionManager                               |
 | 会话管理              | 分散在 StandardLoginPipeline + RedisSessionStore + DefaultLogoutService | 集中在 SessionManager + SessionStore，对外一个入口                                       |
-| 安全上下文             | SecurityContext 混在 sh-auth 中                                         | 独立为 iam-identity，仅 2 个接口（UserIdentity + IdentityContext），零外部依赖                 |
+| 安全上下文             | SecurityContext 混在 sh-auth 中                                         | `sh-core` 中 `UserIdentity`（实体类） + `IdentityContext`（静态工具类），零外部依赖               |
 | 审计日志              | LoginService 中硬编码 recordLoginLog                                     | 会话层定义 `SessionEventListener` 接口，SSO 层实现并写入登录日志表                                |
 | 管理员操作联动           | 缺失（G1-G5）                                                            | 事件驱动：PasswordResetByAdminEvent / UserStatusChangedEvent → 监听器调用 SessionManager |
 | 会话续期              | 未实现（G6）                                                              | 滑窗续期：剩余 < 30min 时 +30min，累计最长 48h                                              |

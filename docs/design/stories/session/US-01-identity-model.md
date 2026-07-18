@@ -1,7 +1,7 @@
 # US-01：用户身份模型与请求级上下文
 
-> **模块**：iam-identity（用户获取契约层）
-> **依赖**：无（纯 JDK 依赖）
+> **归属**：`sh-core`（框架层 `com.wkclz.core.identity`）
+> **依赖**：仅 JDK + Lombok
 > **来源设计**：[session-design.md](../../session-design.md) — IDT-01, IDT-02
 
 ## 用户故事
@@ -34,36 +34,56 @@ set/get/clear 能力
 
 ## 输出
 
-- `UserIdentity` 接口
-- `IdentityContext` 接口
-- `DefaultIdentityContext` — ThreadLocal 默认实现
+| 类                 | 包                         | 说明                                   |
+|-------------------|---------------------------|--------------------------------------|
+| `UserIdentity`    | `com.wkclz.core.identity` | 用户身份实体类（含 appCode/tenantCode 线程变量）   |
+| `IdentityContext` | `com.wkclz.core.identity` | 身份上下文工具类，全部 static 方法，ThreadLocal 实现 |
 
-## 契约接口（概念）
+> 已从独立模块 `sh-identity` 迁移至框架层 `sh-core`。
+
+## 契约
 
 ```java
-// 用户身份 — 最精简的信息集
-interface UserIdentity {
-    String getUserCode();
-
-    String getUsername();
-
-    String getNickname();
-
-    String getAvatar();
-
-    // 扩展属性（小程序 openid 等场景使用）
-    Map<String, Object> getAttributes();
+// 用户身份 — 简单实体类（@Data + Serializable）
+public class UserIdentity implements Serializable {
+    private String userCode;
+    private String username;
+    private String nickname;
+    private String avatar;
+    private Map<String, Object> attributes = Collections.emptyMap();
+    // addAttribute(key, value) 便捷方法
 }
+```
 
-// 身份上下文 — 请求级，纯 ThreadLocal，零外部依赖
-interface IdentityContext {
-    void set(UserIdentity identity, String token);
+```java
+// 身份上下文 — final 类，全部 static 方法
+public final class IdentityContext {
+    // 身份
+    public static void set(UserIdentity identity, String token);
 
-    UserIdentity get();
+    public static UserIdentity get();
 
-    String getToken();
+    public static String getToken();
 
-    void clear();
+    public static String getUserCode();
+
+    public static String getUsername();
+
+    public static String getNickname();
+
+    public static String getAvatar();
+
+    // 应用/租户（独立于 UserIdentity，线程变量）
+    public static void setAppCode(String appCode);
+
+    public static String getAppCode();
+
+    public static void setTenantCode(String tenantCode);
+
+    public static String getTenantCode();
+
+    // 清理
+    public static void clear();
 }
 ```
 
@@ -74,3 +94,19 @@ interface IdentityContext {
 - [ ] `IdentityContext.clear()` 后 `get()` 返回 null
 - [ ] 不依赖任何外部框架（无 Spring、无 Servlet、无 Redis）
 - [ ] 不依赖项目中任何其他模块
+
+## 开发进度
+
+### 2026-07-18 — 迁移至 sh-core
+
+`UserIdentity` 和 `IdentityContext` 已从独立模块 `sh-identity` 迁移至框架层
+`sh-core/src/main/java/com/wkclz/core/identity/`。`UserIdentity` 使用 `@Data`（Lombok）+ `Serializable`。原 `sh-identity`
+模块已移除。
+
+### 2026-07-18 — 简化重构
+
+删除 `SimpleUserIdentity` 和 `DefaultIdentityContext`，`UserIdentity` 改为简单实体类，`IdentityContext` 改为全部 static
+方法的 final 类，新增 `getUserCode()`/`getUsername()`/`getNickname()`/`getAvatar()` + `setAppCode`/`getAppCode`/
+`setTenantCode`/`getTenantCode` 便捷方法。
+
+**验收状态：** 满足所有 5 条验收标准。
