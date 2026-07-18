@@ -1,4 +1,19 @@
-# US-04：Redis 会话存储实现
+# US-04：Redis 会话存储实现（已合并至 US-02）
+
+> **状态**：已合并 — 2026-07-18
+> **合并目标**：[US-02-session-model-spi.md](./US-02-session-model-spi.md)
+
+## 合并原因
+
+`SessionStore` 仅有一个 Redis 实现，不适合剥离接口与实现。`SessionStore` 改为具体类，原有 US-04 的 Redis Key
+设计、核心方法实现要点等内容已合并至 US-02。
+
+## 原始内容
+
+<details>
+<summary>点击展开原始设计内容</summary>
+
+---
 
 > **模块**：iam-session（会话管理层）
 > **依赖**：US-02（SessionStore 接口）
@@ -7,8 +22,7 @@
 ## 用户故事
 
 **作为** 开发者
-**我想要** 基于 Redis 的 `SessionStore` 实现，使用 Hash 结构存储 Session 字段 + ZSet 维护用户会话索引，Key 为
-`iam:session:{sessionId}` 和 `iam:session:index:{subjectId}`
+**我想要** 基于 Redis 的 `SessionStore` 实现，使用 Hash 结构存储 Session 字段 + ZSet 维护用户会话索引
 **以便** 会话数据持久化到 Redis 并支持 TTL 自动过期
 
 ## 包含功能点
@@ -17,29 +31,12 @@
 |--------|------------|-------------------------------------------------------------------|
 | SES-06 | Redis 会话存储 | `RedisSessionStore` 实现 `SessionStore` 接口，Hash + ZSet 结构，简化 Key 设计 |
 
-## 明确不包含
-
-- 不做 `SessionStore` 接口定义（属于 US-02）
-- 不做会话创建/销毁业务逻辑（属于 US-05/07）
-- 不做会话验证/续期（属于 US-06）
-
-## 输入
-
-- US-02：`SessionStore` 接口、`Session` 模型
-
-## 输出
-
-- `RedisSessionStore` 实现类
-- Redis Key 前缀常量
-
 ## Redis Key 设计
 
 | Key                             | 类型   | 内容                                                                                              | TTL          |
 |---------------------------------|------|-------------------------------------------------------------------------------------------------|--------------|
 | `iam:session:{sessionId}`       | Hash | sessionId, subjectId, authType, userIdentity(JSON), clientIp, userAgent, createTime, expireTime | 可配置 (默认 24h) |
 | `iam:session:index:{subjectId}` | ZSet | member=sessionId, score=createTime                                                              | 跟随 session   |
-
-> 相比现状从 3 个 Key 简化为 2 个，sessionId 直接使用 UUID + token 前缀，不再需要 MD5 单向映射。
 
 ## 核心方法实现要点
 
@@ -61,3 +58,7 @@
 - [ ] `refresh` 正确更新 Hash Key 的 TTL
 - [ ] 可通过配置 `iam.session.store.redis.ttl` 设置默认 TTL
 - [ ] Redis 连接异常时有合理的错误处理和日志
+
+---
+
+</details>

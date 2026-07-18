@@ -114,25 +114,24 @@ public final class IdentityContext {
 
 ### 4.1 功能点
 
-| ID         | 功能          | 说明                                                                                                                                                   | 来源                     |
-|------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|
-| **SES-01** | 会话模型        | `Session` 对象：sessionId、userId（subjectId）、authType（PASSWORD / WECHAT_MINI / LDAP / OAUTH）、createTime、expireTime、clientIp、userAgent、metadata（扩展属性 Map） | 现状 Bean.Session 扩展     |
-| **SES-02** | 会话创建        | 输入 UserIdentity + authType + 客户端信息 → 生成 Session + Token → 持久化 → 返回 (Session, Token)                                                                  | 现状 #8                  |
-| **SES-03** | Token 生成    | JWT HS256 签名，claims 仅含 userCode/username（最小信息集），TTL 可配置，默认 24h                                                                                       | 现状 #9, #10, #39        |
-| **SES-04** | Token 验证    | JWT 签名 + 过期校验，解析出 userCode/username                                                                                                                  | 现状 #9, #10             |
-| **SES-05** | 会话持久化 SPI   | `SessionStore` 接口：save / get / delete / deleteBySubjectId / getActiveSessions / refresh                                                              | 现状 #11                 |
-| **SES-06** | Redis 会话存储  | RedisSessionStore 实现：Hash 结构存储 Session 字段 + TTL + 用户会话索引 ZSet                                                                                        | 现状 #36（合并为单一 Hash Key） |
-| **SES-07** | 会话验证        | 从 Token 定位 Session，检查 Session 是否存在且未过期                                                                                                               | 现状 #5 部分               |
-| **SES-08** | 会话 TTL 滑窗续期 | 规则：剩余 TTL < 30 分钟时，续期 +30 分钟；累计最长不超过 48 小时；续期间隔可配置（如 5 分钟内不重复续）                                                                                      | **新增**（弥补现状缺口 G6）      |
-| **SES-09** | 会话主动销毁      | 销毁单个会话：删 Session + 从用户索引移除                                                                                                                           | 现状 #12, #28            |
-| **SES-10** | 会话批量销毁      | 销毁用户所有会话（改密、禁用等场景触发）：按用户索引全量删除                                                                                                                       | 现状 #12, #29            |
-| **SES-11** | 并发会话控制      | 同一用户最大活跃会话数限制，超出时踢最早会话（按创建时间排序）；maxConcurrent 可配置（0=不限制）                                                                                             | 现状 #13, #37            |
-| **SES-12** | 活跃会话查询      | 按用户查询所有活跃 Session 列表（含 sessionId、创建时间、IP、UA 等元数据）                                                                                                    | 现状 #11 补齐              |
-| **SES-13** | 会话事件 SPI    | `SessionEventListener` 接口（onCreated / onDestroyed / onExpired），由会话层定义，SSO 层提供审计实现；Spring EventBus 做消息路由                                              | **新增**                 |
-| **SES-14** | Token 刷新    | 基于旧 Token 签发新 Token（新 iat/exp），同步更新 Session 中的 Token 绑定                                                                                              | 现状 #9（未集成，需补齐 G9）      |
-| **SES-15** | Token 提取    | 从 HTTP 请求中提取 token 的 SPI（默认：`Authorization: Bearer xxx` 头 > `token` 自定义头）                                                                            | 从 sh-core 下沉           |
-| **SES-16** | 白名单路径匹配     | 定义哪些路径不需要身份验证（Ant 风格路径匹配，默认 `/public/**`），提供 `isWhiteListed(uri)` 方法                                                                                 | 从 sh-core 下沉           |
-| **SES-17** | 身份上下文清理     | 请求结束后在 Filter/Interceptor 的 finally 块中调用 `IdentityContext.clear()`，防止内存泄漏                                                                            | 从 sh-core 下沉           |
+| ID         | 功能          | 说明                                                                                                                                                               | 来源                    |
+|------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|
+| **SES-01** | 会话模型        | `Session` 对象：sessionId、userId（subjectId）、authType（PASSWORD / WECHAT_MINI / WECHAT_MP / LDAP / OAUTH）、createTime、expireTime、clientIp、userAgent、metadata（扩展属性 Map） | 现状 Bean.Session 扩展    |
+| **SES-02** | 会话创建        | 输入 UserIdentity + authType + 客户端信息 → 生成 Session + Token → 持久化 → 返回 (Session, Token)                                                                              | 现状 #8                 |
+| **SES-03** | Token 生成    | JWT HS256 签名，claims 仅含 userCode/username（最小信息集），TTL 可配置，默认 24h                                                                                                   | 现状 #9, #10, #39       |
+| **SES-04** | Token 验证    | JWT 签名 + 过期校验，解析出 userCode/username                                                                                                                              | 现状 #9, #10            |
+| **SES-05** | 会话持久化       | `SessionStore` 具体类（直接依赖 Redis），Hash + ZSet 结构，方法：save / get / delete / deleteBySubjectId / refresh / getSessionIds                                               | 现状 #11, #36（合并 US-04） |
+| **SES-07** | 会话验证        | 从 Token 定位 Session，检查 Session 是否存在且未过期                                                                                                                           | 现状 #5 部分              |
+| **SES-08** | 会话 TTL 滑窗续期 | 规则：剩余 TTL < 30 分钟时，续期 +30 分钟；累计最长不超过 48 小时；续期间隔可配置（如 5 分钟内不重复续）                                                                                                  | **新增**（弥补现状缺口 G6）     |
+| **SES-09** | 会话主动销毁      | 销毁单个会话：删 Session + 从用户索引移除                                                                                                                                       | 现状 #12, #28           |
+| **SES-10** | 会话批量销毁      | 销毁用户所有会话（改密、禁用等场景触发）：按用户索引全量删除                                                                                                                                   | 现状 #12, #29           |
+| **SES-11** | 并发会话控制      | 同一用户最大活跃会话数限制，超出时踢最早会话（按创建时间排序）；maxConcurrent 可配置（0=不限制）                                                                                                         | 现状 #13, #37           |
+| **SES-12** | 活跃会话查询      | 按用户查询所有活跃 Session 列表（含 sessionId、创建时间、IP、UA 等元数据）                                                                                                                | 现状 #11 补齐             |
+| **SES-13** | 会话事件 SPI    | `SessionEventListener` 接口（onCreated / onDestroyed / onExpired），由会话层定义，SSO 层提供审计实现；Spring EventBus 做消息路由                                                          | **新增**                |
+| **SES-14** | Token 刷新    | 基于旧 Token 签发新 Token（新 iat/exp），同步更新 Session 中的 Token 绑定                                                                                                          | 现状 #9（未集成，需补齐 G9）     |
+| **SES-15** | Token 提取    | 从 HTTP 请求中提取 token 的 SPI（默认：`Authorization: Bearer xxx` 头 > `token` 自定义头）                                                                                        | 从 sh-core 下沉          |
+| **SES-16** | 白名单路径匹配     | 定义哪些路径不需要身份验证（Ant 风格路径匹配，默认 `/public/**`），提供 `isWhiteListed(uri)` 方法                                                                                             | 从 sh-core 下沉          |
+| **SES-17** | 身份上下文清理     | 请求结束后在 Filter/Interceptor 的 finally 块中调用 `IdentityContext.clear()`，防止内存泄漏                                                                                        | 从 sh-core 下沉          |
 
 ### 4.2 明确不包含
 
@@ -163,18 +162,13 @@ interface SessionManager {
     Token refreshToken(String oldToken);
 }
 
-// Session 存储 SPI — 可替换实现
-interface SessionStore {
+// Session 存储 — 具体类，直接依赖 StringRedisTemplate
+class SessionStore {
     void save(Session session, long ttlSeconds);
-
     Session get(String sessionId);
-
     void delete(String sessionId);
-
     void deleteBySubjectId(String subjectId);
-
     void refresh(String sessionId, long ttlSeconds);
-
     List<String> getSessionIds(String subjectId);
 }
 
@@ -206,12 +200,13 @@ enum DestroyReason {
 
 ### 4.4 Redis Key 设计（简化）
 
-| Key                             | 类型   | 内容                                                                                              | TTL        |
-|---------------------------------|------|-------------------------------------------------------------------------------------------------|------------|
-| `iam:session:{sessionId}`       | Hash | sessionId, subjectId, authType, userIdentity(JSON), clientIp, userAgent, createTime, expireTime | 可配置 (24h)  |
-| `iam:session:index:{subjectId}` | ZSet | member=sessionId, score=createTime                                                              | 跟随 session |
+| Key                             | 类型   | 内容                                                                                                              | TTL        |
+|---------------------------------|------|-----------------------------------------------------------------------------------------------------------------|------------|
+| `iam:session:{sessionId}`       | Hash | sessionId(MD5), subjectId, authType, userIdentity(JSON), clientIp, userAgent, createTime, expireTime, token(原始) | 可配置 (24h)  |
+| `iam:session:index:{subjectId}` | ZSet | member=sessionId(MD5), score=createTime                                                                         | 跟随 session |
 
-相比现状从 3 个 Key 简化为 2 个，且 sessionId 不再需要 MD5（直接使用 UUID + token 前缀）。
+相比现状从 3 个 Key 简化为 2 个。sessionId = MD5(token)，固定 32 字符，方便 Redis 管理工具浏览。Hash 内存储原始 token
+用于反向定位。
 
 ---
 
@@ -287,45 +282,44 @@ interface PasswordEncoder {
 
 以下将从现状分析中梳理出的全部功能点重新分配到新模块，并标注新增项。
 
-| #  | 功能点                              | 归属模块        | 状态              |
-|----|----------------------------------|-------------|-----------------|
-| 1  | 用户身份模型 (UserIdentity)            | sh-core     | 已完成             |
-| 2  | 请求级身份上下文 (IdentityContext)       | sh-core     | 已完成             |
-| 3  | Token 提取 (TokenResolver)         | iam-session | 下沉              |
-| 4  | 白名单路径匹配                          | iam-session | 下沉              |
-| 5  | 身份上下文自动清理                        | iam-session | 下沉              |
-| 6  | 会话模型 (Session)                   | iam-session | 重构              |
-| 7  | 会话创建                             | iam-session | 重构              |
-| 8  | Token 生成 (JWT HS256)             | iam-session | 保留              |
-| 9  | Token 验证 (签名+过期)                 | iam-session | 保留              |
-| 10 | 会话持久化 SPI (SessionStore)         | iam-session | 保留              |
-| 11 | Redis 会话存储实现                     | iam-session | 重构（合并 Hash Key） |
-| 12 | 会话验证（存在+未过期）                     | iam-session | 保留              |
-| 13 | 会话 TTL 滑窗续期                      | iam-session | **新增**          |
-| 14 | 会话主动销毁（单个）                       | iam-session | 保留              |
-| 15 | 会话批量销毁（按用户）                      | iam-session | 保留              |
-| 16 | 并发会话控制                           | iam-session | 保留              |
-| 17 | 活跃会话查询                           | iam-session | 补齐              |
-| 18 | 会话事件 (Created/Destroyed/Expired) | iam-session | **新增**          |
-| 19 | Token 刷新                         | iam-session | 补齐              |
-| 20 | 密码登录端点                           | iam-sso     | 保留              |
-| 21 | RSA 密码解密                         | iam-sso     | 保留              |
-| 22 | 密码凭证校验 SPI                       | iam-sso     | 重构              |
-| 23 | 密码匹配 (PBKDF2+MD5兼容)              | iam-sso     | 保留              |
-| 24 | 账号状态校验                           | iam-sso     | 保留              |
-| 25 | 密码过期检查                           | iam-sso     | 保留              |
-| 26 | 验证码触发判断                          | iam-sso     | 保留              |
-| 27 | 验证码生成                            | iam-sso     | 保留              |
-| 28 | 验证码校验                            | iam-sso     | 保留              |
-| 29 | 登录成功编排                           | iam-sso     | 重构              |
-| 30 | 登录失败处理                           | iam-sso     | 保留              |
-| 31 | 登录审计事件                           | iam-sso     | **新增**          |
-| 32 | 登出端点                             | iam-sso     | 保留              |
-| 33 | 登出审计事件                           | iam-sso     | **新增**          |
-| 34 | 修改密码 + 全会话失效                     | iam-sso     | 保留              |
-| 35 | 密码修改事件                           | iam-sso     | **新增**          |
-| 36 | 管理员重置密码 → 全会话失效                  | iam-sso     | **新增**（事件监听）    |
-| 37 | 用户状态变更 → 全会话失效                   | iam-sso     | **新增**（事件监听）    |
+| #  | 功能点                              | 归属模块        | 状态           |
+|----|----------------------------------|-------------|--------------|
+| 1  | 用户身份模型 (UserIdentity)            | sh-core     | 已完成          |
+| 2  | 请求级身份上下文 (IdentityContext)       | sh-core     | 已完成          |
+| 3  | Token 提取 (TokenResolver)         | iam-session | 下沉           |
+| 4  | 白名单路径匹配                          | iam-session | 下沉           |
+| 5  | 身份上下文自动清理                        | iam-session | 下沉           |
+| 6  | 会话模型 (Session)                   | iam-session | 重构           |
+| 7  | 会话创建                             | iam-session | 重构           |
+| 8  | Token 生成 (JWT HS256)             | iam-session | 保留           |
+| 9  | Token 验证 (签名+过期)                 | iam-session | 保留           |
+| 10 | 会话持久化 (SessionStore)             | iam-session | 重构（合并 US-04） |
+| 11 | 会话验证（存在+未过期）                     | iam-session | 保留           |
+| 13 | 会话 TTL 滑窗续期                      | iam-session | **新增**       |
+| 14 | 会话主动销毁（单个）                       | iam-session | 保留           |
+| 15 | 会话批量销毁（按用户）                      | iam-session | 保留           |
+| 16 | 并发会话控制                           | iam-session | 保留           |
+| 17 | 活跃会话查询                           | iam-session | 补齐           |
+| 18 | 会话事件 (Created/Destroyed/Expired) | iam-session | **新增**       |
+| 19 | Token 刷新                         | iam-session | 补齐           |
+| 20 | 密码登录端点                           | iam-sso     | 保留           |
+| 21 | RSA 密码解密                         | iam-sso     | 保留           |
+| 22 | 密码凭证校验 SPI                       | iam-sso     | 重构           |
+| 23 | 密码匹配 (PBKDF2+MD5兼容)              | iam-sso     | 保留           |
+| 24 | 账号状态校验                           | iam-sso     | 保留           |
+| 25 | 密码过期检查                           | iam-sso     | 保留           |
+| 26 | 验证码触发判断                          | iam-sso     | 保留           |
+| 27 | 验证码生成                            | iam-sso     | 保留           |
+| 28 | 验证码校验                            | iam-sso     | 保留           |
+| 29 | 登录成功编排                           | iam-sso     | 重构           |
+| 30 | 登录失败处理                           | iam-sso     | 保留           |
+| 31 | 登录审计事件                           | iam-sso     | **新增**       |
+| 32 | 登出端点                             | iam-sso     | 保留           |
+| 33 | 登出审计事件                           | iam-sso     | **新增**       |
+| 34 | 修改密码 + 全会话失效                     | iam-sso     | 保留           |
+| 35 | 密码修改事件                           | iam-sso     | **新增**       |
+| 36 | 管理员重置密码 → 全会话失效                  | iam-sso     | **新增**（事件监听） |
+| 37 | 用户状态变更 → 全会话失效                   | iam-sso     | **新增**（事件监听） |
 
 **未纳入新三模块的功能（暂时保留现状，待下一步决策）：**
 
