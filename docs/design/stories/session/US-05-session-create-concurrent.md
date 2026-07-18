@@ -40,22 +40,40 @@ Session + Token），并在超出最大并发数时自动踢出最早会话
 ## 核心流程
 
 ```
-createSession(userIdentity, authType, clientIp, userAgent):
-  1. TokenService.generateToken(userCode, username) → token
-  2. 构建 Session 对象（sessionId = token）
-  3. 并发控制 enforceMaxConcurrent(subjectId):
-     a. 查当前活跃会话数 = ZCARD index:{subjectId}
-     b. 若 >= maxConcurrent → ZRANGE 取最早 sessionId → 删除
-  4. SessionStore.save(session, ttl)
-  5. 发布 SessionCreatedEvent（委托 US-08 的事件机制）
+createSession(userIdentity, authType):
+  1. TokenService.generateToken(userCode, username, nickname) → token
+  2. sessionId = MD5(token)（固定 32 字符）
+  3. 构建 Session 对象（sessionId=MD5, subjectId, authType, token, createTime, expireTime）
+  4. 并发控制 enforceMaxConcurrent(subjectId):
+     a. Lua 脚本原子执行 ZCARD → ZRANGE(0,0) → DEL + ZREM
+     b. 循环执行直到 count < maxConcurrent
+  5. SessionStore.save(session, ttl)
   6. 返回 SessionCreateResult(token, session)
 ```
 
 ## 验收标准
 
-- [ ] 传入 UserIdentity + authType + clientIp + userAgent → 返回 SessionCreateResult(token, session)
-- [ ] Token 作为 sessionId 存入 Session
+- [ ] 传入 UserIdentity + authType → 返回 SessionCreateResult(token, session)
+- [ ] sessionId = MD5(token)，固定 32 字符
 - [ ] `maxConcurrent` 通过 `iam.session.max-concurrent` 配置，默认 0（不限制）
 - [ ] 并发控制通过 Lua 脚本保证原子性（ZRANGE + DEL 在同一脚本中）
 - [ ] 超出限制时踢出创建时间最早的会话，日志记录被踢会话信息
 - [ ] 会话创建成功后 Session 已持久化到 Redis
+
+## 开发进度
+
+### 2026-07-18 — 实现完成
+
+**创建文件：**
+
+| 文件                                | 说明                                           |
+|-----------------------------------|----------------------------------------------|
+| `bean/SessionCreateResult.java`   | 创建结果（token + session）                        |
+| `service/SessionManager.java`     | 会话管理器（`@Component`，createSession + Lua 并发控制） |
+| `service/SessionManagerTest.java` | 7 个测试用例（创建/关联/持久化/并发/配置）                     |
+
+**变更：**
+
+- `config/IamSessionConfig.java` 新增 `maxConcurrent` 字段（默认 0）
+
+**验收状态：** 满足全部 6 条验收标准，IDE 诊断零错误。

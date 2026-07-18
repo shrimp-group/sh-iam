@@ -51,15 +51,17 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-session (`com.wkclz.iam.session`) — 会话管理层（新增）
 
-| 包         | 类                           | 说明                                                                         |
-|-----------|-----------------------------|----------------------------------------------------------------------------|
-| `bean`    | `Session`                   | 会话领域模型（8 字段，不含 clientIp/userAgent，由 SSO 层从 Request 实时获取）                   |
-| `bean`    | `TokenInfo`                 | Token 解析结果（userCode/username/nickname）                                     |
-| `enums`   | `AuthType`                  | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）                          |
-| `service` | `SessionStore`              | 会话持久化具体类（@Component，Redis Hash+ZSet，无接口分离）                                 |
-| `service` | `TokenService`              | JWT 令牌服务（@Service，HS256 签名，generate/verify/refresh，含配置校验）                  |
-| `config`  | `IamSessionTokenProperties` | Token 配置 `iam.session.token.secret-key` / `ttl`                            |
-| 根包        | `IamSessionAutoConfig`      | 自动配置（@AutoConfiguration + @ComponentScan + @EnableConfigurationProperties） |
+| 包         | 类                      | 说明                                                 |
+|-----------|------------------------|----------------------------------------------------|
+| `bean`    | `Session`              | 会话领域模型（8 字段，不含 clientIp/userAgent）                 |
+| `bean`    | `SessionCreateResult`  | 会话创建结果（token + session）                            |
+| `bean`    | `TokenInfo`            | Token 解析结果（userCode/username/nickname）             |
+| `enums`   | `AuthType`             | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）  |
+| `service` | `SessionManager`       | 会话管理器（@Component，createSession + Lua 并发控制）         |
+| `service` | `SessionStore`         | 会话持久化（@Component，Redis Hash+ZSet）                  |
+| `service` | `TokenService`         | JWT 令牌服务（@Service，HS256 签名）                        |
+| `config`  | `IamSessionConfig`     | iam-session 全局配置（secret-key / ttl / maxConcurrent） |
+| 根包        | `IamSessionAutoConfig` | 自动配置（@AutoConfiguration + @ComponentScan）          |
 
 > 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）。认证方式无关，仅管理会话生命周期。
 
