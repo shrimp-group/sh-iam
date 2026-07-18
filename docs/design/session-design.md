@@ -200,10 +200,10 @@ enum DestroyReason {
 
 ### 4.4 Redis Key 设计（简化）
 
-| Key                             | 类型   | 内容                                                                                                              | TTL        |
-|---------------------------------|------|-----------------------------------------------------------------------------------------------------------------|------------|
-| `iam:session:{sessionId}`       | Hash | sessionId(MD5), subjectId, authType, userIdentity(JSON), clientIp, userAgent, createTime, expireTime, token(原始) | 可配置 (24h)  |
-| `iam:session:index:{subjectId}` | ZSet | member=sessionId(MD5), score=createTime                                                                         | 跟随 session |
+| Key                             | 类型   | 内容                                                                                         | TTL        |
+|---------------------------------|------|--------------------------------------------------------------------------------------------|------------|
+| `iam:session:{sessionId}`       | Hash | sessionId(MD5), subjectId, authType, token(原始), userIdentity(JSON), createTime, expireTime | 可配置 (24h)  |
+| `iam:session:index:{subjectId}` | ZSet | member=sessionId(MD5), score=createTime                                                    | 跟随 session |
 
 相比现状从 3 个 Key 简化为 2 个。sessionId = MD5(token)，固定 32 字符，方便 Redis 管理工具浏览。Hash 内存储原始 token
 用于反向定位。

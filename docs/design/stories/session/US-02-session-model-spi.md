@@ -44,11 +44,11 @@
 | authType     | AuthType              | 认证方式                        |
 | token        | String                | 原始 JWT Token（存储于 Hash 中）    |
 | userIdentity | String                | UserIdentity 的 JSON 序列化     |
-| clientIp     | String                | 客户端 IP                      |
-| userAgent    | String                | 客户端 UA                      |
 | createTime   | long                  | 创建时间戳（毫秒）                   |
 | expireTime   | long                  | 过期时间戳（毫秒）                   |
 | metadata     | Map\<String, String\> | 扩展属性                        |
+
+> clientIp / userAgent 不存储在 Session 中，由 SSO 层每次请求从 HttpServletRequest 实时获取。
 
 ## 契约
 
@@ -62,15 +62,13 @@ enum AuthType {
     OAUTH          // OAuth 2.0
 }
 
-// 会话模型
+// 会话模型（8 字段，不含 clientIp/userAgent）
 class Session {
     String sessionId;   // MD5(token)，固定 32 字符
     String subjectId;
     AuthType authType;
     String token;       // 原始 JWT Token
     String userIdentity; // JSON
-    String clientIp;
-    String userAgent;
     long createTime;
     long expireTime;
     Map<String, String> metadata;
@@ -92,23 +90,23 @@ class SessionStore {
 
 ## Redis Key 设计
 
-| Key                             | 类型   | 内容                                                                                                              | TTL          |
-|---------------------------------|------|-----------------------------------------------------------------------------------------------------------------|--------------|
-| `iam:session:{sessionId}`       | Hash | sessionId(MD5), subjectId, authType, userIdentity(JSON), clientIp, userAgent, createTime, expireTime, token(原始) | 可配置 (默认 24h) |
-| `iam:session:index:{subjectId}` | ZSet | member=sessionId(MD5), score=createTime                                                                         | 跟随 session   |
+| Key                             | 类型   | 内容                                                                                         | TTL          |
+|---------------------------------|------|--------------------------------------------------------------------------------------------|--------------|
+| `iam:session:{sessionId}`       | Hash | sessionId(MD5), subjectId, authType, token(原始), userIdentity(JSON), createTime, expireTime | 可配置 (默认 24h) |
+| `iam:session:index:{subjectId}` | ZSet | member=sessionId(MD5), score=createTime                                                    | 跟随 session   |
 
 > sessionId = MD5(token)，固定 32 字符，方便 Redis 管理工具浏览。Hash 内存储原始 token 字段用于反向定位。
 
 ## 核心方法实现要点
 
-| 方法                   | Redis 操作                                                                                               |
-|----------------------|--------------------------------------------------------------------------------------------------------|
-| `save(session, ttl)` | `HSET iam:session:{MD5} field value...` + `EXPIRE {ttl}` + `ZADD index:{subjectId} {createTime} {MD5}` |
-| `get(sessionId)`     | `HGETALL iam:session:{MD5}` → 反序列化为 Session                                                            |
-| `delete(sessionId)`  | `DEL iam:session:{MD5}` + `ZREM index:{subjectId} {MD5}`                                               |
-| `deleteBySubjectId`  | `ZRANGE index:{sub} 0 -1` → Pipeline 批量 `DEL` session Key → `DEL` index Key                            |
-| `refresh(id, ttl)`   | `EXPIRE iam:session:{MD5} {ttl}`                                                                       |
-| `getSessionIds(sub)` | `ZRANGE index:{sub} 0 -1`                                                                              |
+| 方法                   | Redis 操作                                                                    |
+|----------------------|-----------------------------------------------------------------------------|
+| `save(session, ttl)` | `putAll` 一次性 HSET + Pipeline 批量 EXPIRE + ZADD（共 3 次 Redis 调用）               |
+| `get(sessionId)`     | `HGETALL iam:session:{MD5}` → 反序列化为 Session                                 |
+| `delete(sessionId)`  | `DEL iam:session:{MD5}` + `ZREM index:{subjectId} {MD5}`                    |
+| `deleteBySubjectId`  | `ZRANGE index:{sub} 0 -1` → Pipeline 批量 `DEL` session Key → `DEL` index Key |
+| `refresh(id, ttl)`   | `EXPIRE iam:session:{MD5} {ttl}`                                            |
+| `getSessionIds(sub)` | `ZRANGE index:{sub} 0 -1`                                                   |
 
 ## 验收标准
 
@@ -124,6 +122,25 @@ class SessionStore {
 - [ ] Redis 连接异常时有合理的错误处理和日志
 
 ## 开发进度
+
+### 2026-07-18 — 实现完成
+
+**创建文件：**
+
+| 文件                          | 说明                                                   |
+|-----------------------------|------------------------------------------------------|
+| `iam-session/pom.xml`       | Maven 模块，父 POM sh-iam，依赖 sh-core + sh-redis          |
+| `AuthType.java`             | 5 种认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH） |
+| `Session.java`              | 会话领域模型，10 个字段，含 token 原始值                            |
+| `SessionStore.java`         | 会话持久化具体类（@Component），Redis Hash+ZSet + Pipeline 批量删除 |
+| `IamSessionAutoConfig.java` | 自动配置（@AutoConfiguration + @ComponentScan）            |
+| `AuthTypeTest.java`         | 7 个测试用例                                              |
+| `SessionTest.java`          | 5 个测试用例                                              |
+| `SessionStoreTest.java`     | 7 个测试用例（Mockito mock Redis）                          |
+
+**Maven 坐标：** groupId=`com.wkclz.iam`，artifactId=`iam-session`
+
+**验收状态：** 满足全部 10 条验收标准，IDE 诊断零错误。
 
 ### 2026-07-18 — 设计优化
 
