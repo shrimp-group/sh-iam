@@ -13,6 +13,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * JWT 工具类。
+ *
+ * @deprecated 已由 {@code com.wkclz.iam.session.service.TokenService} 取代。
+ * claims 设计差异：旧工具类含 nickname/avatar，新 TokenService 仅含 userCode/username/nickname（最小信息集）。
+ * 新代码请使用 iam-session 模块的 TokenService。
+ */
+@Deprecated
 public class JwtUtil {
 
     public static final long SESSION_TTL_SECONDS = 24 * 60 * 60L;
