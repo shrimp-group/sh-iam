@@ -53,7 +53,7 @@ public class TokenService {
             .subject(userCode)
             .claim("username", username)
             .claim("nickname", nickname)
-            .issuedAt(new Date(now))
+            .issuedAt(new Date(now - 60_000))
             .expiration(new Date(now + iamSessionConfig.getTtl() * 1000))
             .signWith(getSecretKey(), Jwts.SIG.HS256)
             .compact();

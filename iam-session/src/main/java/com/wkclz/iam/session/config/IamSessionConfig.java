@@ -20,9 +20,9 @@ public class IamSessionConfig {
     private String secretKey;
 
     /**
-     * Token TTL（秒），默认 24h
+     * Token TTL（秒），默认 48h
      */
-    @Value(("${iam.session.token.ttl:86400}"))
+    @Value(("${iam.session.token.ttl:172800}"))
     private Long ttl;
 
     /**
