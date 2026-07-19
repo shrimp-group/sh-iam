@@ -16,8 +16,7 @@ import com.wkclz.iam.session.service.SessionManager;
 import com.wkclz.iam.sso.bean.req.LoginReq;
 import com.wkclz.iam.sso.bean.resp.LoginResp;
 import com.wkclz.iam.sso.config.IamSsoConfig;
-import com.wkclz.iam.sso.event.LoginFailedEvent;
-import com.wkclz.iam.sso.event.LoginSuccessEvent;
+import com.wkclz.iam.sso.event.LoginEvent;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
 import com.wkclz.iam.sso.spi.CredentialChecker;
@@ -130,7 +129,7 @@ public class PasswordLoginService {
         ssoLoginMapper.updateUserLoginInfo(userAuth);
 
         // 发布登录成功事件
-        eventPublisher.publishEvent(new LoginSuccessEvent(username, userIdentity.getUserCode(), clientIp, userAgent, sessionResult.getToken()));
+        eventPublisher.publishEvent(LoginEvent.success(username, userIdentity.getUserCode(), clientIp, userAgent, sessionResult.getToken()));
 
         // 构建成功响应
         LoginResp resp = new LoginResp();
@@ -217,7 +216,7 @@ public class PasswordLoginService {
      * 构建认证失败的响应，并发布 LoginFailedEvent。
      */
     private LoginResp failResp(LoginStatus loginStatus, String username, String clientIp, String userAgent) {
-        eventPublisher.publishEvent(new LoginFailedEvent(username, clientIp, userAgent, loginStatus));
+        eventPublisher.publishEvent(LoginEvent.failed(username, clientIp, userAgent, loginStatus));
 
         LoginResp resp = new LoginResp();
         resp.setLoginStatus(loginStatus.getCode());
