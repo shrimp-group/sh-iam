@@ -13,13 +13,13 @@ import com.wkclz.iam.common.entity.IamUser;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
-import com.wkclz.iam.sdk.bean.enums.AuthType;
+import com.wkclz.iam.session.enums.AuthType;
+import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
-import com.wkclz.tool.utils.SecretUtil;
 import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.tool.utils.SecretUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,11 +33,13 @@ import java.time.LocalDateTime;
  * @author shrimp
  * @table iam_user (用户表) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_user 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamUserService extends BaseService<IamUser, IamUserMapper> {
 
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @Autowired
     private RedisIdGenerator redisIdGenerator;
     @Autowired
@@ -105,7 +107,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         IamUserAuthPassword pwd = new IamUserAuthPassword();
         pwd.setUserCode(dto.getUserCode());
         pwd.setSalt(SecretUtil.getKey());
-        pwd.setPassword(PasswordHelper.generatePassword(dto.getPassword(), pwd.getSalt()));
+        pwd.setPassword(passwordEncoder.encode(dto.getPassword(), pwd.getSalt()));
         pwd.setLastChangedTime(LocalDateTime.now());
         iamUserAuthPasswordMapper.insert(pwd);
 

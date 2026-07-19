@@ -1,26 +1,26 @@
 package com.wkclz.iam.sso.service;
 
 import com.wkclz.core.exception.UserException;
-import com.wkclz.iam.common.dto.IamUserAuthDto;
+import com.wkclz.core.identity.UserIdentity;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
-import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
-import com.wkclz.iam.sdk.helper.CaptchaHelper;
-import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sdk.bean.req.LoginReq;
 import com.wkclz.iam.sdk.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sdk.facade.SsoFacade;
+import com.wkclz.iam.sdk.helper.CaptchaHelper;
+import com.wkclz.iam.sdk.helper.SessionHelper;
+import com.wkclz.iam.session.enums.AuthType;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
+import com.wkclz.iam.sso.spi.CredentialChecker;
+import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.tool.tools.RsaTool;
-import com.wkclz.tool.utils.SecretUtil;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,8 +33,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 @Service
@@ -54,6 +52,10 @@ public class IamLoginService {
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
     private IamSessionService iamSessionService;
+    @Autowired
+    private CredentialChecker credentialChecker;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * 1. 用户不存在
@@ -77,8 +79,6 @@ public class IamLoginService {
             password = RsaTool.decryptByPrivateKey(password, privateKey);
         }
 
-        IamUserAuthDto auth = ssoLoginMapper.getUserAuth4PasswordByUsername(username);
-
         // 0. 需要验证码
         IamLoginLog param = new IamLoginLog();
         param.setAuthIdentifier(username);
@@ -87,7 +87,7 @@ public class IamLoginService {
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
                 && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 距离上次登录失败，在 1 小时内，需要验证码", username, lastLoginIn1Hour);
-            loginLog(loginReq, auth, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
+            loginLog(loginReq, LoginStatus.NEED_CAPTCHA, AuthType.PASSWORD);
             return failResp(LoginStatus.NEED_CAPTCHA);
         }
 
@@ -98,75 +98,57 @@ public class IamLoginService {
 
             // 验证码不存在或已过期
             if (StringUtils.isBlank(redisCaptchaCode)) {
-                loginLog(loginReq, auth, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
+                loginLog(loginReq, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
                 return failResp(LoginStatus.CAPTCHA_TIMEOUT);
             }
             // 验证码错误
             if (!captchaCode.equalsIgnoreCase(redisCaptchaCode)) {
-                loginLog(loginReq, auth, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
+                loginLog(loginReq, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
                 return failResp(LoginStatus.INVALID_CAPTCHA);
             }
         }
 
 
-        // 1. 用户不存在
-        if (auth ==  null) {
-            loginLog(loginReq, auth, LoginStatus.USER_NOT_FOUND, AuthType.PASSWORD);
-            return failResp(LoginStatus.USER_NOT_FOUND, "用户不存在, 或密码错误!");
+        // 凭证校验（委托 CredentialChecker：存在 → 禁用 → 锁定 → 认证禁用 → 密码匹配 → 密码过期）
+        CredentialCheckResult result = credentialChecker.check(username, password);
+
+        if (!result.isSuccess()) {
+            LoginStatus status = switch (result.getFailReason()) {
+                case USER_NOT_FOUND -> LoginStatus.USER_NOT_FOUND;
+                case AUTH_DISABLED -> LoginStatus.EXPIRED_ACCOUNT;
+                case LOCKED -> LoginStatus.ACCOUNT_LOCKED;
+                case DISABLED -> LoginStatus.ACCOUNT_DISABLED;
+                case PASSWORD_ERROR -> LoginStatus.INVALID_CREDENTIALS;
+                case PASSWORD_EXPIRED -> LoginStatus.EXPIRED_PASSWORD;
+            };
+            loginLog(loginReq, status, AuthType.PASSWORD);
+            return failResp(status, result.getFailReason() == CredentialCheckResult.FailReason.USER_NOT_FOUND
+                ? "用户不存在, 或密码错误!" : status.getMessage());
         }
 
-        // 2. 登录方式已禁用
-        if (auth.getAuthStatus().equals(0)) {
-            loginLog(loginReq, auth, LoginStatus.EXPIRED_ACCOUNT, AuthType.PASSWORD);
-            return failResp(LoginStatus.EXPIRED_ACCOUNT);
-        }
-
-        // 3. 用户已锁定
-        if (auth.getUserStatus().equals(3)) {
-            loginLog(loginReq, auth, LoginStatus.ACCOUNT_LOCKED, AuthType.PASSWORD);
-            return failResp(LoginStatus.ACCOUNT_LOCKED);
-        }
-
-        // 4. 用户已禁用
-        if (auth.getUserStatus().equals(2)) {
-            loginLog(loginReq, auth, LoginStatus.ACCOUNT_DISABLED, AuthType.PASSWORD);
-            return failResp(LoginStatus.ACCOUNT_DISABLED);
-        }
-
-        // 5. 密码错误
-        if (!PasswordHelper.validatePassword(password, auth.getSalt(), auth.getPassword())) {
-            loginLog(loginReq, auth, LoginStatus.INVALID_CREDENTIALS, AuthType.PASSWORD);
-            return failResp(LoginStatus.INVALID_CREDENTIALS);
-        }
-
-        // 6. 密码已过期
-        Integer passwordExpireDays = iamSsoConfig.getPasswordExpireDays();
-
-        ZonedDateTime zonedDateTime = auth.getLastChangedTime().atZone(ZoneId.systemDefault());
-        long timestamp = zonedDateTime.toInstant().toEpochMilli();
-        long passwordExpireAt = timestamp + passwordExpireDays * 24 * 60 * 60 * 1000L;
-        if (passwordExpireAt < System.currentTimeMillis()) {
-            loginLog(loginReq, auth, LoginStatus.EXPIRED_PASSWORD, AuthType.PASSWORD);
-            return failResp(LoginStatus.EXPIRED_PASSWORD);
-        }
-
-        // 7. 登录成功，通过 SsoFacade 创建会话
+        // 登录成功，通过 SsoFacade 创建会话
+        UserIdentity userIdentity = result.getUserIdentity();
         SessionCreateReq sessionCreateReq = new SessionCreateReq();
-        sessionCreateReq.setUserCode(auth.getUserCode());
-        sessionCreateReq.setUsername(auth.getUsername());
-        sessionCreateReq.setAuthIdentifier(auth.getAuthIdentifier());
-        sessionCreateReq.setNickname(auth.getNickname());
-        sessionCreateReq.setAvatar(auth.getAvatar());
-        sessionCreateReq.setAuthType(auth.getAuthType());
-        log.info("用户 {} 认证成功，调用 SsoFacade 创建会话", auth.getAuthIdentifier());
+        sessionCreateReq.setUserCode(userIdentity.getUserCode());
+        sessionCreateReq.setUsername(userIdentity.getUsername());
+        sessionCreateReq.setAuthIdentifier(username);
+        sessionCreateReq.setNickname(userIdentity.getNickname());
+        sessionCreateReq.setAvatar(userIdentity.getAvatar());
+        sessionCreateReq.setAuthType(AuthType.PASSWORD.name());
+        log.info("用户 {} 认证成功，调用 SsoFacade 创建会话", username);
 
         LoginResp response = ssoFacade.login(sessionCreateReq);
 
         // 登录成功，需要更新的信息
         IamUserAuth userAuth = new IamUserAuth();
-        userAuth.setId(auth.getId());
+        userAuth.setUserCode(userIdentity.getUserCode());
+        userAuth.setAuthIdentifier(username);
         userAuth.setLastLoginIp(IpHelper.getOriginIp(request));
+        // 通过 userCode + authIdentifier 更新登录信息
         ssoLoginMapper.updateUserLoginInfo(userAuth);
+
+        // 记录登录成功日志
+        loginLog(loginReq, LoginStatus.SUCCESS, AuthType.PASSWORD);
 
         return response;
     }
@@ -205,17 +187,19 @@ public class IamLoginService {
             throw UserException.of("用户密码记录不存在");
         }
 
-        if (!PasswordHelper.validatePassword(oldPassword, currentPwd.getSalt(), currentPwd.getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, currentPwd.getSalt(), currentPwd.getPassword())) {
             throw UserException.of("旧密码错误");
         }
 
         List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, 3);
-        if (PasswordHelper.isPasswordInHistory(newPassword, historyList)) {
-            throw UserException.of("新密码不能与最近3次使用过的密码相同");
+        for (IamUserPasswordHis his : historyList) {
+            if (passwordEncoder.matches(newPassword, his.getSalt(), his.getPassword())) {
+                throw UserException.of("新密码不能与最近3次使用过的密码相同");
+            }
         }
 
-        String newSalt = SecretUtil.getKey();
-        String encryptedPassword = PasswordHelper.generatePassword(newPassword, newSalt);
+        String encryptedPassword = passwordEncoder.encode(newPassword, null);
+        String newSalt = "";
 
         IamUserAuthPassword updatePwd = new IamUserAuthPassword();
         updatePwd.setUserCode(userCode);
@@ -239,7 +223,7 @@ public class IamLoginService {
     }
 
 
-    private void loginLog(LoginReq loginReq, IamUserAuthDto auth, LoginStatus loginStatus, AuthType loginType) {
+    private void loginLog(LoginReq loginReq, LoginStatus loginStatus, AuthType loginType) {
         IamLoginLog log = new IamLoginLog();
         log.setAuthIdentifier(loginReq.getUsername());
         log.setAuthType(loginType.name());
@@ -247,13 +231,6 @@ public class IamLoginService {
         log.setMessage(loginStatus.getMessage());
         log.setCreateBy(loginReq.getUsername());
         log.setUpdateBy(loginReq.getUsername());
-
-        if (auth != null) {
-            log.setUserCode(auth.getUserCode());
-            log.setUsername(auth.getAuthIdentifier());
-            log.setCreateBy(log.getUsername());
-            log.setUpdateBy(log.getUsername());
-        }
 
         HttpServletRequest request = RequestHelper.getRequest();
         if (request != null) {

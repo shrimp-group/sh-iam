@@ -1,8 +1,6 @@
 package com.wkclz.iam.sdk.helper;
 
 
-import com.wkclz.core.base.UserInfo;
-import com.wkclz.core.user.UserContext;
 import com.wkclz.iam.sdk.bean.UserJwt;
 import com.wkclz.iam.sdk.bean.UserSession;
 import com.wkclz.web.helper.RequestHelper;
@@ -42,14 +40,14 @@ public class SessionHelper {
     public static void cacheUserInfo(HttpServletRequest request, UserJwt userJwt, UserSession userSession) {
         request.setAttribute("userJwt", userJwt);
         request.setAttribute("userSession", userSession);
-        UserInfo userInfo = new UserInfo();
-        userInfo.setUserCode(userJwt.getUserCode());
-        userInfo.setUsername(userJwt.getUsername());
-        userInfo.setNickname(userJwt.getNickname());
-        userInfo.setAvatar(userJwt.getAvatar());
-        userInfo.setTenantCode(getTenantCode());
-        userInfo.setAuthIdentifier(userSession.getAuthIdentifier());
-        UserContext.setUserInfo(userInfo);
+//        UserInfo userInfo = new UserInfo();
+//        userInfo.setUserCode(userJwt.getUserCode());
+//        userInfo.setUsername(userJwt.getUsername());
+//        userInfo.setNickname(userJwt.getNickname());
+//        userInfo.setAvatar(userJwt.getAvatar());
+//        userInfo.setTenantCode(getTenantCode());
+//        userInfo.setAuthIdentifier(userSession.getAuthIdentifier());
+        // UserContext.setUserInfo(userInfo);
     }
 
     public static String getUserCode() {
