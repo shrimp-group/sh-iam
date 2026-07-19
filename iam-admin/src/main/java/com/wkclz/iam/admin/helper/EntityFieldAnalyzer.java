@@ -1,9 +1,9 @@
 package com.wkclz.iam.admin.helper;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.wkclz.core.annotation.FieldDesc;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.bean.resp.EntityFieldNode;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -125,8 +125,8 @@ public class EntityFieldAnalyzer {
             node.setFieldName(fieldName);
 
             // 读取 @FieldDesc 注解
-            FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
-            node.setFieldDesc(fieldDesc != null ? fieldDesc.value() : fieldName);
+            Schema fieldDesc = field.getAnnotation(Schema.class);
+            node.setFieldDesc(fieldDesc != null ? fieldDesc.description() : fieldName);
             node.setFieldType(fieldType.getSimpleName());
             node.setFieldTypeClazz(fieldType);
 
@@ -307,9 +307,9 @@ public class EntityFieldAnalyzer {
             EntityFieldNode node = new EntityFieldNode();
             node.setFieldName(fieldName);
 
-            // 读取 @FieldDesc 注解作为描述
-            FieldDesc fieldDesc = field.getAnnotation(FieldDesc.class);
-            node.setFieldDesc(fieldDesc != null ? fieldDesc.value() : fieldName);
+            // 读取 @Schema 注解作为描述
+            Schema fieldDesc = field.getAnnotation(Schema.class);
+            node.setFieldDesc(fieldDesc != null ? fieldDesc.description() : fieldName);
 
             Class<?> fieldType = field.getType();
             node.setFieldType(fieldType.getSimpleName());
