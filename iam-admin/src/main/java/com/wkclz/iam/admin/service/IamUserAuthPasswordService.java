@@ -7,10 +7,14 @@ import com.wkclz.iam.admin.mapper.IamUserAuthPasswordMapper;
 import com.wkclz.iam.admin.mapper.IamUserPasswordHisMapper;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
+import com.wkclz.iam.common.event.PasswordResetByAdminEvent;
 import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.tool.utils.SecretUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -27,8 +31,12 @@ import java.util.List;
 @Service
 public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword, IamUserAuthPasswordMapper> {
 
+    private static final Logger log = LoggerFactory.getLogger(IamUserAuthPasswordService.class);
+
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
     @Autowired
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
 
@@ -119,6 +127,10 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
         his.setPassword(encryptedPassword);
         his.setSalt(newSalt);
         iamUserPasswordHisMapper.insert(his);
+
+        // 发布管理员重置密码事件 → 触发全会话失效
+        eventPublisher.publishEvent(new PasswordResetByAdminEvent(userCode));
+        log.info("管理员重置密码完成，已发布 PasswordResetByAdminEvent: userCode={}", userCode);
     }
 
 

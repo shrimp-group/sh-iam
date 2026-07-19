@@ -15,11 +15,13 @@ import com.wkclz.iam.admin.mapper.IamUserRoleMapper;
 import com.wkclz.iam.common.dto.IamUserRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamUserRole;
+import com.wkclz.iam.common.event.UserRoleChangedEvent;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -42,6 +44,8 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
 
     @Autowired
     private IamRoleService iamRoleService;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 绑定用户与角色（含有效期）
@@ -83,6 +87,9 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
         }
         deleteById(oldEntity);
         log.info("用户角色解绑成功, userCode={}, roleCode={}", oldEntity.getUserCode(), oldEntity.getRoleCode());
+        // 发布角色变更事件 → 刷新权限缓存
+        eventPublisher.publishEvent(new UserRoleChangedEvent(oldEntity.getUserCode()));
+        log.info("已发布 UserRoleChangedEvent: userCode={}", oldEntity.getUserCode());
         return oldEntity;
     }
 
