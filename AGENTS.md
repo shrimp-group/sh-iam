@@ -80,10 +80,9 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 | `config`   | IamSdkConfig                                | SDK 配置 (appCode, jwtSecretKey, serverUrl, appId/appSecret) |
 | `contract` | JwtAuthContract, HttpSsoFacadeContract      | AuthContract + SsoFacadeContract 实现                        |
 | `filter`   | LoggingFilter, RequestWrapperFilter         | 日志/请求包装过滤器                                                 |
-| `helper`   | AkSignHelper, CaptchaHelper, ResponseHelper | AK签名/验证码/响应工具                                              |
-| `model`    | UserJwt                                     | JWT载荷内部模型，仅 JwtUtil 使用                                     |
-| `enums`    | AuthType, LoginStatus                       | 认证类型 (PASSWORD/LDAP)、登录状态枚举                                |
-| `util`     | JwtUtil                                     | JWT 生成/解析/验证/刷新                                            |
+| `helper`   | AkSignHelper, ResponseHelper, SessionHelper | AK签名、响应工具、会话辅助工具                                           |
+| `model`    | UserJwt                                     | JWT载荷内部模型                                                  |
+| `enums`    | LoginStatus                                 | 登录状态枚举（17值，参照LDAP返回码设计）                                    |
 | 根包         | IamSdkAutoConfig                            | 自动配置 (`@AutoConfiguration` + `@ConditionalOnProperty`)     |
 
 ### iam-sso (`com.wkclz.iam.sso`)
