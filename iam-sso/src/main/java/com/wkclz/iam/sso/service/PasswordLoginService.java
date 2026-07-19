@@ -1,6 +1,7 @@
 package com.wkclz.iam.sso.service;
 
 import com.wkclz.core.exception.UserException;
+import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.core.identity.UserIdentity;
 import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
@@ -8,19 +9,21 @@ import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
-import com.wkclz.iam.sdk.facade.SsoFacade;
 import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.session.bean.SessionCreateResult;
 import com.wkclz.iam.session.enums.AuthType;
+import com.wkclz.iam.session.enums.DestroyReason;
 import com.wkclz.iam.session.service.SessionManager;
 import com.wkclz.iam.sso.bean.req.LoginReq;
 import com.wkclz.iam.sso.bean.resp.LoginResp;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.event.LoginEvent;
+import com.wkclz.iam.sso.event.LogoutEvent;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
 import com.wkclz.iam.sso.spi.CredentialChecker;
 import com.wkclz.iam.sso.spi.PasswordEncoder;
+import com.wkclz.tool.tools.Md5Tool;
 import com.wkclz.tool.tools.RsaTool;
 import com.wkclz.web.helper.IpHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,8 +45,6 @@ public class PasswordLoginService {
 
     @Autowired
     private SessionManager sessionManager;
-    @Autowired
-    private SsoFacade ssoFacade;
     @Autowired
     private IamSsoConfig iamSsoConfig;
     @Autowired
@@ -143,13 +144,29 @@ public class PasswordLoginService {
         return resp;
     }
 
-    public void logout(HttpServletRequest request) {
-        String token = SessionHelper.getToken(request);
+    /**
+     * 登出。
+     *
+     * <p>从 IdentityContext 取当前 token → SessionManager.destroySession → 发布 LogoutEvent → 清理上下文。</p>
+     */
+    public void logout() {
+        String token = IdentityContext.getToken();
         if (StringUtils.isBlank(token)) {
+            log.debug("未登录状态调用登出，跳过");
             return;
         }
-        // 委托 SsoFacade 执行登出（US-13 将改为直接调用 SessionManager）
-        ssoFacade.logout(token);
+        String username = IdentityContext.getUsername();
+        log.info("用户 {} 登出", username);
+
+        // 委托 SessionManager 销毁会话
+        String sessionId = Md5Tool.md5(token);
+        sessionManager.destroySession(sessionId, DestroyReason.LOGOUT);
+
+        // 发布登出事件
+        eventPublisher.publishEvent(new LogoutEvent(username, token));
+
+        // 清理身份上下文
+        IdentityContext.clear();
     }
 
     @Transactional(rollbackFor = Exception.class)

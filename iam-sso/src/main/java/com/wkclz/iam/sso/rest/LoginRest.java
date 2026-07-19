@@ -31,8 +31,8 @@ public class LoginRest {
 
     @GetMapping(Route.PUBLIC_SSO_LOGOUT)
     @Operation(summary = "用户登出")
-    public R<Void> publicSsoLogout(HttpServletRequest request) {
-        passwordLoginService.logout(request);
+    public R<Void> publicSsoLogout() {
+        passwordLoginService.logout();
         return R.ok();
     }
 
