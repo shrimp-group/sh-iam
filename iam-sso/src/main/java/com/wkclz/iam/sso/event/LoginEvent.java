@@ -1,6 +1,6 @@
 package com.wkclz.iam.sso.event;
 
-import com.wkclz.iam.sdk.bean.enums.LoginStatus;
+import com.wkclz.iam.session.enums.LoginStatus;
 
 import java.io.Serializable;
 

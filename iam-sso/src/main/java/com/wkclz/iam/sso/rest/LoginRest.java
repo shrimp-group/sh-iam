@@ -3,7 +3,7 @@ package com.wkclz.iam.sso.rest;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.bean.req.LoginReq;
-import com.wkclz.iam.sso.bean.resp.LoginResp;
+import com.wkclz.iam.session.bean.resp.LoginResp;
 import com.wkclz.iam.sso.service.PasswordLoginService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
