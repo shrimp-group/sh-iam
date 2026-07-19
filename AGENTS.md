@@ -51,17 +51,25 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-session (`com.wkclz.iam.session`) — 会话管理层（新增）
 
-| 包         | 类                      | 说明                                                 |
-|-----------|------------------------|----------------------------------------------------|
-| `bean`    | `Session`              | 会话领域模型（8 字段，不含 clientIp/userAgent）                 |
-| `bean`    | `SessionCreateResult`  | 会话创建结果（token + session）                            |
-| `bean`    | `TokenInfo`            | Token 解析结果（userCode/username/nickname）             |
-| `enums`   | `AuthType`             | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）  |
-| `service` | `SessionManager`       | 会话管理器（@Component，createSession + Lua 并发控制）         |
-| `service` | `SessionStore`         | 会话持久化（@Component，Redis Hash+ZSet）                  |
-| `service` | `TokenService`         | JWT 令牌服务（@Service，HS256 签名）                        |
-| `config`  | `IamSessionConfig`     | iam-session 全局配置（secret-key / ttl / maxConcurrent） |
-| 根包        | `IamSessionAutoConfig` | 自动配置（@AutoConfiguration + @ComponentScan）          |
+| 包         | 类                       | 说明                                                 |
+|-----------|-------------------------|----------------------------------------------------|
+| `bean`    | `Session`               | 会话领域模型（8 字段，不含 clientIp/userAgent）                 |
+| `bean`    | `SessionCreateResult`   | 会话创建结果（token + session）                            |
+| `bean`    | `TokenInfo`             | Token 解析结果（userCode/username/nickname）             |
+| `bean`    | `RequestLogData`        | 请求日志数据载体（RequestLogFilter 与 SPI 之间传递）              |
+| `enums`   | `AuthType`              | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）  |
+| `enums`   | `DestroyReason`         | 会话销毁原因枚举（6 个值）                                     |
+| `service` | `SessionManager`        | 会话管理器（@Component，createSession + Lua 并发控制）         |
+| `service` | `SessionStore`          | 会话持久化（@Component，Redis Hash+ZSet）                  |
+| `service` | `TokenService`          | JWT 令牌服务（@Service，HS256 签名）                        |
+| `filter`  | `SessionAuthFilter`     | 会话认证过滤器（Token 提取 → 验证 → IdentityContext 设置）        |
+| `filter`  | `RequestLogFilter`      | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → SPI 异步持久化）              |
+| `filter`  | `TokenResolver`         | Token 提取 SPI（Authorization: Bearer → token）        |
+| `filter`  | `WhiteListMatcher`      | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）      |
+| `spi`     | `RequestLogHandler`     | 请求日志持久化 SPI（iam-sso 提供实现）                          |
+| `spi`     | `NoOpRequestLogHandler` | RequestLogHandler 空实现（默认，静默跳过）                     |
+| `config`  | `IamSessionConfig`      | iam-session 全局配置（secret-key / ttl / maxConcurrent） |
+| 根包        | `IamSessionAutoConfig`  | 自动配置（@AutoConfiguration + @ComponentScan）          |
 
 > 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）。认证方式无关，仅管理会话生命周期。
 
@@ -87,14 +95,14 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-sso (`com.wkclz.iam.sso`)
 
-| 包          | 类                                                                                                                                                                                     | 说明                                                               |
-|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| `config`   | IamSsoConfig                                                                                                                                                                          | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
-| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                    | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
-| `contract` | LocalSsoFacadeContract                                                                                                                                                                | SSO 门面本地实现                                                       |
-| `service`  | IamLoginService, IamSessionService(createSession, enforceMaxConcurrentSessions, logout, invalidateAllSessions), SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService | SSO 核心业务逻辑                                                       |
-| `mapper`   | SsoLoginMapper, SsoLoginLogMapper, SsoRequestLogMapper, SsoResourceMapper                                                                                                             | SSO 数据访问                                                         |
-| 根包         | IamSsoAutoConfig, Route                                                                                                                                                               | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
+| 包          | 类                                                                                                                                | 说明                                                               |
+|------------|----------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| `config`   | IamSsoConfig                                                                                                                     | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
+| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                               | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
+| `contract` | LocalSsoFacadeContract                                                                                                           | SSO 门面本地实现                                                       |
+| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestLogHandlerImpl | SSO 核心业务逻辑                                                       |
+| `mapper`   | SsoLoginMapper, SsoLoginLogMapper, SsoRequestLogMapper, SsoResourceMapper                                                        | SSO 数据访问                                                         |
+| 根包         | IamSsoAutoConfig, Route                                                                                                          | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
 
 ### iam-admin (`com.wkclz.iam.admin`)
 

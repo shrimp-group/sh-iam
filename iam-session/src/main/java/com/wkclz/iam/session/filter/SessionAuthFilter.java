@@ -77,7 +77,7 @@ public class SessionAuthFilter extends OncePerRequestFilter {
             IdentityContext.setAppCode(request.getHeader("app-code"));
             IdentityContext.setTenantCode(request.getHeader("tenant-code"));
 
-            // 5. 放行
+            // 6. 放行
             chain.doFilter(request, response);
         } finally {
             // 6. 清理 IdentityContext，防止 ThreadLocal 内存泄漏

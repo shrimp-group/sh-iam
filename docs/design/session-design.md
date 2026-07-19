@@ -321,22 +321,22 @@ interface PasswordEncoder {
 | 36 | 管理员重置密码 → 全会话失效                  | iam-sso     | **新增**（事件监听） |
 | 37 | 用户状态变更 → 全会话失效                   | iam-sso     | **新增**（事件监听） |
 
-**未纳入新三模块的功能（暂时保留现状，待下一步决策）：**
+**未纳入新三模块的功能（部分已实现，其余暂时保留现状）：**
 
-| 功能                                          | 所处位置             |
-|---------------------------------------------|------------------|
-| 请求体缓存包装 (EagerContentCachingRequestWrapper) | sh-auth Filter   |
-| 请求日志采集 Filter (RequestRecordFilter)         | sh-auth Filter   |
-| 安全头注入 Filter (SecurityHeaderFilter)         | sh-auth Filter   |
-| 鉴权 Filter (AuthorizationFilter)             | sh-auth Filter   |
-| 三层缓存 (AuthCacheManager)                     | sh-auth Cache    |
-| 请求日志持久化 (IamRequestService)                 | iam-sso          |
-| AK 签名工具                                     | sh-auth          |
-| 用户注册                                        | iam-sso（空占位）     |
-| 用户信息/菜单资源查询                                 | iam-sso          |
-| SsoFacade 跨应用远程调用                           | iam-sso contract |
+| 功能                                          | 所处位置                 | 状态        |
+|---------------------------------------------|----------------------|-----------|
+| 请求体缓存包装 (EagerContentCachingRequestWrapper) | sh-auth Filter       | 暂时保留      |
+| ~~请求日志采集 Filter~~                           | **iam-session**（新实现） | ✅ **已实现** |
+| 安全头注入 Filter (SecurityHeaderFilter)         | sh-auth Filter       | 暂时保留      |
+| 鉴权 Filter (AuthorizationFilter)             | sh-auth Filter       | 暂时保留      |
+| 三层缓存 (AuthCacheManager)                     | sh-auth Cache        | 暂时保留      |
+| 请求日志持久化                                     | iam-sso（通过 SPI）      | ✅ **已实现** |
+| AK 签名工具                                     | sh-auth              | 暂时保留      |
+| 用户注册                                        | iam-sso（空占位）         | 暂时保留      |
+| 用户信息/菜单资源查询                                 | iam-sso              | 暂时保留      |
+| SsoFacade 跨应用远程调用                           | iam-sso contract     | 暂时保留      |
 
-> 以上功能将在下一步设计中决定归属：是纳入新三模块、保留为独立基础设施、还是废弃重写。
+> 标记 ✅ 的功能已在当前会话中实现。其余功能将在下一步设计中决定归属：是纳入新三模块、保留为独立基础设施、还是废弃重写。
 
 ---
 

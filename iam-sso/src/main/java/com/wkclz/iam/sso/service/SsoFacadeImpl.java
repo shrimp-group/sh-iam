@@ -1,9 +1,8 @@
 package com.wkclz.iam.sso.service;
 
-import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.iam.sdk.facade.SsoFacade;
-import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.web.helper.RequestHelper;
+import com.wkclz.iam.session.bean.RequestRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,7 @@ public class SsoFacadeImpl implements SsoFacade {
     private IamSessionService iamSessionService;
 
     @Override
-    public void saveLog(RequestLog log) {
+    public void saveLog(RequestRecord record) {
         requestLogService.insertLog(log);
     }
 
@@ -34,7 +33,7 @@ public class SsoFacadeImpl implements SsoFacade {
 
     @Override
     public void logout() {
-        String token = SessionHelper.getToken(RequestHelper.getRequest());
+        String token = IdentityContext.getToken();
         if (StringUtils.isBlank(token)) {
             log.warn("SsoFacade 本地登出，当前请求上下文中 token 为空，跳过登出处理");
             return;
