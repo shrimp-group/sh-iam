@@ -128,29 +128,29 @@ public class SessionManager {
         TokenInfo tokenInfo = tokenService.verifyToken(token);
         long now = System.currentTimeMillis();
 
-        // 2. 快速路径：若 Token 签发时间到 Redis 过期还有大量剩余，跳过 Redis 读取
-        long redisTtlSec = iamSessionConfig.getRedisTtl() != null ? iamSessionConfig.getRedisTtl() : 86400L;
-        long thresholdSec = iamSessionConfig.getRenewalThreshold() != null ? iamSessionConfig.getRenewalThreshold() : 1800L;
-        Long issuedAt = tokenInfo.getIssuedAt();
-        if (issuedAt != null && now < issuedAt + (redisTtlSec - thresholdSec) * 1000) {
-            log.debug("Session fast-path: Redis expiry is far away, skip read. sessionId={}", Md5Tool.md5(token));
-            return null;
-        }
-
-        // 3. sessionId = MD5(token)
+        // 2. sessionId = MD5(token)
         String sessionId = Md5Tool.md5(token);
 
-        // 4. 查 Redis
+        // 3. 查 Redis
         Session session = sessionStore.get(sessionId);
         if (session == null) {
             log.warn("Session not found in Redis: sessionId={}", sessionId);
             return null;
         }
 
-        // 5. Redis 已过期
+        // 4. Redis 已过期
         if (session.getRedisExpireTime() < now) {
             log.warn("Session Redis expired: sessionId={}, redisExpireTime={}", sessionId, session.getRedisExpireTime());
             return null;
+        }
+
+        // 5. 快速路径：若 Token 签发时间到 Redis 过期还有大量剩余，跳过 Redis 读取
+        long redisTtlSec = iamSessionConfig.getRedisTtl() != null ? iamSessionConfig.getRedisTtl() : 86400L;
+        long thresholdSec = iamSessionConfig.getRenewalThreshold() != null ? iamSessionConfig.getRenewalThreshold() : 1800L;
+        Long issuedAt = tokenInfo.getIssuedAt();
+        if (issuedAt != null && now < issuedAt + (redisTtlSec - thresholdSec) * 1000) {
+            log.debug("Session fast-path: Redis expiry is far away, skip read. sessionId={}", sessionId);
+            return session;
         }
 
         // 6. 续期判断
