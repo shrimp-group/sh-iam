@@ -1,10 +1,10 @@
 package com.wkclz.iam.sso.rest;
 
 import com.wkclz.core.base.R;
-import com.wkclz.iam.sdk.bean.req.LoginReq;
-import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sso.Route;
-import com.wkclz.iam.sso.service.IamLoginService;
+import com.wkclz.iam.sso.bean.req.LoginReq;
+import com.wkclz.iam.sso.bean.resp.LoginResp;
+import com.wkclz.iam.sso.service.PasswordLoginService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,19 +20,19 @@ import org.springframework.web.bind.annotation.*;
 public class LoginRest {
 
     @Autowired
-    private IamLoginService iamLoginService;
+    private PasswordLoginService passwordLoginService;
 
     @PostMapping(Route.PUBLIC_SSO_LOGIN)
     @Operation(summary = "用户登录")
     public R<LoginResp> publicSsoLogin(HttpServletRequest request, @Valid @RequestBody LoginReq loginReq) {
-        LoginResp response = iamLoginService.loginByUsernameAndPassword(request, loginReq);
+        LoginResp response = passwordLoginService.login(request, loginReq);
         return R.ok(response);
     }
 
     @GetMapping(Route.PUBLIC_SSO_LOGOUT)
     @Operation(summary = "用户登出")
     public R<Void> publicSsoLogout(HttpServletRequest request) {
-        iamLoginService.logout(request);
+        passwordLoginService.logout(request);
         return R.ok();
     }
 

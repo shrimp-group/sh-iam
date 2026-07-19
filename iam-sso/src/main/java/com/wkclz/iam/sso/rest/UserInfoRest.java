@@ -7,7 +7,7 @@ import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sso.Route;
 import com.wkclz.iam.sso.entity.VueRouterMenu;
-import com.wkclz.iam.sso.service.IamLoginService;
+import com.wkclz.iam.sso.service.PasswordLoginService;
 import com.wkclz.iam.sso.service.SsoResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +30,7 @@ import java.util.List;
 public class UserInfoRest {
 
     @Autowired
-    private IamLoginService iamLoginService;
+    private PasswordLoginService passwordLoginService;
     @Autowired
     private SsoResourceService ssoResourceService;
 
@@ -67,7 +67,7 @@ public class UserInfoRest {
     @PostMapping(Route.USER_CHANGE_PASSWORD)
     @Operation(summary = "修改密码")
     public R<Void> changePassword(@Valid @RequestBody ChangePasswordReq changePasswordReq) {
-        iamLoginService.changePassword(changePasswordReq);
+        passwordLoginService.changePassword(changePasswordReq);
         return R.ok();
     }
 
