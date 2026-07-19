@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
  *   <li>白名单路径直接放行</li>
  *   <li>从请求中提取 Token（委托 TokenResolver）</li>
  *   <li>调用 SessionManager.validateAndRefresh() 验证会话</li>
- *   <li>设置 IdentityContext（UserIdentity + Token）</li>
+ *   <li>设置 IdentityContext（UserIdentity + Token + appCode + tenantCode）</li>
  *   <li>请求结束（finally）清理 IdentityContext</li>
  * </ul>
  */
@@ -74,6 +74,8 @@ public class SessionAuthFilter extends OncePerRequestFilter {
             // 4. 设置 IdentityContext
             UserIdentity userIdentity = JSON.parseObject(session.getUserIdentity(), UserIdentity.class);
             IdentityContext.set(userIdentity, token);
+            IdentityContext.setAppCode(request.getHeader("app-code"));
+            IdentityContext.setTenantCode(request.getHeader("tenant-code"));
 
             // 5. 放行
             chain.doFilter(request, response);
