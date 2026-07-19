@@ -7,7 +7,8 @@ import com.wkclz.iam.session.bean.SessionCreateResult;
 import com.wkclz.iam.session.bean.TokenInfo;
 import com.wkclz.iam.session.config.IamSessionConfig;
 import com.wkclz.iam.session.enums.AuthType;
-import com.wkclz.iam.session.event.SessionDestroyedEvent;
+import com.wkclz.iam.session.enums.DestroyReason;
+import com.wkclz.iam.session.event.SessionEvent;
 import com.wkclz.tool.tools.Md5Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +105,10 @@ public class SessionManager {
 
         log.info("Session created: subjectId={}, sessionId={}, authType={}", userIdentity.getUserCode(), sessionId, authType);
 
-        // 6. 返回结果
+        // 6. 发布 SessionCreatedEvent
+        eventPublisher.publishEvent(SessionEvent.created(session));
+
+        // 7. 返回结果
         SessionCreateResult result = new SessionCreateResult();
         result.setToken(token);
         result.setSession(session);
@@ -143,9 +147,11 @@ public class SessionManager {
             return null;
         }
 
-        // 4. Redis 已过期
+        // 4. Redis 已过期 → 发布 SessionExpiredEvent，清理 Session，返回 null
         if (session.getRedisExpireTime() < now) {
             log.warn("Session Redis expired: sessionId={}, redisExpireTime={}", sessionId, session.getRedisExpireTime());
+            eventPublisher.publishEvent(SessionEvent.expired(sessionId, session.getSubjectId()));
+            sessionStore.delete(sessionId);
             return null;
         }
 
@@ -188,10 +194,10 @@ public class SessionManager {
      * <p>删除 Redis Session Key + 从用户索引 ZSet 移除，并发布 SessionDestroyedEvent。</p>
      *
      * @param sessionId 会话 ID
-     * @param reason    销毁原因（如 logout、admin_action）
+     * @param reason    销毁原因
      * @return true 表示成功销毁，false 表示会话不存在
      */
-    public boolean destroySession(String sessionId, String reason) {
+    public boolean destroySession(String sessionId, DestroyReason reason) {
         Session session = sessionStore.get(sessionId);
         if (session == null) {
             log.warn("Session not found for destroy: sessionId={}", sessionId);
@@ -199,7 +205,7 @@ public class SessionManager {
         }
         String subjectId = session.getSubjectId();
         sessionStore.delete(sessionId);
-        eventPublisher.publishEvent(new SessionDestroyedEvent(sessionId, subjectId, reason));
+        eventPublisher.publishEvent(SessionEvent.destroyed(sessionId, subjectId, reason));
         log.info("Session destroyed: sessionId={}, subjectId={}, reason={}", sessionId, subjectId, reason);
         return true;
     }
@@ -211,10 +217,10 @@ public class SessionManager {
      * 并对每个 sessionId 发布 SessionDestroyedEvent。</p>
      *
      * @param subjectId 用户标识（userCode）
-     * @param reason    销毁原因（如 password_changed、account_disabled）
+     * @param reason    销毁原因
      * @return 实际销毁的会话数量
      */
-    public int destroyAllSessions(String subjectId, String reason) {
+    public int destroyAllSessions(String subjectId, DestroyReason reason) {
         List<String> sessionIds = sessionStore.getSessionIds(subjectId);
         if (sessionIds.isEmpty()) {
             log.debug("No active sessions to destroy for subjectId={}", subjectId);
@@ -223,7 +229,7 @@ public class SessionManager {
         int count = sessionIds.size();
         sessionStore.deleteBySubjectId(subjectId);
         for (String sid : sessionIds) {
-            eventPublisher.publishEvent(new SessionDestroyedEvent(sid, subjectId, reason));
+            eventPublisher.publishEvent(SessionEvent.destroyed(sid, subjectId, reason));
         }
         log.info("All sessions destroyed: subjectId={}, count={}, reason={}", subjectId, count, reason);
         return count;

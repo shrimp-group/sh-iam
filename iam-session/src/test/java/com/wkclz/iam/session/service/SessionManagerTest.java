@@ -5,7 +5,8 @@ import com.wkclz.iam.session.bean.Session;
 import com.wkclz.iam.session.bean.SessionCreateResult;
 import com.wkclz.iam.session.config.IamSessionConfig;
 import com.wkclz.iam.session.enums.AuthType;
-import com.wkclz.iam.session.event.SessionDestroyedEvent;
+import com.wkclz.iam.session.enums.DestroyReason;
+import com.wkclz.iam.session.event.SessionEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -93,7 +94,7 @@ class SessionManagerTest {
     class CreateSession {
 
         @Test
-        @DisplayName("传入 UserIdentity + authType → 返回 SessionCreateResult(token, session)")
+        @DisplayName("传入 UserIdentity + authType → 返回 SessionCreateResult(token, session) + 发布创建事件")
         void shouldCreateSession() {
             UserIdentity user = createUser("user_001", "admin", "管理员");
 
@@ -104,6 +105,8 @@ class SessionManagerTest {
             assertNotNull(result.getSession(), "session 不应为空");
             assertEquals("user_001", result.getSession().getSubjectId());
             assertEquals(AuthType.PASSWORD, result.getSession().getAuthType());
+            // 验证发布 SessionCreatedEvent
+            verify(eventPublisher, times(1)).publishEvent(any(SessionEvent.class));
         }
 
         @Test
@@ -168,7 +171,7 @@ class SessionManagerTest {
         }
 
         @Test
-        @DisplayName("Redis 已过期时返回 null")
+        @DisplayName("Redis 已过期时返回 null + 发布过期事件 + 删除 Session")
         void shouldReturnNullWhenRedisExpired() {
             UserIdentity user = createUser("user_002", "user2", "用户2");
             String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
@@ -180,6 +183,9 @@ class SessionManagerTest {
             Session result = sessionManager.validateAndRefresh(token);
 
             assertNull(result);
+            // 验证发布 SessionExpiredEvent 并删除过期 Session
+            verify(eventPublisher, times(1)).publishEvent(any(SessionEvent.class));
+            verify(sessionStore, times(1)).delete("sid_002");
         }
 
         @Test
@@ -300,11 +306,11 @@ class SessionManagerTest {
             Session session = buildSession("sid_d1", "user_del", System.currentTimeMillis() + 3600_000, System.currentTimeMillis());
             when(sessionStore.get("sid_d1")).thenReturn(session);
 
-            boolean result = sessionManager.destroySession("sid_d1", "logout");
+            boolean result = sessionManager.destroySession("sid_d1", DestroyReason.LOGOUT);
 
             assertTrue(result);
             verify(sessionStore, times(1)).delete("sid_d1");
-            verify(eventPublisher, times(1)).publishEvent(any(SessionDestroyedEvent.class));
+            verify(eventPublisher, times(1)).publishEvent(any(SessionEvent.class));
         }
 
         @Test
@@ -312,7 +318,7 @@ class SessionManagerTest {
         void shouldReturnFalseWhenSessionNotFound() {
             when(sessionStore.get("sid_nonexist")).thenReturn(null);
 
-            boolean result = sessionManager.destroySession("sid_nonexist", "logout");
+            boolean result = sessionManager.destroySession("sid_nonexist", DestroyReason.LOGOUT);
 
             assertFalse(result);
             verify(sessionStore, never()).delete(anyString());
@@ -326,11 +332,11 @@ class SessionManagerTest {
             List<String> sessionIds = List.of("sid_b1", "sid_b2", "sid_b3");
             when(sessionStore.getSessionIds(subjectId)).thenReturn(sessionIds);
 
-            int result = sessionManager.destroyAllSessions(subjectId, "password_changed");
+            int result = sessionManager.destroyAllSessions(subjectId, DestroyReason.PASSWORD_CHANGED);
 
             assertEquals(3, result);
             verify(sessionStore, times(1)).deleteBySubjectId(subjectId);
-            verify(eventPublisher, times(3)).publishEvent(any(SessionDestroyedEvent.class));
+            verify(eventPublisher, times(3)).publishEvent(any(SessionEvent.class));
         }
 
         @Test
@@ -339,7 +345,7 @@ class SessionManagerTest {
             String subjectId = "user_empty";
             when(sessionStore.getSessionIds(subjectId)).thenReturn(List.of());
 
-            int result = sessionManager.destroyAllSessions(subjectId, "account_disabled");
+            int result = sessionManager.destroyAllSessions(subjectId, DestroyReason.USER_DISABLED);
 
             assertEquals(0, result);
             verify(sessionStore, never()).deleteBySubjectId(anyString());

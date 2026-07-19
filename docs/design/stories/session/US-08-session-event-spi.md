@@ -3,6 +3,7 @@
 > **模块**：iam-session（会话管理层）
 > **依赖**：US-02（Session 模型）
 > **来源设计**：[session-design.md](../../session-design.md) — SES-13
+> **讨论日期**：2026-07-19
 
 ## 用户故事
 
@@ -22,6 +23,7 @@ EventBus 发布事件
 - 不做事件监听的具体实现（属于 US-14）
 - 不做登录日志写入（属于 US-14）
 - 不做事件存储/持久化
+- 不做 `enforceMaxConcurrent` 中的事件发布（CONCURRENT_KICK 枚举已定义，Lua 脚本暂不改）
 
 ## 输入
 
@@ -29,15 +31,13 @@ EventBus 发布事件
 
 ## 输出
 
+- `DestroyReason` 枚举（6 个值）
 - `SessionEventListener` 接口
-- `DestroyReason` 枚举
-- `SessionCreatedEvent` 事件类
-- `SessionDestroyedEvent` 事件类
-- `SessionExpiredEvent` 事件类
 - `NoOpSessionEventListener` 默认空实现
-- 在 `SessionManager` 的创建/销毁流程中集成事件发布
+- `SessionEvent` 统一事件类（通过 `Type` 枚举区分 CREATED/DESTROYED/EXPIRED）
+- `SessionManager` 集成点（4 处）
 
-## 契约接口（概念）
+## 契约接口
 
 ```java
 interface SessionEventListener {
@@ -47,50 +47,36 @@ interface SessionEventListener {
 }
 
 enum DestroyReason {
-    LOGOUT,                  // 用户主动登出
-    PASSWORD_CHANGED,        // 用户自己修改密码
-    PASSWORD_RESET_BY_ADMIN, // 管理员重置密码
-    USER_DISABLED,           // 用户被禁用
-    CONCURRENT_KICK,         // 并发会话踢出
-    SESSION_EXPIRED          // 会话自然过期
+    LOGOUT, PASSWORD_CHANGED, PASSWORD_RESET_BY_ADMIN,
+    USER_DISABLED, CONCURRENT_KICK, SESSION_EXPIRED
 }
-```
-
-## 事件发布流程
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Manager as SessionManager
-    participant Publisher as ApplicationEventPublisher<br/>(Spring)
-    participant Listener as SessionEventListener<br/>(@Async)
-    Note over Manager, Listener: === SessionCreatedEvent ===
-    Manager ->> Publisher: publishEvent(SessionCreatedEvent)
-    Publisher ->> Listener: @EventListener (异步)
-    Listener ->> Listener: onCreated(session)
-    Note over Manager, Listener: === SessionDestroyedEvent ===
-    Manager ->> Publisher: publishEvent(SessionDestroyedEvent)
-    Publisher ->> Listener: @EventListener (异步)
-    Listener ->> Listener: onDestroyed(sessionId, subjectId, reason)
-    Note over Manager, Listener: === SessionExpiredEvent ===
-    Manager ->> Publisher: publishEvent(SessionExpiredEvent)
-    Publisher ->> Listener: @EventListener (异步)
-    Listener ->> Listener: onExpired(sessionId, subjectId)
 ```
 
 ## 事件发布集成点
 
-| 事件                      | 发布位置                                                       | 发布时机                         |
-|-------------------------|------------------------------------------------------------|------------------------------|
-| `SessionCreatedEvent`   | `SessionManager.createSession()`                           | Session 持久化成功后               |
-| `SessionDestroyedEvent` | `SessionManager.destroySession()` / `destroyAllSessions()` | Session 删除后（每个 session 一个事件） |
-| `SessionExpiredEvent`   | 定时任务或惰性检测                                                  | 检测到 Session 过期时              |
+| 事件                       | 发布位置                                                       | 发布时机                                          |
+|--------------------------|------------------------------------------------------------|-----------------------------------------------|
+| `SessionEvent.CREATED`   | `SessionManager.createSession()`                           | Session 持久化成功后                                |
+| `SessionEvent.DESTROYED` | `SessionManager.destroySession()` / `destroyAllSessions()` | Session 删除后（每个 session 一个事件）                  |
+| `SessionEvent.EXPIRED`   | `SessionManager.validateAndRefresh()`                      | 检测到 `redisExpireTime < now` 时，发布事件后删除 Session |
+
+## 影响范围
+
+| 文件                              | 变更类型 | 说明                                                         |
+|---------------------------------|------|------------------------------------------------------------|
+| `DestroyReason.java`            | 新增   | 6 个枚举值                                                     |
+| `SessionEventListener.java`     | 新增   | 接口，3 个方法                                                   |
+| `NoOpSessionEventListener.java` | 新增   | 默认空实现                                                      |
+| `SessionEvent.java`             | 新增   | 统一事件类（Type + 静态工厂方法 created/destroyed/expired），替代 3 个独立事件类 |
+| `SessionManager.java`           | 修改   | 4 处集成点发布 SessionEvent                                      |
+| `SessionManagerTest.java`       | 修改   | 新增事件验证断言                                                   |
 
 ## 验收标准
 
 - [ ] `SessionEventListener` 接口定义 3 个方法
-- [ ] `DestroyReason` 枚举包含上述 6 个值
-- [ ] `NoOpSessionEventListener` 提供默认空实现，上层未注入时不 NPE
-- [ ] Spring EventBus 事件发布使用 `@EventListener` 或 `ApplicationEventPublisher`
-- [ ] 事件类包含完整上下文信息（Session 或 sessionId + subjectId + reason）
-- [ ] 事件监听是异步的（`@Async`），不阻塞主流程
+- [ ] `DestroyReason` 枚举包含 6 个值
+- [ ] `NoOpSessionEventListener` 提供默认空实现
+- [ ] `SessionManager.createSession()` 发布 `SessionEvent.CREATED`
+- [ ] `SessionManager.destroySession()` / `destroyAllSessions()` 发布 `SessionEvent.DESTROYED`（使用 DestroyReason）
+- [ ] `SessionManager.validateAndRefresh()` 过期分支发布 `SessionEvent.EXPIRED` 并清理 Session
+- [ ] `enforceMaxConcurrent()` 暂不发布事件（CONCURRENT_KICK 枚举已定义，后续实现）
