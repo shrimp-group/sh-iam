@@ -13,7 +13,7 @@ import com.wkclz.iam.common.entity.IamUser;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.event.UserStatusChangedEvent;
+import com.wkclz.iam.common.event.AdminSecurityEvent;
 import com.wkclz.iam.session.enums.AuthType;
 import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.mybatis.helper.PageQuery;
@@ -76,8 +76,8 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         if (entity.getUserStatus() != null
             && (entity.getUserStatus() == 2 || entity.getUserStatus() == 3)
             && !entity.getUserStatus().equals(oldStatus)) {
-            eventPublisher.publishEvent(new UserStatusChangedEvent(oldEntity.getUserCode(), entity.getUserStatus()));
-            log.info("用户状态变更 — 已发布 UserStatusChangedEvent: userCode={}, oldStatus={}, newStatus={}",
+            eventPublisher.publishEvent(AdminSecurityEvent.statusChanged(oldEntity.getUserCode(), entity.getUserStatus()));
+            log.info("用户状态变更 — 已发布 AdminSecurityEvent.STATUS_CHANGED: userCode={}, oldStatus={}, newStatus={}",
                 oldEntity.getUserCode(), oldStatus, entity.getUserStatus());
         }
 

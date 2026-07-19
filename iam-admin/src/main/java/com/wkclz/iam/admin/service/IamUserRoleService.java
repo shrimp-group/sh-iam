@@ -15,7 +15,7 @@ import com.wkclz.iam.admin.mapper.IamUserRoleMapper;
 import com.wkclz.iam.common.dto.IamUserRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamUserRole;
-import com.wkclz.iam.common.event.UserRoleChangedEvent;
+import com.wkclz.iam.common.event.AdminSecurityEvent;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
@@ -88,8 +88,8 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
         deleteById(oldEntity);
         log.info("用户角色解绑成功, userCode={}, roleCode={}", oldEntity.getUserCode(), oldEntity.getRoleCode());
         // 发布角色变更事件 → 刷新权限缓存
-        eventPublisher.publishEvent(new UserRoleChangedEvent(oldEntity.getUserCode()));
-        log.info("已发布 UserRoleChangedEvent: userCode={}", oldEntity.getUserCode());
+        eventPublisher.publishEvent(AdminSecurityEvent.roleChanged(oldEntity.getUserCode()));
+        log.info("已发布 AdminSecurityEvent.ROLE_CHANGED: userCode={}", oldEntity.getUserCode());
         return oldEntity;
     }
 
