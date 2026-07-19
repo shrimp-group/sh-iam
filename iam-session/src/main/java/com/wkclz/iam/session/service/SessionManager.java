@@ -7,10 +7,12 @@ import com.wkclz.iam.session.bean.SessionCreateResult;
 import com.wkclz.iam.session.bean.TokenInfo;
 import com.wkclz.iam.session.config.IamSessionConfig;
 import com.wkclz.iam.session.enums.AuthType;
+import com.wkclz.iam.session.event.SessionDestroyedEvent;
 import com.wkclz.tool.tools.Md5Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
@@ -20,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 会话管理器 — 会话创建、验证、续期与并发会话控制。
+ * 会话管理器 — 会话创建、验证、续期、销毁与并发会话控制。
  *
  * <p>认证方式无关的会话管理入口。职责：
  * <ul>
@@ -29,6 +31,7 @@ import java.util.List;
  *   <li>并发会话控制（可选，通过 iam.session.max-concurrent 配置）</li>
  *   <li>会话验证与滑窗续期（validateAndRefresh）</li>
  *   <li>活跃会话查询（getActiveSessions）</li>
+ *   <li>会话销毁（destroySession / destroyAllSessions）</li>
  *   <li>通过 SessionStore 持久化到 Redis</li>
  * </ul>
  */
@@ -45,6 +48,8 @@ public class SessionManager {
     private IamSessionConfig iamSessionConfig;
     @Autowired
     private StringRedisTemplate redisTemplate;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     private final DefaultRedisScript<Long> evictScript = buildEvictScript();
 
@@ -173,6 +178,55 @@ public class SessionManager {
         }
 
         return session;
+    }
+
+    // ========== 会话销毁 ==========
+
+    /**
+     * 销毁单个会话。
+     *
+     * <p>删除 Redis Session Key + 从用户索引 ZSet 移除，并发布 SessionDestroyedEvent。</p>
+     *
+     * @param sessionId 会话 ID
+     * @param reason    销毁原因（如 logout、admin_action）
+     * @return true 表示成功销毁，false 表示会话不存在
+     */
+    public boolean destroySession(String sessionId, String reason) {
+        Session session = sessionStore.get(sessionId);
+        if (session == null) {
+            log.warn("Session not found for destroy: sessionId={}", sessionId);
+            return false;
+        }
+        String subjectId = session.getSubjectId();
+        sessionStore.delete(sessionId);
+        eventPublisher.publishEvent(new SessionDestroyedEvent(sessionId, subjectId, reason));
+        log.info("Session destroyed: sessionId={}, subjectId={}, reason={}", sessionId, subjectId, reason);
+        return true;
+    }
+
+    /**
+     * 批量销毁用户所有会话（如改密、禁用等场景）。
+     *
+     * <p>通过 ZSet 获取全量 sessionId → Pipeline 批量 DEL + DEL index Key，
+     * 并对每个 sessionId 发布 SessionDestroyedEvent。</p>
+     *
+     * @param subjectId 用户标识（userCode）
+     * @param reason    销毁原因（如 password_changed、account_disabled）
+     * @return 实际销毁的会话数量
+     */
+    public int destroyAllSessions(String subjectId, String reason) {
+        List<String> sessionIds = sessionStore.getSessionIds(subjectId);
+        if (sessionIds.isEmpty()) {
+            log.debug("No active sessions to destroy for subjectId={}", subjectId);
+            return 0;
+        }
+        int count = sessionIds.size();
+        sessionStore.deleteBySubjectId(subjectId);
+        for (String sid : sessionIds) {
+            eventPublisher.publishEvent(new SessionDestroyedEvent(sid, subjectId, reason));
+        }
+        log.info("All sessions destroyed: subjectId={}, count={}, reason={}", subjectId, count, reason);
+        return count;
     }
 
     // ========== 活跃会话查询 ==========

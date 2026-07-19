@@ -3,6 +3,7 @@
 > **模块**：iam-session（会话管理层）
 > **依赖**：US-02（SessionStore）、US-04（RedisSessionStore）
 > **来源设计**：[session-design.md](../../session-design.md) — SES-09, SES-10
+> **讨论日期**：2026-07-19
 
 ## 用户故事
 
@@ -22,17 +23,18 @@
 - 不做登出端点（属于 US-13）
 - 不做修改密码逻辑（属于 US-15）
 - 不做管理员操作的事件发布（属于 US-16）
-- 不做审计日志写入（由 US-08 事件 → US-14 监听器处理）
+- 不做审计日志写入（由 US-14 监听器处理）
 
 ## 输入
 
-- US-02：`SessionStore` 接口
+- US-02：`SessionStore` 接口（get/delete/getSessionIds/deleteBySubjectId）
 - US-04：`RedisSessionStore`（运行时实现）
 
 ## 输出
 
-- `SessionManager.destroySession()` 方法
-- `SessionManager.destroyAllSessions()` 方法
+- `SessionManager.destroySession(sessionId, reason)` → boolean
+- `SessionManager.destroyAllSessions(subjectId, reason)` → int
+- `SessionDestroyedEvent` 事件类
 
 ## 核心流程
 
@@ -44,22 +46,18 @@ sequenceDiagram
     participant Caller as 调用方
     participant Manager as SessionManager
     participant Store as SessionStore<br/>(Redis)
-    participant Listener as SessionEventListener
-    Caller ->> Manager: destroySession(sessionId)
+    participant Publisher as ApplicationEventPublisher
+    Caller ->> Manager: destroySession(sessionId, reason)
     Manager ->> Store: get(sessionId)
-    Store -->> Manager: Session (获取 subjectId)
-    Manager ->> Store: delete(sessionId)<br/>DEL session Key + ZREM index
-    Store -->> Manager: ok
-    Manager ->> Listener: onDestroyed(sessionId, subjectId, reason)
-    Manager -->> Caller: ok
-```
-
-```text
-destroySession(sessionId):
-  1. SessionStore.get(sessionId) → Session（获取 subjectId）
-  2. SessionStore.delete(sessionId)         → DEL session Key
-  3. ZREM index:{subjectId} {sessionId}     → 从索引移除
-  4. 发布 SessionDestroyedEvent (US-08)
+    Store -->> Manager: Session | null
+    alt Session 不存在
+        Manager -->> Caller: false (log.warn)
+    else Session 存在
+        Manager ->> Store: delete(sessionId)<br/>DEL session Key + ZREM index
+        Store -->> Manager: ok
+        Manager ->> Publisher: publishEvent(SessionDestroyedEvent)
+        Manager -->> Caller: true (log.info)
+    end
 ```
 
 ### destroyAllSessions（批量销毁）
@@ -70,24 +68,29 @@ sequenceDiagram
     participant Caller as 调用方
     participant Manager as SessionManager
     participant Store as SessionStore<br/>(Redis)
-    participant Listener as SessionEventListener
-    Caller ->> Manager: destroyAllSessions(subjectId)
+    participant Publisher as ApplicationEventPublisher
+    Caller ->> Manager: destroyAllSessions(subjectId, reason)
     Manager ->> Store: getSessionIds(subjectId)
     Store -->> Manager: sessionId 列表
-    Manager ->> Store: deleteBySubjectId(subjectId)<br/>Pipeline: 批量 DEL session Key + DEL index Key
-    Store -->> Manager: ok
-    loop 每个被销毁的 sessionId
-        Manager ->> Listener: onDestroyed(sessionId, subjectId, reason)
+    alt 无活跃会话
+        Manager -->> Caller: 0 (log.debug)
+    else 有活跃会话
+        Manager ->> Store: deleteBySubjectId(subjectId)<br/>Pipeline: 批量 DEL session Key + DEL index Key
+        Store -->> Manager: ok
+        loop 每个被销毁的 sessionId
+            Manager ->> Publisher: publishEvent(SessionDestroyedEvent)
+        end
+        Manager -->> Caller: count (log.info)
     end
-    Manager -->> Caller: ok
 ```
 
-```text
-destroyAllSessions(subjectId):
-  1. SessionStore.getSessionIds(subjectId) → 全量 sessionId 列表
-  2. SessionStore.deleteBySubjectId(subjectId) → Pipeline 批量 DEL + DEL index Key
-  3. 对每个 sessionId 发布 SessionDestroyedEvent (US-08)
-```
+## 影响范围
+
+| 文件                           | 变更类型 | 说明                                                                        |
+|------------------------------|------|---------------------------------------------------------------------------|
+| `SessionDestroyedEvent.java` | 新增   | 事件类（sessionId, subjectId, reason）                                         |
+| `SessionManager.java`        | 修改   | +`destroySession()`, +`destroyAllSessions()`，注入 ApplicationEventPublisher |
+| `SessionManagerTest.java`    | 修改   | +4 个测试用例                                                                  |
 
 ## 验收标准
 
@@ -95,5 +98,6 @@ destroyAllSessions(subjectId):
 - [ ] `destroyAllSessions(subjectId)` 通过 ZSet 获取全量 sessionId → Pipeline 批量 DEL + DEL index Key
 - [ ] 批量删除使用 Redis Pipeline 优化，避免逐个网络往返
 - [ ] 销毁操作后对应的 Session Key 和 ZSet 成员不存在
-- [ ] 销毁不存在的 sessionId 时不抛异常，日志记录 warn
-- [ ] `destroyAllSessions` 传入无活跃会话的 subjectId 时正常返回
+- [ ] 销毁不存在的 sessionId 时返回 false，日志记录 warn
+- [ ] `destroyAllSessions` 传入无活跃会话的 subjectId 时返回 0
+- [ ] 销毁成功后发布 `SessionDestroyedEvent`
