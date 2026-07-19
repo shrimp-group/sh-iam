@@ -9,7 +9,6 @@ import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
-import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.session.bean.SessionCreateResult;
 import com.wkclz.iam.session.enums.AuthType;
 import com.wkclz.iam.session.enums.DestroyReason;
@@ -19,6 +18,7 @@ import com.wkclz.iam.sso.bean.resp.LoginResp;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.event.LoginEvent;
 import com.wkclz.iam.sso.event.LogoutEvent;
+import com.wkclz.iam.sso.event.PasswordChangedEvent;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
 import com.wkclz.iam.sso.spi.CredentialChecker;
@@ -51,8 +51,6 @@ public class PasswordLoginService {
     private SsoLoginMapper ssoLoginMapper;
     @Autowired
     private SsoLoginLogMapper ssoLoginLogMapper;
-    @Autowired
-    private IamSessionService iamSessionService;
     @Autowired
     private CredentialChecker credentialChecker;
     @Autowired
@@ -174,7 +172,12 @@ public class PasswordLoginService {
         Assert.notNull(request.getOldPassword(), "旧密码不能为空");
         Assert.notNull(request.getNewPassword(), "新密码不能为空");
 
-        String userCode = SessionHelper.getUserCode();
+        // 从 IdentityContext 获取当前用户
+        UserIdentity userIdentity = IdentityContext.get();
+        Assert.notNull(userIdentity, "当前用户未登录");
+        String userCode = userIdentity.getUserCode();
+        log.info("用户 {} 开始修改密码", userCode);
+
         String oldPassword = request.getOldPassword();
         String newPassword = request.getNewPassword();
         String privateKey = iamSsoConfig.getPrivateKey();
@@ -187,22 +190,25 @@ public class PasswordLoginService {
             }
         }
 
+        // 旧密码校验
         IamUserAuthPassword currentPwd = ssoLoginMapper.getPasswordByUserCode(userCode);
         if (currentPwd == null) {
             throw UserException.of("用户密码记录不存在");
         }
-
         if (!passwordEncoder.matches(oldPassword, currentPwd.getSalt(), currentPwd.getPassword())) {
             throw UserException.of("旧密码错误");
         }
 
-        List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, 3);
+        // 历史密码检查（可配置，默认 5）
+        int historySize = iamSsoConfig.getPasswordHistorySize() != null ? iamSsoConfig.getPasswordHistorySize() : 5;
+        List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, historySize);
         for (IamUserPasswordHis his : historyList) {
             if (passwordEncoder.matches(newPassword, his.getSalt(), his.getPassword())) {
-                throw UserException.of("新密码不能与最近3次使用过的密码相同");
+                throw UserException.of("新密码不能与最近" + historySize + "次使用过的密码相同");
             }
         }
 
+        // 编码新密码
         String encryptedPassword = passwordEncoder.encode(newPassword, null);
         String newSalt = "";
 
@@ -213,6 +219,7 @@ public class PasswordLoginService {
         updatePwd.setVersion(currentPwd.getVersion());
         ssoLoginMapper.updatePasswordByUserCode(updatePwd);
 
+        // 记录密码变更历史
         IamUserPasswordHis his = new IamUserPasswordHis();
         his.setUserCode(userCode);
         his.setPassword(encryptedPassword);
@@ -221,10 +228,12 @@ public class PasswordLoginService {
         his.setUpdateBy(userCode);
         ssoLoginMapper.insertPasswordHis(his);
 
-        // 修改密码成功，使该用户所有会话失效
-        String username = SessionHelper.getUserJwt().getUsername();
-        iamSessionService.invalidateAllSessions(username);
-        log.info("用户 {} 修改密码成功，所有会话已失效", username);
+        // 全会话失效
+        sessionManager.destroyAllSessions(userCode, DestroyReason.PASSWORD_CHANGED);
+        log.info("用户 {} 修改密码成功，所有会话已失效", userCode);
+
+        // 发布事件
+        eventPublisher.publishEvent(new PasswordChangedEvent(userCode));
     }
 
     // ========== 内部方法 ==========
