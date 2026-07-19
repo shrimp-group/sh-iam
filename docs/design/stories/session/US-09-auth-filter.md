@@ -3,6 +3,7 @@
 > **模块**：iam-session（会话管理层）
 > **依赖**：US-01（IdentityContext）、US-06（validateAndRefresh）
 > **来源设计**：[session-design.md](../../session-design.md) — SES-15, SES-16, SES-17
+> **讨论日期**：2026-07-19
 
 ## 用户故事
 
@@ -34,78 +35,37 @@
 
 - `TokenResolver` 接口 + 默认实现 `DefaultTokenResolver`
 - `WhiteListMatcher` 接口 + 默认实现 `AntPathWhiteListMatcher`
-- `SessionAuthFilter` — Spring Filter 实现
-- 配置项：
-    - `iam.session.white-list`：白名单路径列表（默认 `/**/public/**`）
-
-## 核心接口（概念）
-
-```java
-interface TokenResolver {
-    String resolve(HttpServletRequest request);
-}
-
-interface WhiteListMatcher {
-    boolean isWhiteListed(String requestUri);
-}
-```
+- `SessionAuthFilter` — Spring Filter 实现（iam-session 模块，新增 servlet 依赖）
+- 配置项：`iam.session.white-list`：白名单路径列表（默认 `/**/public/**`）
 
 ## SessionAuthFilter 核心流程
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Client as 客户端
-    participant Filter as SessionAuthFilter
-    participant Matcher as WhiteListMatcher
-    participant Resolver as TokenResolver
-    participant Manager as SessionManager
-    participant Ctx as IdentityContext
-    participant Controller as 业务 Controller
-    Client ->> Filter: HTTP Request
-    Filter ->> Matcher: isWhiteListed(requestUri)
-    alt 白名单路径
-        Matcher -->> Filter: true
-        Filter ->> Controller: chain.doFilter() (放行)
-    else 非白名单
-        Matcher -->> Filter: false
-        Filter ->> Resolver: resolve(request)
-        Resolver -->> Filter: token (或 null)
-        alt token 为 null
-            Filter -->> Client: 401 缺少 Token
-        else token 存在
-            Filter ->> Manager: validateAndRefresh(token)
-            alt Session 无效 (null)
-                Manager -->> Filter: null
-                Filter -->> Client: 401 会话无效
-            else Session 有效
-                Manager -->> Filter: Session
-                Filter ->> Ctx: set(userIdentity, token)
-                Filter ->> Controller: chain.doFilter()
-                Controller ->> Ctx: get() → 获取当前用户
-                Controller -->> Client: 响应
-                Filter ->> Ctx: clear()
-            end
-        end
-    end
+```
+doFilterInternal(request, response, chain):
+  try:
+    1. whitelist.isWhiteListed(requestUri)? → 是: chain.doFilter() 放行
+    2. tokenResolver.resolve(request) → token
+       → null: 401 + log.warn(uri)
+    3. sessionManager.validateAndRefresh(token) → Session
+       → null 或 userIdentity 缺失: 401 + log.warn(uri)
+    4. 从 Session.userIdentity JSON 反序列化 UserIdentity
+    5. IdentityContext.set(userIdentity, token)
+    6. chain.doFilter()
+  finally:
+    IdentityContext.clear()  // 防止 ThreadLocal 泄漏
 ```
 
-```text
-doFilter(request, response, chain):
-  try:
-    1. 获取请求 URI
-    2. whiteListMatcher.isWhiteListed(uri)?
-       → 是：chain.doFilter()，直接放行
-       → 否：继续
-    3. tokenResolver.resolve(request) → token
-       → 若 token 为 null：返回 401
-    4. sessionManager.validateAndRefresh(token) → Session
-       → 若 Session 为 null（不存在/已过期）：返回 401
-    5. identityContext.set(session.userIdentity, token)
-    6. chain.doFilter() → 业务处理
-  finally:
-    7. identityContext.clear()
-```
+## 影响范围
+
+| 文件                                    | 变更类型   | 说明                                    |
+|---------------------------------------|--------|---------------------------------------|
+| `iam-session/pom.xml`                 | 修改     | +spring-web, +jakarta.servlet-api     |
+| `filter/TokenResolver.java`           | 新增     | SPI 接口                                |
+| `filter/DefaultTokenResolver.java`    | 新增     | @Component, @ConditionalOnMissingBean |
+| `filter/WhiteListMatcher.java`        | 新增     | SPI 接口                                |
+| `filter/AntPathWhiteListMatcher.java` | 新增     | @Component, @ConditionalOnMissingBean |
+| `filter/SessionAuthFilter.java`       | 新增     | @Component OncePerRequestFilter       |
+| `iam-sdk/.../IamAuthFilter.java`      | **删除** | 新 Filter 全量覆盖，旧模块 iam-sdk 不再需要        |
 
 ## 验收标准
 
