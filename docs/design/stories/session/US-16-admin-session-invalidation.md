@@ -48,7 +48,74 @@
 
 ### 场景1：管理员重置密码
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Admin as iam-admin<br/>IamUserService
+    participant Event as Spring EventBus
+    participant Listener as SessionInvalidationListener<br/>(iam-sso)
+    participant Manager as SessionManager<br/>(iam-session)
+    participant Store as SessionStore<br/>(Redis)
+    participant Audit as SessionEventListenerImpl<br/>(审计)
+    participant DB as Database<br/>iam_login_log
+    Admin ->> Admin: resetPassword(userCode, newPassword)
+    Admin ->> Event: publish(PasswordResetByAdminEvent(userCode))
+    Event ->> Listener: onPasswordReset(event) (@Async)
+    Listener ->> Manager: destroyAllSessions(userCode)
+    Manager ->> Store: ZRANGE index:{userCode} → sessionId 列表
+    Manager ->> Store: Pipeline: 批量 DEL session Key + DEL index Key
+    loop 每个被销毁的 sessionId
+        Manager ->> Audit: onDestroyed(sessionId, userCode, PASSWORD_RESET_BY_ADMIN)
+        Audit ->> DB: INSERT 会话失效日志
+    end
+    Manager -->> Listener: ok
 ```
+
+### 场景2：用户状态变更（禁用/锁定）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Admin as iam-admin<br/>IamUserService
+    participant Event as Spring EventBus
+    participant Listener as SessionInvalidationListener<br/>(iam-sso)
+    participant Manager as SessionManager<br/>(iam-session)
+    participant Store as SessionStore<br/>(Redis)
+    participant Audit as SessionEventListenerImpl<br/>(审计)
+    participant DB as Database<br/>iam_login_log
+    Admin ->> Admin: updateUserStatus(userCode, DISABLED/LOCKED)
+    Admin ->> Event: publish(UserStatusChangedEvent(userCode, newStatus))
+    Event ->> Listener: onUserStatusChanged(event) (@Async)
+    Listener ->> Manager: destroyAllSessions(userCode)
+    Manager ->> Store: ZRANGE index:{userCode} → sessionId 列表
+    Manager ->> Store: Pipeline: 批量 DEL session Key + DEL index Key
+    loop 每个被销毁的 sessionId
+        Manager ->> Audit: onDestroyed(sessionId, userCode, USER_DISABLED)
+        Audit ->> DB: INSERT 会话失效日志
+    end
+    Manager -->> Listener: ok
+```
+
+### 场景3：角色绑定变更（不销毁会话，仅刷新权限缓存）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Admin as iam-admin<br/>RoleService
+    participant Event as Spring EventBus
+    participant Listener as SessionInvalidationListener<br/>(iam-sso)
+    participant Cache as AuthCache<br/>(权限缓存)
+    Admin ->> Admin: unbindRole(userCode, roleCode)
+    Admin ->> Event: publish(UserRoleChangedEvent(userCode))
+    Event ->> Listener: onUserRoleChanged(event) (@Async)
+    Note over Listener: 不销毁会话
+    Listener ->> Cache: 发布 AuthCacheRefreshEvent(SUBJECT, userCode)
+    Note over Cache: 仅刷新权限缓存
+```
+
+```text
+### 场景1：管理员重置密码
+
 iam-admin IamUserService.resetPassword(userCode, newPassword):
   1. 重置密码逻辑（已有）
   2. 发布 PasswordResetByAdminEvent(userCode)
@@ -57,11 +124,9 @@ iam-sso SessionInvalidationListener.onPasswordReset(event):
   3. sessionManager.destroyAllSessions(event.userCode)
   4. → SessionStore 批量删除 → 发布 SessionDestroyedEvent ×N
   5. → SessionEventListenerImpl.onDestroyed() → INSERT 审计日志
-```
 
 ### 场景2：用户状态变更
 
-```
 iam-admin IamUserService.updateUserStatus(userCode, newStatus):
   1. 状态变更逻辑（已有）
   2. 若 newStatus == DISABLED 或 LOCKED:
@@ -70,11 +135,9 @@ iam-admin IamUserService.updateUserStatus(userCode, newStatus):
 iam-sso SessionInvalidationListener.onUserStatusChanged(event):
   3. sessionManager.destroyAllSessions(event.userCode)
   4. → 同上审计流程
-```
 
 ### 场景3：角色绑定变更（暂不销毁会话）
 
-```
 iam-admin RoleService.unbindRole(userCode, roleCode):
   1. 解绑逻辑（已有）
   2. 发布 UserRoleChangedEvent(userCode)

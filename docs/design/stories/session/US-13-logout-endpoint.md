@@ -36,7 +36,36 @@
 
 ## 核心流程
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 前端
+    participant Rest as LoginRest<br/>/iam-sso/logout
+    participant Service as PasswordLoginService
+    participant Ctx as IdentityContext<br/>(sh-core)
+    participant Manager as SessionManager<br/>(iam-session)
+    participant Store as SessionStore<br/>(Redis)
+    participant Listener as SessionEventListener<br/>(审计)
+    participant DB as Database
+    Client ->> Rest: GET /iam-sso/logout
+    Rest ->> Service: logout()
+    Service ->> Ctx: getToken()
+    alt token 为 null
+        Ctx -->> Service: null
+        Service -->> Client: 登出成功 (未登录)
+    end
+    Ctx -->> Service: token
+    Service ->> Manager: destroySession(token)
+    Manager ->> Store: get(sessionId) → 获取 subjectId
+    Manager ->> Store: DEL session Key + ZREM index
+    Manager ->> Listener: onDestroyed(sessionId, subjectId, LOGOUT)
+    Listener ->> DB: INSERT 登出日志
+    Manager -->> Service: ok
+    Service ->> Ctx: clear()
+    Service -->> Client: 登出成功
 ```
+
+```text
 GET /iam-sso/logout:
   1. identityContext.getToken() → token
      → 若 token 为 null → 返回 "未登录" 或直接成功

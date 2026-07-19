@@ -52,7 +52,45 @@ interface WhiteListMatcher {
 
 ## SessionAuthFilter 核心流程
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 客户端
+    participant Filter as SessionAuthFilter
+    participant Matcher as WhiteListMatcher
+    participant Resolver as TokenResolver
+    participant Manager as SessionManager
+    participant Ctx as IdentityContext
+    participant Controller as 业务 Controller
+    Client ->> Filter: HTTP Request
+    Filter ->> Matcher: isWhiteListed(requestUri)
+    alt 白名单路径
+        Matcher -->> Filter: true
+        Filter ->> Controller: chain.doFilter() (放行)
+    else 非白名单
+        Matcher -->> Filter: false
+        Filter ->> Resolver: resolve(request)
+        Resolver -->> Filter: token (或 null)
+        alt token 为 null
+            Filter -->> Client: 401 缺少 Token
+        else token 存在
+            Filter ->> Manager: validateAndRefresh(token)
+            alt Session 无效 (null)
+                Manager -->> Filter: null
+                Filter -->> Client: 401 会话无效
+            else Session 有效
+                Manager -->> Filter: Session
+                Filter ->> Ctx: set(userIdentity, token)
+                Filter ->> Controller: chain.doFilter()
+                Controller ->> Ctx: get() → 获取当前用户
+                Controller -->> Client: 响应
+                Filter ->> Ctx: clear()
+            end
+        end
+    end
 ```
+
+```text
 doFilter(request, response, chain):
   try:
     1. 获取请求 URI

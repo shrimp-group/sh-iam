@@ -56,6 +56,28 @@ enum DestroyReason {
 }
 ```
 
+## 事件发布流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Manager as SessionManager
+    participant Publisher as ApplicationEventPublisher<br/>(Spring)
+    participant Listener as SessionEventListener<br/>(@Async)
+    Note over Manager, Listener: === SessionCreatedEvent ===
+    Manager ->> Publisher: publishEvent(SessionCreatedEvent)
+    Publisher ->> Listener: @EventListener (异步)
+    Listener ->> Listener: onCreated(session)
+    Note over Manager, Listener: === SessionDestroyedEvent ===
+    Manager ->> Publisher: publishEvent(SessionDestroyedEvent)
+    Publisher ->> Listener: @EventListener (异步)
+    Listener ->> Listener: onDestroyed(sessionId, subjectId, reason)
+    Note over Manager, Listener: === SessionExpiredEvent ===
+    Manager ->> Publisher: publishEvent(SessionExpiredEvent)
+    Publisher ->> Listener: @EventListener (异步)
+    Listener ->> Listener: onExpired(sessionId, subjectId)
+```
+
 ## 事件发布集成点
 
 | 事件                      | 发布位置                                                       | 发布时机                         |

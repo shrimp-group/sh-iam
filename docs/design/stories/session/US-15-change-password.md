@@ -37,7 +37,52 @@
 
 ## 核心流程
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 前端
+    participant Service as PasswordLoginService
+    participant Ctx as IdentityContext
+    participant Encoder as PasswordEncoder
+    participant DB as Database
+    participant Manager as SessionManager<br/>(iam-session)
+    participant Store as SessionStore<br/>(Redis)
+    participant Listener as SessionEventListener
+    Client ->> Service: changePassword(oldPassword, newPassword)
+    Service ->> Ctx: get() → UserIdentity
+    Note over Service, DB: === 旧密码校验 ===
+    Service ->> DB: 查询 iam_user_auth_password<br/>→ storedPassword + salt
+    Service ->> Encoder: matches(oldPassword, salt, storedPassword)
+    alt 不匹配
+        Encoder -->> Service: false
+        Service -->> Client: 旧密码错误
+    end
+    Note over Service, DB: === 历史密码检查 ===
+    Service ->> DB: 查询 iam_user_password_his 最近 N 条
+    loop 每条历史记录
+        Service ->> Encoder: matches(newPassword, salt, historyEncoded)
+        alt 匹配
+            Encoder -->> Service: true
+            Service -->> Client: 新密码不能与最近 N 次相同
+        end
+    end
+    Note over Service, DB: === 更新密码 ===
+    Service ->> Service: 生成新 salt
+    Service ->> Encoder: encode(newPassword, newSalt) → newEncoded
+    Service ->> DB: UPDATE iam_user_auth_password<br/>（新密码+新salt+新lastChangedTime）
+    Service ->> DB: INSERT iam_user_password_his（历史记录）
+    Note over Service, Listener: === 全会话失效 ===
+    Service ->> Manager: destroyAllSessions(userCode)
+    Manager ->> Store: ZRANGE index:{userCode} → sessionId 列表
+    Manager ->> Store: Pipeline: 批量 DEL session Key + DEL index Key
+    loop 每个被销毁的 sessionId
+        Manager ->> Listener: onDestroyed(sessionId, userCode, PASSWORD_CHANGED)
+    end
+    Manager -->> Service: ok
+    Service -->> Client: 修改成功
 ```
+
+```text
 changePassword(oldPassword, newPassword):
   1. identityContext.get() → UserIdentity（获取当前用户）
   2. 根据 userCode 查询 iam_user_auth_password → 获取 storedPassword + salt

@@ -36,13 +36,53 @@
 
 ## 核心流程
 
+### destroySession（单个销毁）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as 调用方
+    participant Manager as SessionManager
+    participant Store as SessionStore<br/>(Redis)
+    participant Listener as SessionEventListener
+    Caller ->> Manager: destroySession(sessionId)
+    Manager ->> Store: get(sessionId)
+    Store -->> Manager: Session (获取 subjectId)
+    Manager ->> Store: delete(sessionId)<br/>DEL session Key + ZREM index
+    Store -->> Manager: ok
+    Manager ->> Listener: onDestroyed(sessionId, subjectId, reason)
+    Manager -->> Caller: ok
 ```
+
+```text
 destroySession(sessionId):
   1. SessionStore.get(sessionId) → Session（获取 subjectId）
   2. SessionStore.delete(sessionId)         → DEL session Key
   3. ZREM index:{subjectId} {sessionId}     → 从索引移除
   4. 发布 SessionDestroyedEvent (US-08)
+```
 
+### destroyAllSessions（批量销毁）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as 调用方
+    participant Manager as SessionManager
+    participant Store as SessionStore<br/>(Redis)
+    participant Listener as SessionEventListener
+    Caller ->> Manager: destroyAllSessions(subjectId)
+    Manager ->> Store: getSessionIds(subjectId)
+    Store -->> Manager: sessionId 列表
+    Manager ->> Store: deleteBySubjectId(subjectId)<br/>Pipeline: 批量 DEL session Key + DEL index Key
+    Store -->> Manager: ok
+    loop 每个被销毁的 sessionId
+        Manager ->> Listener: onDestroyed(sessionId, subjectId, reason)
+    end
+    Manager -->> Caller: ok
+```
+
+```text
 destroyAllSessions(subjectId):
   1. SessionStore.getSessionIds(subjectId) → 全量 sessionId 列表
   2. SessionStore.deleteBySubjectId(subjectId) → Pipeline 批量 DEL + DEL index Key

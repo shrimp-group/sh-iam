@@ -64,7 +64,38 @@
 
 ### validateAndRefresh(token)
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as 调用方<br/>(SessionAuthFilter)
+    participant Manager as SessionManager
+    participant TokenSvc as TokenService
+    participant Store as SessionStore<br/>(Redis)
+    Note over Caller, Store: === Token 解析 ===
+    Caller ->> Manager: validateAndRefresh(token)
+    Manager ->> TokenSvc: verifyToken(token)
+    TokenSvc -->> Manager: TokenInfo(userCode, username, nickname, JWT.exp)
+    Manager ->> Manager: sessionId = MD5(token)
+    Manager ->> Store: get(sessionId)
+    alt Session 不存在
+        Store -->> Manager: null
+        Manager -->> Caller: null (401)
+    else Redis 已过期
+        Store -->> Manager: Session (redisExpireTime < now)
+        Manager -->> Caller: null (401)
+    else Session 有效
+        Store -->> Manager: Session
+        Note over Manager, Store: === 滑窗续期判断 ===
+        alt redisExpireTime - now < threshold<br/>且 now - lastRenewalTime > interval<br/>且 JWT.exp > now + threshold
+            Manager ->> Manager: newRedisExpire = min(now + threshold, JWT.exp)
+            Manager ->> Store: renewSession(sessionId, newRedisExpire)<br/>Pipeline: HSET + EXPIRE
+            Manager ->> Manager: 更新 redisExpireTime / lastRenewalTime
+        end
+        Manager -->> Caller: Session (含 UserIdentity)
+    end
 ```
+
+```text
 1. TokenService.verifyToken(token) → TokenInfo（含 JWT exp，由 JJWT 库已预校验签名+过期）
 2. sessionId = MD5(token)
 3. SessionStore.get(sessionId) → Session
@@ -82,7 +113,24 @@
 
 ### getActiveSessions(subjectId)
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as 调用方
+    participant Manager as SessionManager
+    participant Store as SessionStore<br/>(Redis)
+    Caller ->> Manager: getActiveSessions(subjectId)
+    Manager ->> Store: getSessionIds(subjectId)
+    Store -->> Manager: sessionId 列表 (ZSet)
+    loop 每个 sessionId
+        Manager ->> Store: get(sessionId)
+        Store -->> Manager: Session
+    end
+    Manager ->> Manager: 过滤 redisExpireTime >= now
+    Manager -->> Caller: 存活 Session 列表
 ```
+
+```text
 1. SessionStore.getSessionIds(subjectId) → sessionId 列表
 2. 批量 SessionStore.get() → 按 redisExpireTime 过滤（>= now）
 3. 返回存活 Session 列表
@@ -90,7 +138,7 @@
 
 ### SessionStore.renewSession(sessionId, newRedisExpireTime)
 
-```
+```text
 通过 Pipeline 原子执行：
 1. HSET: key → {redisExpireTime, lastRenewalTime}
 2. EXPIRE: key → (newRedisExpireTime - now) / 1000 秒

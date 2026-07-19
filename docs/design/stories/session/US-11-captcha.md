@@ -33,6 +33,39 @@
 - `CaptchaRest` — `GET /iam-sso/public/captcha`（生成端点和校验端点）
 - Redis Key：`iam:captcha:{captchaId}`
 
+## 核心流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 前端
+    participant Rest as CaptchaRest<br/>/iam-sso/public/captcha
+    participant Service as CaptchaService
+    participant Redis as Redis
+    Note over Client, Redis: === 生成验证码 ===
+    Client ->> Rest: GET /iam-sso/public/captcha
+    Rest ->> Service: generate()
+    Service ->> Service: 生成 captchaId (UUID)
+    Service ->> Service: 生成随机码 + 绘制图形
+    Service ->> Redis: SET iam:captcha:{captchaId} = code<br/>EXPIRE 300 (5min)
+    Service -->> Rest: CaptchaResult(captchaId, base64Image)
+    Rest -->> Client: { captchaId, base64Image }
+    Note over Client, Redis: === 校验验证码（在登录时触发） ===
+    Client ->> Rest: POST /iam-sso/login<br/>(含 captchaId + captchaCode)
+    Rest ->> Service: verify(captchaId, captchaCode)
+    Service ->> Redis: Lua: GET iam:captcha:{captchaId} → DEL<br/>（原子 get-and-delete）
+    alt captchaId 不存在或已消费
+        Redis -->> Service: null
+        Service -->> Rest: false (验证码不存在或已过期)
+    else code 不匹配
+        Redis -->> Service: storedCode ≠ captchaCode
+        Service -->> Rest: false (验证码错误)
+    else 校验成功
+        Redis -->> Service: storedCode == captchaCode
+        Service -->> Rest: true
+    end
+```
+
 ## 核心接口（概念）
 
 ```java

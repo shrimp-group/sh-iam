@@ -35,6 +35,31 @@
 - `LoginLog` 实体 + Mapper（或复用现有）
 - 注入 Spring 容器，自动订阅 Session 事件
 
+## 审计流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Event as Spring EventBus
+    participant Listener as SessionEventListenerImpl<br/>(@Async)
+    participant DB as Database<br/>iam_login_log
+    Note over Event, DB: === onCreated: 登录成功 ===
+    Event ->> Listener: onCreated(session)
+    Listener ->> DB: INSERT iam_login_log<br/>username, loginStatus=SUCCESS,<br/>clientIp, userAgent, loginTime, sessionId
+    Note over Event, DB: === onDestroyed: 登出/失效 ===
+    Event ->> Listener: onDestroyed(sessionId, subjectId, reason)
+    alt reason == LOGOUT
+        Listener ->> DB: INSERT 登出日志<br/>username, logoutTime, reason=LOGOUT, sessionId
+    else reason == CONCURRENT_KICK
+        Listener ->> DB: INSERT 会话踢出日志<br/>username, reason=CONCURRENT_KICK, sessionId
+    else reason == PASSWORD_CHANGED 等安全事件
+        Listener ->> DB: INSERT 会话失效日志<br/>username, reason, sessionId
+    end
+    Note over Event, DB: === onExpired: 自然过期 ===
+    Event ->> Listener: onExpired(sessionId, subjectId)
+    Listener ->> DB: UPDATE iam_login_log<br/>SET expired=true<br/>WHERE sessionId=sessionId
+```
+
 ## 核心实现
 
 ```java

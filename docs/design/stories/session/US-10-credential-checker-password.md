@@ -60,7 +60,41 @@ interface PasswordEncoder {
 
 ## 校验顺序
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as PasswordLoginService
+    participant Checker as CredentialChecker
+    participant Encoder as PasswordEncoder
+    participant DB as Database
+    Caller ->> Checker: check(username, rawPassword)
+    Checker ->> DB: 查询用户 (username)
+    alt 用户不存在
+        DB -->> Checker: null
+        Checker -->> Caller: USER_NOT_FOUND
+    end
+    DB -->> Checker: userCode, storedPassword, salt, userStatus, authStatus
+    alt userStatus == 2 (禁用)
+        Checker -->> Caller: DISABLED
+    else userStatus == 3 (锁定)
+        Checker -->> Caller: LOCKED
+    else authStatus == 0 (认证方式禁用)
+        Checker -->> Caller: AUTH_DISABLED
+    end
+    Checker ->> Encoder: matches(rawPassword, salt, storedPassword)
+    alt 密码不匹配
+        Encoder -->> Checker: false
+        Checker -->> Caller: PASSWORD_ERROR
+    end
+    Encoder -->> Checker: true
+    Checker ->> DB: 查询 lastChangedTime
+    alt lastChangedTime + expireDays < now
+        Checker -->> Caller: PASSWORD_EXPIRED<br/>(含 UserIdentity)
+    end
+    Checker -->> Caller: success + UserIdentity
 ```
+
+```text
 check(username, rawPassword):
   1. 查用户信息 → userCode, storedPassword, salt, userStatus, authStatus, lastChangedTime
   2. 用户不存在 → 返回 USER_NOT_FOUND

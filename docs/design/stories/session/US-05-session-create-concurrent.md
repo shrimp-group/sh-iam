@@ -39,7 +39,36 @@ Session + Token），并在超出最大并发数时自动踢出最早会话
 
 ## 核心流程
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as 调用方<br/>(iam-sso)
+    participant Manager as SessionManager
+    participant TokenSvc as TokenService
+    participant Store as SessionStore<br/>(Redis)
+    participant Listener as SessionEventListener
+    Note over Caller, Listener: === 会话创建 ===
+    Caller ->> Manager: createSession(userIdentity, authType, clientIp, userAgent)
+    Manager ->> TokenSvc: generateToken(userCode, username, nickname)
+    TokenSvc -->> Manager: JWT Token (HS256)
+    Manager ->> Manager: sessionId = MD5(token)
+    Manager ->> Manager: 构建 Session 对象
+    Note over Caller, Listener: === 并发控制 (Lua 原子操作) ===
+    Manager ->> Store: Lua: ZCARD index:{subjectId}
+    Store -->> Manager: currentCount
+    loop currentCount >= maxConcurrent
+        Manager ->> Store: Lua: ZRANGE(0,0) → DEL + ZREM<br/>（踢出最早会话）
+        Manager ->> Listener: onDestroyed(oldSessionId, subjectId, CONCURRENT_KICK)
+        Manager ->> Store: Lua: ZCARD index:{subjectId}
+        Store -->> Manager: currentCount
+    end
+    Note over Caller, Listener: === 持久化 ===
+    Manager ->> Store: save(session, ttl)
+    Manager ->> Listener: onCreated(session)
+    Manager -->> Caller: SessionCreateResult(token, session)
 ```
+
+```text
 createSession(userIdentity, authType):
   1. TokenService.generateToken(userCode, username, nickname) → token
   2. sessionId = MD5(token)（固定 32 字符）

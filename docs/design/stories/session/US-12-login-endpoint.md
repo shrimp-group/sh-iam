@@ -46,7 +46,56 @@ Token 和用户信息
 
 ## 核心流程
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 前端
+    participant Rest as LoginRest<br/>/iam-sso/login
+    participant Service as PasswordLoginService
+    participant Captcha as CaptchaService
+    participant Checker as CredentialChecker
+    participant Encoder as PasswordEncoder
+    participant Session as SessionManager<br/>(iam-session)
+    participant Store as SessionStore<br/>(Redis)
+    participant Listener as SessionEventListener<br/>(审计)
+    participant DB as Database
+    Note over Client, DB: === 阶段1：密码解密 ===
+    Client ->> Rest: POST /iam-sso/login<br/>{username, password, captchaId, captchaCode}
+    Rest ->> Service: login(req, request)
+    Service ->> Service: 若 password.length > 32<br/>→ RSA 私钥解密 → rawPassword
+    Note over Client, DB: === 阶段2：验证码判断 ===
+    Service ->> Service: 查询 Redis 中 1h 内失败次数
+    alt 失败次数 >= 阈值
+        Service ->> Captcha: verify(captchaId, captchaCode)
+        Captcha -->> Service: valid / invalid
+    end
+    Note over Client, DB: === 阶段3：凭证校验 ===
+    Service ->> Checker: check(username, rawPassword)
+    Checker ->> DB: ① 查询用户信息 (userCode+status+pwd)
+    Checker ->> DB: ② 账号状态校验 (存在→禁用→锁定→认证禁用)
+    Checker ->> Encoder: ③ matches(rawPassword, salt, stored)
+    Encoder -->> Checker: true/false
+    Checker ->> Checker: ④ 密码过期检查
+    alt 校验失败
+        Checker -->> Service: failReason
+        Service ->> Service: Redis 失败计数 +1
+        Service -->> Client: 登录失败
+    end
+    Checker -->> Service: success + UserIdentity
+    Note over Client, DB: === 阶段4：会话创建 (委托 iam-session) ===
+    Service ->> Session: createSession(userIdentity, PASSWORD, ip, ua)
+    Session ->> Session: 生成 JWT Token (HS256)
+    Session ->> Session: 构建 Session 对象
+    Session ->> Session: 并发控制 (Lua 原子操作)
+    Session ->> Store: save(session)
+    Session ->> Listener: onCreated(session)
+    Session -->> Service: SessionCreateResult(token, session)
+    Note over Client, DB: === 阶段5：返回 ===
+    Service ->> Service: 更新最后登录 IP
+    Service -->> Client: LoginResp {token, userCode, username, nickname, avatar}
 ```
+
+```text
 POST /iam-sso/login {username, password, captchaId, captchaCode}:
 
   阶段1：密码解密
