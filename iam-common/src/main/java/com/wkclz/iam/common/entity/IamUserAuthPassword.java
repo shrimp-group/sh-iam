@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,25 +21,25 @@ public class IamUserAuthPassword extends BaseEntity {
     /**
      * 用户编码
      */
-    @FieldDesc(value = "用户编码", notNull = true)
+    @Schema(description = "用户编码")
     private String userCode;
 
     /**
      * 加密后的密码
      */
-    @FieldDesc(value = "加密后的密码", notNull = true)
+    @Schema(description = "加密后的密码")
     private String password;
 
     /**
      * 密码盐值
      */
-    @FieldDesc(value = "密码盐值", notNull = true)
+    @Schema(description = "密码盐值")
     private String salt;
 
     /**
      * 最后修改时间
      */
-    @FieldDesc(value = "最后修改时间", notNull = true)
+    @Schema(description = "最后修改时间")
     private LocalDateTime lastChangedTime;
 
 

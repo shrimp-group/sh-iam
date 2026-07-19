@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,49 +21,49 @@ public class IamLoginLog extends BaseEntity {
     /**
      * 认证标识
      */
-    @FieldDesc(value = "认证标识", notNull = true)
+    @Schema(description = "认证标识")
     private String authIdentifier;
 
     /**
      * 用户编码
      */
-    @FieldDesc(value = "用户编码", notNull = true)
+    @Schema(description = "用户编码")
     private String userCode;
 
     /**
      * 登录用户名
      */
-    @FieldDesc(value = "登录用户名", notNull = true)
+    @Schema(description = "登录用户名")
     private String username;
 
     /**
      * 登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等
      */
-    @FieldDesc(value = "登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等", notNull = true)
+    @Schema(description = "登录类型：PASSWORD(密码登录)、LDAP(LDAP登录)等")
     private String authType;
 
     /**
      * 登录状态：SUCCESS(成功)、FAILED(失败)
      */
-    @FieldDesc(value = "登录状态：SUCCESS(成功)、FAILED(失败)", notNull = true)
+    @Schema(description = "登录状态：SUCCESS(成功)、FAILED(失败)")
     private Integer loginStatus;
 
     /**
      * 登录结果消息
      */
-    @FieldDesc(value = "登录结果消息", notNull = true)
+    @Schema(description = "登录结果消息")
     private String message;
 
     /**
      * 登录IP地址
      */
-    @FieldDesc(value = "登录IP地址", notNull = true)
+    @Schema(description = "登录IP地址")
     private String ipAddress;
 
     /**
      * 用户代理信息
      */
-    @FieldDesc(value = "用户代理信息", notNull = true)
+    @Schema(description = "用户代理信息")
     private String userAgent;
 
 

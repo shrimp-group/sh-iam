@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,61 +21,61 @@ public class IamMenu extends BaseEntity {
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * 父编码，顶级为0
      */
-    @FieldDesc(value = "父编码，顶级为0")
+    @Schema(description = "父编码，顶级为0")
     private String parentCode;
 
     /**
      * 资源编码
      */
-    @FieldDesc(value = "资源编码")
+    @Schema(description = "资源编码")
     private String menuCode;
 
     /**
      * 名称
      */
-    @FieldDesc(value = "名称")
+    @Schema(description = "名称")
     private String menuName;
 
     /**
      * 图标
      */
-    @FieldDesc(value = "图标")
+    @Schema(description = "图标")
     private String icon;
 
     /**
      * 菜单类型:菜单MENU, 按钮BUTTON,字段组FIELDS
      */
-    @FieldDesc(value = "菜单类型:菜单MENU, 按钮BUTTON,字段组FIELDS")
+    @Schema(description = "菜单类型:菜单MENU, 按钮BUTTON,字段组FIELDS")
     private String menuType;
 
     /**
      * 路由地址
      */
-    @FieldDesc(value = "路由地址")
+    @Schema(description = "路由地址")
     private String routePath;
 
     /**
      * 组件
      */
-    @FieldDesc(value = "组件")
+    @Schema(description = "组件")
     private String component;
 
     /**
      * 权限标识符
      */
-    @FieldDesc(value = "权限标识符")
+    @Schema(description = "权限标识符")
     private String buttonCode;
 
     /**
      * 隐藏
      */
-    @FieldDesc(value = "隐藏")
+    @Schema(description = "隐藏")
     private Integer hidden;
 
 

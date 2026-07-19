@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,43 +21,43 @@ public class IamUser extends BaseEntity {
     /**
      * 用户编码
      */
-    @FieldDesc(value = "用户编码", notNull = true)
+    @Schema(description = "用户编码")
     private String userCode;
 
     /**
      * 用户名
      */
-    @FieldDesc(value = "用户名", notNull = true)
+    @Schema(description = "用户名")
     private String username;
 
     /**
      * 昵称
      */
-    @FieldDesc(value = "昵称", notNull = true)
+    @Schema(description = "昵称")
     private String nickname;
 
     /**
      * 邮箱
      */
-    @FieldDesc(value = "邮箱")
+    @Schema(description = "邮箱")
     private String email;
 
     /**
      * 手机号
      */
-    @FieldDesc(value = "手机号")
+    @Schema(description = "手机号")
     private String phone;
 
     /**
      * 头像
      */
-    @FieldDesc(value = "头像")
+    @Schema(description = "头像")
     private String avatar;
 
     /**
      * 状态：1-启用，2-禁用，3-锁定
      */
-    @FieldDesc(value = "状态：1-启用，2-禁用，3-锁定", notNull = true)
+    @Schema(description = "状态：1-启用，2-禁用，3-锁定")
     private Integer userStatus;
 
 

@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,37 +21,37 @@ public class IamApp extends BaseEntity {
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * 应用名称
      */
-    @FieldDesc(value = "应用名称")
+    @Schema(description = "应用名称")
     private String appName;
 
     /**
      * 应用域名
      */
-    @FieldDesc(value = "应用域名")
+    @Schema(description = "应用域名")
     private String domain;
 
     /**
      * 鉴权类型
      */
-    @FieldDesc(value = "鉴权类型")
+    @Schema(description = "鉴权类型")
     private String authType;
 
     /**
      * 图标
      */
-    @FieldDesc(value = "图标")
+    @Schema(description = "图标")
     private String appIcon;
 
     /**
      * 登录页背景
      */
-    @FieldDesc(value = "登录页背景")
+    @Schema(description = "登录页背景")
     private String loginBgp;
 
 
