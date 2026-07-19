@@ -1,7 +1,12 @@
-package com.wkclz.iam.sdk.helper;
+package com.wkclz.iam.sso.service;
 
 import com.wkclz.core.exception.SystemException;
-import com.wkclz.iam.sdk.bean.resp.PictureCaptchaResp;
+import com.wkclz.iam.sso.bean.resp.PictureCaptchaResp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -11,95 +16,86 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-public class CaptchaHelper {
+/**
+ * 验证码服务 — 图形验证码生成 + Redis 原子校验。
+ *
+ * <p>验证码存入 Redis，Key 为 {@code iam:captcha:{captchaId}}，TTL 5min。
+ * 校验使用 Redis 的 get-and-delete 实现一次性消费。</p>
+ */
+@Service
+public class CaptchaService {
 
-    // 验证码有效时间：5
-    private static final long CAPTCHA_EXPIRATION = 5;
-    // 验证码长度
+    private static final Logger log = LoggerFactory.getLogger(CaptchaService.class);
+
+    private static final long CAPTCHA_TTL_MINUTES = 5;
+    private static final String REDIS_KEY_PREFIX = "iam:captcha:";
     private static final int CAPTCHA_LENGTH = 4;
-    // 验证码宽度
     private static final int WIDTH = 120;
-    // 验证码高度
     private static final int HEIGHT = 40;
-    // 字体大小
     private static final int FONT_SIZE = 20;
-    // 可选字符集，避开容易混淆的字符：0, O, 1, I, l
     private static final String CHARACTERS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
-    public static PictureCaptchaResp getCaptcha() {
-        // 生成验证码内容
+    public PictureCaptchaResp generate() {
         String captchaCode = generateCaptchaCode();
-        // 生成验证码唯一ID
         String captchaId = UUID.randomUUID().toString().replace("-", "");
-        // 生成验证码图片
         String base64Image = generateCaptchaImage(captchaCode);
 
-        // 构建返回结果
-        PictureCaptchaResp response = new PictureCaptchaResp();
-        response.setCaptchaId(captchaId);
-        response.setCaptchaCode(captchaCode);
-        response.setCaptchaImage(base64Image);
-        response.setExpireTime(System.currentTimeMillis() + CAPTCHA_EXPIRATION * 60 * 1000);
+        // 存入 Redis，TTL 5min
+        String redisKey = REDIS_KEY_PREFIX + captchaId;
+        redisTemplate.opsForValue().set(redisKey, captchaCode, CAPTCHA_TTL_MINUTES, TimeUnit.MINUTES);
+        log.debug("Captcha generated: captchaId={}", captchaId);
 
-        return response;
+        return new PictureCaptchaResp(captchaId, base64Image);
     }
 
-
-    public static String getCaptchaRedisKey(String captchaId) {
-        return "iam:captcha:" + captchaId;
+    public boolean verify(String captchaId, String captchaCode) {
+        if (captchaId == null || captchaCode == null) {
+            return false;
+        }
+        String redisKey = REDIS_KEY_PREFIX + captchaId;
+        // 原子 get-and-delete，实现一次性消费
+        String storedCode = redisTemplate.opsForValue().getAndDelete(redisKey);
+        if (storedCode == null) {
+            log.debug("Captcha not found or already consumed: captchaId={}", captchaId);
+            return false;
+        }
+        boolean matched = storedCode.equalsIgnoreCase(captchaCode);
+        if (!matched) {
+            log.debug("Captcha mismatch: captchaId={}, expected={}, actual={}", captchaId, storedCode, captchaCode);
+        }
+        return matched;
     }
 
+    // ========== 图形绘制 ==========
 
-    /**
-     * 生成验证码内容
-     * @return 验证码字符串
-     */
     private static String generateCaptchaCode() {
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < CAPTCHA_LENGTH; i++) {
-            int index = random.nextInt(CHARACTERS.length());
-            sb.append(CHARACTERS.charAt(index));
+            sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
         }
         return sb.toString();
     }
 
-    /**
-     * 生成验证码图片
-     * @param captchaCode 验证码内容
-     * @return base64编码的图片
-     */
     private static String generateCaptchaImage(String captchaCode) {
-        // 创建图片缓冲区
         BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
-        // 设置背景色
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, WIDTH, HEIGHT);
-        // 设置字体
         Font font = new Font("Arial", Font.BOLD, FONT_SIZE);
         g.setFont(font);
-        // 绘制干扰线
         drawInterferenceLines(g);
-        // 绘制噪点
         drawNoisePoints(g);
-        // 绘制验证码字符
         drawCaptchaCharacters(g, captchaCode);
-        // 添加边框
-        // g.setColor(Color.GRAY);
-        // g.drawRect(0, 0, WIDTH - 1, HEIGHT - 1);
-        // 释放资源
         g.dispose();
-        // 将图片转换为base64
-        return "data:image/png;base64,"+ imageToBase64(image);
+        return "data:image/png;base64," + imageToBase64(image);
     }
 
-    /**
-     * 绘制干扰线
-     * @param g 图形上下文
-     */
     private static void drawInterferenceLines(Graphics2D g) {
         Random random = new Random();
         g.setColor(Color.LIGHT_GRAY);
@@ -112,10 +108,6 @@ public class CaptchaHelper {
         }
     }
 
-    /**
-     * 绘制噪点
-     * @param g 图形上下文
-     */
     private static void drawNoisePoints(Graphics2D g) {
         Random random = new Random();
         for (int i = 0; i < 50; i++) {
@@ -127,41 +119,25 @@ public class CaptchaHelper {
         }
     }
 
-    /**
-     * 绘制验证码字符
-     * @param g 图形上下文
-     * @param captchaCode 验证码内容
-     */
     private static void drawCaptchaCharacters(Graphics2D g, String captchaCode) {
         Random random = new Random();
         int charWidth = WIDTH / captchaCode.length();
         for (int i = 0; i < captchaCode.length(); i++) {
-            // 随机颜色
             g.setColor(new Color(random.nextInt(100), random.nextInt(100), random.nextInt(100)));
-            // 随机旋转角度, -10° 到 10°
             double angle = random.nextDouble() * 0.4 - 0.2;
             g.rotate(angle, i * charWidth + (double) charWidth / 2, (double) HEIGHT / 2);
-            // 绘制字符
             g.drawString(String.valueOf(captchaCode.charAt(i)), i * charWidth + 10, HEIGHT / 2 + 8);
-            // 恢复旋转
             g.rotate(-angle, i * charWidth + (double) charWidth / 2, (double) HEIGHT / 2);
         }
     }
 
-    /**
-     * 将图片转换为base64编码
-     * @param image 图片对象
-     * @return base64编码的图片
-     */
     private static String imageToBase64(BufferedImage image) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             ImageIO.write(image, "png", baos);
-            byte[] imageBytes = baos.toByteArray();
-            return Base64.getEncoder().encodeToString(imageBytes);
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
         } catch (IOException e) {
             throw SystemException.of("验证码图片生成失败");
         }
     }
-
 
 }

@@ -6,15 +6,14 @@ import com.wkclz.iam.common.entity.IamLoginLog;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
+import com.wkclz.iam.sdk.bean.enums.AuthType;
 import com.wkclz.iam.sdk.bean.enums.LoginStatus;
 import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sdk.bean.req.LoginReq;
 import com.wkclz.iam.sdk.bean.req.SessionCreateReq;
 import com.wkclz.iam.sdk.bean.resp.LoginResp;
 import com.wkclz.iam.sdk.facade.SsoFacade;
-import com.wkclz.iam.sdk.helper.CaptchaHelper;
 import com.wkclz.iam.sdk.helper.SessionHelper;
-import com.wkclz.iam.session.enums.AuthType;
 import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
@@ -28,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -49,13 +47,13 @@ public class IamLoginService {
     @Autowired
     private SsoLoginLogMapper ssoLoginLogMapper;
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
-    @Autowired
     private IamSessionService iamSessionService;
     @Autowired
     private CredentialChecker credentialChecker;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private CaptchaService captchaService;
 
     /**
      * 1. 用户不存在
@@ -93,16 +91,8 @@ public class IamLoginService {
 
         // 验证码校验
         if (StringUtils.isNotBlank(captchaId)) {
-            String redisKey = CaptchaHelper.getCaptchaRedisKey(captchaId);
-            String redisCaptchaCode = redisTemplate.opsForValue().getAndDelete(redisKey);
-
-            // 验证码不存在或已过期
-            if (StringUtils.isBlank(redisCaptchaCode)) {
-                loginLog(loginReq, LoginStatus.CAPTCHA_TIMEOUT, AuthType.PASSWORD);
-                return failResp(LoginStatus.CAPTCHA_TIMEOUT);
-            }
-            // 验证码错误
-            if (!captchaCode.equalsIgnoreCase(redisCaptchaCode)) {
+            if (!captchaService.verify(captchaId, captchaCode)) {
+                log.info("Captcha verify failed for user: {}", username);
                 loginLog(loginReq, LoginStatus.INVALID_CAPTCHA, AuthType.PASSWORD);
                 return failResp(LoginStatus.INVALID_CAPTCHA);
             }
