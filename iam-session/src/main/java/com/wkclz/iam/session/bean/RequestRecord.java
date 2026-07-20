@@ -10,7 +10,7 @@ import java.io.Serializable;
  * <p>纯 JDK 依赖，不依赖任何框架或模块。字段与 {@code IamRequestLog} 实体对应，
  * 由 SPI 实现方负责 UA 解析、IP 归属地查询和持久化。</p>
  *
- * @see com.wkclz.iam.session.spi.RequestLogHandler
+ * @see com.wkclz.iam.session.spi.RequestRecordHandler
  */
 @Data
 public class RequestRecord implements Serializable {
@@ -21,6 +21,16 @@ public class RequestRecord implements Serializable {
     private String queryString;
     private String requestBody;
     private String httpProtocol;
+
+    // ========== 浏览器信息 ==========
+    private String browserName;
+    private String browserVersion;
+    private String engineName;
+    private String engineVersion;
+
+    // ========== 客户端平台信息 ==========
+    private String userOs;
+    private String userPlatform;
 
     // ========== 响应信息 ==========
     private Integer httpStatus;

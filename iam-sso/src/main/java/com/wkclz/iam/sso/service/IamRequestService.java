@@ -2,7 +2,7 @@ package com.wkclz.iam.sso.service;
 
 import com.wkclz.iam.common.entity.IamRequestLog;
 import com.wkclz.iam.common.helper.IpLocalCacheHelper;
-import com.wkclz.iam.sdk.bean.RequestLog;
+import com.wkclz.iam.session.bean.RequestRecord;
 import com.wkclz.iam.sso.mapper.SsoRequestLogMapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -16,42 +16,42 @@ public class IamRequestService {
     @Resource
     private SsoRequestLogMapper ssoRequestLogMapper;
 
-    public void insertLog(RequestLog log) {
-        if (log == null) {
+    public void insertRecord(RequestRecord record) {
+        if (record == null) {
             return;
         }
         IamRequestLog iLog = new IamRequestLog();
-        iLog.setTenantCode(log.getTenantCode());
-        iLog.setAppCode(log.getAppCode());
-        iLog.setUserAgent(log.getUserAgent());
-        iLog.setBrowserName(log.getBrowserName());
-        iLog.setBrowserVersion(log.getBrowserVersion());
-        iLog.setEngineName(log.getEngineName());
-        iLog.setEngineVersion(log.getEngineVersion());
-        iLog.setUserOs(log.getUserOs());
-        iLog.setUserPlatform(log.getUserPlatform());
-        iLog.setCharacterEncoding(log.getCharacterEncoding());
-        iLog.setAccept(log.getAccept());
-        iLog.setAcceptLanguage(log.getAcceptLanguage());
-        iLog.setAcceptEncoding(log.getAcceptEncoding());
-        iLog.setCookie(log.getCookie());
-        iLog.setOrigin(log.getOrigin());
-        iLog.setReferer(log.getReferer());
-        iLog.setRemoteAddr(log.getRemoteAddr());
-        iLog.setMethod(log.getMethod());
-        iLog.setHttpProtocol(log.getHttpProtocol());
-        iLog.setRequestHost(log.getRequestHost());
-        iLog.setRequestUri(log.getRequestUri());
-        iLog.setQueryString(log.getQueryString());
-        iLog.setRequestBody(log.getRequestBody());
-        iLog.setHttpStatus(log.getHttpStatus());
-        iLog.setToken(log.getToken());
-        iLog.setUserCode(log.getUserCode());
-        iLog.setUsername(log.getUsername());
-        iLog.setNickname(log.getNickname());
-        iLog.setCostTime(log.getCostTime());
-        iLog.setErrorMsg(log.getErrorMsg());
-        iLog.setResponseBody(log.getResponseBody());
+        iLog.setTenantCode(record.getTenantCode());
+        iLog.setAppCode(record.getAppCode());
+        iLog.setUserAgent(record.getUserAgent());
+        iLog.setBrowserName(record.getBrowserName());
+        iLog.setBrowserVersion(record.getBrowserVersion());
+        iLog.setEngineName(record.getEngineName());
+        iLog.setEngineVersion(record.getEngineVersion());
+        iLog.setUserOs(record.getUserOs());
+        iLog.setUserPlatform(record.getUserPlatform());
+        iLog.setCharacterEncoding(record.getCharacterEncoding());
+        iLog.setAccept(record.getAccept());
+        iLog.setAcceptLanguage(record.getAcceptLanguage());
+        iLog.setAcceptEncoding(record.getAcceptEncoding());
+        iLog.setCookie(record.getCookie());
+        iLog.setOrigin(record.getOrigin());
+        iLog.setReferer(record.getReferer());
+        iLog.setRemoteAddr(record.getRemoteAddr());
+        iLog.setMethod(record.getMethod());
+        iLog.setHttpProtocol(record.getHttpProtocol());
+        iLog.setRequestHost(record.getRequestHost());
+        iLog.setRequestUri(record.getRequestUri());
+        iLog.setQueryString(record.getQueryString());
+        iLog.setRequestBody(record.getRequestBody());
+        iLog.setHttpStatus(record.getHttpStatus());
+        iLog.setToken(record.getToken());
+        iLog.setUserCode(record.getUserCode());
+        iLog.setUsername(record.getUsername());
+        iLog.setNickname(record.getNickname());
+        iLog.setCostTime(record.getCostTime());
+        iLog.setErrorMsg(record.getErrorMsg());
+        iLog.setResponseBody(record.getResponseBody());
 
         // 缓存的地址信息
         IamRequestLog location = IpLocalCacheHelper.offerQueue(iLog.getRemoteAddr());

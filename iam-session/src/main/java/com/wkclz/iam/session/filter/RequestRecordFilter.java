@@ -1,5 +1,7 @@
 package com.wkclz.iam.session.filter;
 
+import cn.hutool.http.useragent.UserAgent;
+import cn.hutool.http.useragent.UserAgentUtil;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.iam.session.bean.RequestRecord;
 import com.wkclz.iam.session.spi.RequestRecordHandler;
@@ -96,7 +98,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         record.setCharacterEncoding(request.getCharacterEncoding());
 
         // 请求体（JSON 内容）
-        String requestBody = getCachedBody(request.getContentAsByteArray());
+        String requestBody = getCachedRequestBody(request);
         record.setRequestBody(maskPassword(requestBody));
 
         // 请求头
@@ -107,6 +109,17 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         record.setCookie(request.getHeader("Cookie"));
         record.setOrigin(request.getHeader("Origin"));
         record.setReferer(request.getHeader("Referer"));
+
+        // 浏览器信息
+        if (record.getUserAgent() != null) {
+            UserAgent ua = UserAgentUtil.parse(record.getUserAgent());
+            record.setBrowserName(ua.getBrowser() == null ? null : ua.getBrowser().toString());
+            record.setBrowserVersion(ua.getVersion());
+            record.setEngineName(ua.getEngine() == null ? null : ua.getEngine().toString());
+            record.setEngineVersion(ua.getEngineVersion());
+            record.setUserOs(ua.getOs() == null ? null : ua.getOs().toString());
+            record.setUserPlatform(ua.getPlatform() == null ? null : ua.getPlatform().toString());
+        }
 
         // 网络信息
         record.setRemoteAddr(getClientIp(request));
@@ -127,7 +140,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
         // 响应信息
         record.setHttpStatus(response.getStatus());
-        String responseBody = getCachedBody(response.getContentAsByteArray());
+        String responseBody = getCachedResponseBody(response);
         record.setResponseBody(maskPassword(responseBody));
 
         // 耗时
@@ -155,12 +168,31 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
     // ========== 工具方法 ==========
 
-    private static String getCachedBody(byte[] body) {
-        if (body == null || body.length == 0) {
+    private static String getCachedRequestBody(ContentCachingRequestWrapper request) {
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.toLowerCase().contains("multipart/form-data")) {
+            return null;
+        }
+        byte[] body = request.getContentAsByteArray();
+        if (body.length == 0) {
             return null;
         }
         return new String(body, StandardCharsets.UTF_8);
     }
+
+
+    private static String getCachedResponseBody(ContentCachingResponseWrapper response) {
+        String contentType = response.getContentType();
+        if (contentType == null || !contentType.toLowerCase().contains("application/json")) {
+            return null;
+        }
+        byte[] body = response.getContentAsByteArray();
+        if (body.length == 0) {
+            return null;
+        }
+        return new String(body, StandardCharsets.UTF_8);
+    }
+
 
     private static String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");

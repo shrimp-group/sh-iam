@@ -21,8 +21,8 @@ public class SsoFacadeImpl implements SsoFacade {
     private IamSessionService iamSessionService;
 
     @Override
-    public void saveLog(RequestRecord record) {
-        requestLogService.insertLog(log);
+    public void saveRecord(RequestRecord record) {
+        requestLogService.insertRecord(record);
     }
 
     @Override

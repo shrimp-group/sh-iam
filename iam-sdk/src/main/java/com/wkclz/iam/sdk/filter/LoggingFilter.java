@@ -130,68 +130,6 @@ public class LoggingFilter extends OncePerRequestFilter {
 
 
 
-    private void fetchRequestLog(HttpServletRequest request, RequestLog log) {
-        log.setHttpStatus(200);
-        log.setMethod(request.getMethod());
-        log.setRequestHost(request.getRemoteHost());
-        log.setRequestUri(request.getRequestURI());
-        log.setQueryString(request.getQueryString());
-
-        log.setUserAgent(request.getHeader("User-Agent"));
-        log.setHttpProtocol(request.getProtocol());
-        log.setCharacterEncoding(request.getCharacterEncoding());
-        log.setAccept(request.getHeader("Accept"));
-        log.setAcceptLanguage(request.getHeader("Accept-Language"));
-        log.setAcceptEncoding(request.getHeader("Accept-Encoding"));
-        log.setCookie(request.getHeader("Cookie"));
-        log.setOrigin(request.getHeader("Origin"));
-        log.setReferer(request.getHeader("Referer"));
-
-        log.setRemoteAddr(IpHelper.getOriginIp(request));
-        log.setToken(SessionHelper.getToken(request));
-        log.setTenantCode(SessionHelper.getTenantCode());
-        log.setAppCode(SessionHelper.getAppCode(request));
-
-        if (log.getUserAgent() != null) {
-            UserAgent ua = UserAgentUtil.parse(log.getUserAgent());
-            log.setBrowserName(ua.getBrowser() == null? null:ua.getBrowser().toString());
-            log.setBrowserVersion(ua.getVersion());
-            log.setEngineName(ua.getEngine() == null ? null:ua.getEngine().toString());
-            log.setEngineVersion(ua.getEngineVersion());
-            log.setUserOs(ua.getOs() == null ? null:ua.getOs().toString());
-            log.setUserPlatform(ua.getPlatform() == null ? null:ua.getPlatform().toString());
-        }
-    }
-
-    private String getRequestBody(ServletRequest request) throws IOException {
-        String contentType = request.getContentType();
-        if (contentType != null && contentType.toLowerCase().contains("multipart/form-data")) {
-            return null;
-        }
-        if (!(request instanceof EagerContentCachingRequestWrapper requestWrapper)) {
-            return null;
-        }
-        // 只有在非 form-data 时才需要提前缓存，减少因文件上传导致的内存压力
-        requestWrapper.makeBodyCache();
-        byte[] body = requestWrapper.getContentAsByteArray();
-        if (body.length == 0) {
-            return "";
-        }
-        return new String(body, StandardCharsets.UTF_8);
-    }
-
-    private String getResponseBody(ContentCachingResponseWrapper wrappedResponse) {
-        String contentType = wrappedResponse.getContentType();
-        if (contentType == null || !contentType.toLowerCase().contains("application/json")) {
-            return null;
-        }
-        byte[] body = wrappedResponse.getContentAsByteArray();
-        if (body.length == 0) {
-            return "";
-        }
-        return new String(body, StandardCharsets.UTF_8);
-    }
-
     private boolean isLog(String uri) {
         if (StringUtils.isBlank(uri)) {
             return false;
