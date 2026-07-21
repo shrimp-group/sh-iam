@@ -2,6 +2,8 @@ package com.wkclz.iam.session.filter;
 
 import cn.hutool.http.useragent.UserAgent;
 import cn.hutool.http.useragent.UserAgentUtil;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.iam.session.bean.RequestRecord;
 import com.wkclz.iam.session.spi.RequestRecordHandler;
@@ -9,31 +11,41 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * 请求日志采集过滤器 — 在请求执行前后采集请求/响应信息，异步写入请求日志。
  *
+ * <p>统一支持服务端部署和客户端部署：
+ * <ul>
+ *   <li>服务端：通过 {@link RequestRecordHandler} SPI 持久化到本地数据库（iam-sso 提供 RequestRecordHandlerImpl）</li>
+ *   <li>客户端：通过 {@code RemoteRequestRecordHandler} 持久化到远程 SSO 服务端（iam-session remote 子包提供）</li>
+ * </ul>
+ *
  * <p>执行顺序：
  * <ol>
  *   <li>记录开始时间，包装 request/response</li>
  *   <li>调用下层过滤器链（{@link SessionAuthFilter} → 业务 Controller）</li>
  *   <li>请求结束后采集响应信息、用户身份、计算耗时</li>
- *   <li>密码脱敏后通过 {@link RequestRecordHandler} SPI 异步持久化</li>
+ *   <li>字段截断 + 密码脱敏后通过 {@link RequestRecordHandler} SPI 异步持久化</li>
  * </ol>
  *
  * <p>Order 优先级高于 {@link SessionAuthFilter}（无显式 Order），作为最外层包装过滤器。</p>
@@ -46,10 +58,26 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
     private static final Pattern PWD_PATTERN = Pattern.compile("assword\"\\s*:\\s*\"(.*?)\"");
 
+    private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
+
     /**
      * 不记录日志的 URI 模式
      */
-    private static final String[] NO_LOG_URIS = {"/public/status", "/public/health"};
+    private static final List<String> NO_LOGS = List.of("/public/status", "/public/health");
+
+    /**
+     * 静态资源后缀正则（匹配的不记录日志）
+     */
+    private static final Pattern STATIC_RESOURCE_PATTERN = Pattern.compile(
+        "^.+\\.(?i)(js|css|jpg|png|mp3|html|htm|jpeg|ttf|woff|ico|woff2|map)$");
+
+    /**
+     * URI 日志过滤缓存（性能优化：避免每次请求都匹配正则和 AntPath）
+     */
+    private static final Cache<String, Boolean> LOGS_SET = CacheBuilder.newBuilder()
+        .maximumSize(1_000)
+        .expireAfterWrite(1, TimeUnit.HOURS)
+        .build();
 
     @Autowired
     private RequestRecordHandler requestRecordHandler;
@@ -64,19 +92,21 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request, 0);
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
 
+        String errorMsg = null;
         try {
             chain.doFilter(wrappedRequest, wrappedResponse);
         } catch (Exception e) {
-            // 捕获异常，不影响上层异常处理
+            // 捕获异常信息，不影响上层异常处理
+            errorMsg = e.getMessage();
             log.debug("Request processing error: {}", e.getMessage());
             throw e;
         } finally {
             // 收集日志信息（在 SessionAuthFilter 的 finally 已清理 IdentityContext 后执行）
-            RequestRecord logData = collectLogData(wrappedRequest, wrappedResponse, startTime);
+            RequestRecord logData = collectLogData(wrappedRequest, wrappedResponse, startTime, errorMsg);
             // 必须执行，否则客户端收不到响应体
             wrappedResponse.copyBodyToResponse();
             // 异步持久化
-            persistAsync(logData);
+            persistAsync(logData, request);
         }
     }
 
@@ -87,7 +117,8 @@ public class RequestRecordFilter extends OncePerRequestFilter {
      */
     private RequestRecord collectLogData(ContentCachingRequestWrapper request,
                                          ContentCachingResponseWrapper response,
-                                         long startTime) {
+                                         long startTime,
+                                         String errorMsg) {
         RequestRecord record = new RequestRecord();
 
         // 基础请求信息
@@ -146,17 +177,39 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         // 耗时
         record.setCostTime(System.currentTimeMillis() - startTime);
 
+        // 异常信息
+        record.setErrorMsg(errorMsg);
+
+        // 字段截断（防止数据库字段超长）
+        truncateFields(record);
+
         return record;
     }
 
     /**
      * 异步持久化请求日志。
      */
-    private void persistAsync(RequestRecord record) {
+    private void persistAsync(RequestRecord record, HttpServletRequest request) {
         String uri = record.getRequestUri();
-        if (uri != null && isNoLogUri(uri)) {
+        if (uri != null && !isLog(uri)) {
             return;
         }
+
+        // debug 模式：输出详细日志（含响应体）
+        String debug = request.getParameter("debug");
+        boolean isDebug = log.isDebugEnabled() || ("1".equals(debug));
+        String method = record.getMethod();
+        String args = "GET".equals(method) ? record.getQueryString() : record.getRequestBody();
+        if (isDebug) {
+            if (log.isDebugEnabled()) {
+                log.debug("{}ms|{}|{}|{}|{}", record.getCostTime(), method, uri, args, record.getResponseBody());
+            } else {
+                log.info("{}ms|{}|{}|{}|{}", record.getCostTime(), method, uri, args, record.getResponseBody());
+            }
+        } else {
+            log.info("{}ms|{}|{}|{}", record.getCostTime(), method, uri, args);
+        }
+
         CompletableFuture.runAsync(() -> {
             try {
                 requestRecordHandler.handle(record);
@@ -167,6 +220,85 @@ public class RequestRecordFilter extends OncePerRequestFilter {
     }
 
     // ========== 工具方法 ==========
+
+    /**
+     * 判断指定 URI 是否需要记录日志（带 Guava Cache 性能优化）。
+     */
+    private boolean isLog(String uri) {
+        if (StringUtils.isBlank(uri)) {
+            return false;
+        }
+        try {
+            return LOGS_SET.get(uri, () -> computeIsLog(uri));
+        } catch (Exception e) {
+            log.warn("isLog cache load failed for uri: {}, fallback to direct compute", uri, e);
+            return computeIsLog(uri);
+        }
+    }
+
+    /**
+     * 计算指定 URI 是否需要记录日志（仅在缓存未命中时调用）。
+     */
+    private boolean computeIsLog(String uri) {
+        // 静态资源不记录
+        if (STATIC_RESOURCE_PATTERN.matcher(uri).matches()) {
+            return false;
+        }
+        // 排除列表不记录
+        for (String noLog : NO_LOGS) {
+            if (ANT_PATH_MATCHER.match(noLog, uri)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 字段截断 — 将所有字段截断到数据库字段长度，防止插入失败。
+     */
+    private static void truncateFields(RequestRecord record) {
+        if (record == null) {
+            return;
+        }
+        record.setTenantCode(subText(record.getTenantCode(), 31));
+        record.setAppCode(subText(record.getAppCode(), 31));
+        record.setUserAgent(subText(record.getUserAgent(), 1023));
+        record.setBrowserName(subText(record.getBrowserName(), 31));
+        record.setBrowserVersion(subText(record.getBrowserVersion(), 31));
+        record.setEngineName(subText(record.getEngineName(), 31));
+        record.setEngineVersion(subText(record.getEngineVersion(), 31));
+        record.setUserOs(subText(record.getUserOs(), 63));
+        record.setUserPlatform(subText(record.getUserPlatform(), 31));
+        record.setCharacterEncoding(subText(record.getCharacterEncoding(), 15));
+        record.setAccept(subText(record.getAccept(), 255));
+        record.setAcceptLanguage(subText(record.getAcceptLanguage(), 255));
+        record.setAcceptEncoding(subText(record.getAcceptEncoding(), 31));
+        record.setCookie(subText(record.getCookie(), 2047));
+        record.setOrigin(subText(record.getOrigin(), 255));
+        record.setReferer(subText(record.getReferer(), 1023));
+        record.setRemoteAddr(subText(record.getRemoteAddr(), 63));
+        record.setMethod(subText(record.getMethod(), 15));
+        record.setHttpProtocol(subText(record.getHttpProtocol(), 31));
+        record.setRequestHost(subText(record.getRequestHost(), 63));
+        record.setRequestUri(subText(record.getRequestUri(), 255));
+        record.setQueryString(subText(record.getQueryString(), 1023));
+        record.setRequestBody(subText(record.getRequestBody(), 4095));
+        record.setUserCode(subText(record.getUserCode(), 31));
+        record.setUsername(subText(record.getUsername(), 31));
+        record.setNickname(subText(record.getNickname(), 31));
+        record.setErrorMsg(subText(record.getErrorMsg(), 4095));
+    }
+
+    private static String subText(String text, int max) {
+        if (StringUtils.isBlank(text)) {
+            return text;
+        }
+        int length = text.length();
+        if (length <= max) {
+            return text;
+        }
+        return text.substring(0, max);
+    }
 
     private static String getCachedRequestBody(ContentCachingRequestWrapper request) {
         String contentType = request.getContentType();
@@ -247,14 +379,5 @@ public class RequestRecordFilter extends OncePerRequestFilter {
             return "*".repeat(len);
         }
         return token.substring(0, 8) + "***" + token.substring(len - 4);
-    }
-
-    private static boolean isNoLogUri(String uri) {
-        for (String pattern : NO_LOG_URIS) {
-            if (uri.contains(pattern) || uri.matches(pattern.replace("*", ".*"))) {
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
  * 远程客户端配置 — 第三方应用通过 HTTP 调用 SSO 服务端时使用。
  *
  * <p>仅当配置了 {@code iam.session.remote.server-url} 时生效，
- * 与 {@link RemoteSsoFacadeImpl} 和 {@code LoggingFilter} 的条件装配联动。</p>
+ * 与 {@link RemoteSsoFacadeImpl} 和 {@link RemoteRequestRecordHandler} 的条件装配联动。</p>
  *
  * <p>历史：从 iam-sdk 的 IamSdkConfig 拆分迁入，仅保留远程调用相关配置项。
  * 原有 jwt.secret-key 已由 IamSessionConfig 替代，app-code 由请求头传递，enabled 开关已删除。</p>
