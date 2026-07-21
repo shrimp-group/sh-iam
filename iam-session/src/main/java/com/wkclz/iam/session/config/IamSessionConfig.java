@@ -16,7 +16,7 @@ public class IamSessionConfig {
     /**
      * JWT 签名密钥（HS256，最低 32 字符）
      */
-    @Value(("${iam.session.token.secret-key:}"))
+    @Value(("${iam.session.token.secret-key:qwertyuioplkjhgfdsazxcvbnmqwertyuioplkjhgfdsazxcvbnm}"))
     private String secretKey;
 
     /**
