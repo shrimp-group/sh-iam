@@ -63,11 +63,18 @@ public class SessionAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 3. 验证会话
-            Session session = sessionManager.validateAndRefresh(token);
-            if (session == null || session.getUserIdentity() == null) {
-                log.warn("Invalid session for URI: {}", requestUri);
-                writeUnauthorized(response, "会话无效或已过期");
+            // 3. 验证会话（含 JWT 解析异常处理）
+            Session session;
+            try {
+                session = sessionManager.validateAndRefresh(token);
+                if (session == null || session.getUserIdentity() == null) {
+                    log.warn("Invalid session for URI: {}", requestUri);
+                    writeUnauthorized(response, "会话无效或已过期");
+                    return;
+                }
+            } catch (IllegalArgumentException e) {
+                log.warn("Token validation failed for URI: {}, reason: {}", requestUri, e.getMessage());
+                writeUnauthorized(response, e.getMessage());
                 return;
             }
 
