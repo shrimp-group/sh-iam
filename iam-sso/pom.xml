@@ -20,10 +20,9 @@
             <artifactId>iam-common</artifactId>
             <version>${revision}</version>
         </dependency>
-
         <dependency>
             <groupId>com.wkclz.iam</groupId>
-            <artifactId>iam-sdk</artifactId>
+            <artifactId>iam-session</artifactId>
             <version>${revision}</version>
         </dependency>
 

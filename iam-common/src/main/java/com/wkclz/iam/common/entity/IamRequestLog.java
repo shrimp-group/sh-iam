@@ -1,6 +1,6 @@
 package com.wkclz.iam.common.entity;
 
-import com.wkclz.core.annotation.FieldDesc;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,199 +21,199 @@ public class IamRequestLog extends BaseEntity {
     /**
      * 租户编码
      */
-    @FieldDesc(value = "租户编码")
+    @Schema(description = "租户编码")
     private String tenantCode;
 
     /**
      * 应用编码
      */
-    @FieldDesc(value = "应用编码")
+    @Schema(description = "应用编码")
     private String appCode;
 
     /**
      * UA
      */
-    @FieldDesc(value = "UA")
+    @Schema(description = "UA")
     private String userAgent;
 
     /**
      * 浏览器名称
      */
-    @FieldDesc(value = "浏览器名称")
+    @Schema(description = "浏览器名称")
     private String browserName;
 
     /**
      * 浏览器版本
      */
-    @FieldDesc(value = "浏览器版本")
+    @Schema(description = "浏览器版本")
     private String browserVersion;
 
     /**
      * 引擎类型
      */
-    @FieldDesc(value = "引擎类型")
+    @Schema(description = "引擎类型")
     private String engineName;
 
     /**
      * 引擎版本
      */
-    @FieldDesc(value = "引擎版本")
+    @Schema(description = "引擎版本")
     private String engineVersion;
 
     /**
      * 用户系统
      */
-    @FieldDesc(value = "用户系统")
+    @Schema(description = "用户系统")
     private String userOs;
 
     /**
      * 用户平台
      */
-    @FieldDesc(value = "用户平台")
+    @Schema(description = "用户平台")
     private String userPlatform;
 
     /**
      * 请求编码
      */
-    @FieldDesc(value = "请求编码")
+    @Schema(description = "请求编码")
     private String characterEncoding;
 
     /**
      * Accept
      */
-    @FieldDesc(value = "Accept")
+    @Schema(description = "Accept")
     private String accept;
 
     /**
      * Accept-语言
      */
-    @FieldDesc(value = "Accept-语言")
+    @Schema(description = "Accept-语言")
     private String acceptLanguage;
 
     /**
      * Accept-编码
      */
-    @FieldDesc(value = "Accept-编码")
+    @Schema(description = "Accept-编码")
     private String acceptEncoding;
 
     /**
      * Cookie
      */
-    @FieldDesc(value = "Cookie")
+    @Schema(description = "Cookie")
     private String cookie;
 
     /**
      * Origin
      */
-    @FieldDesc(value = "Origin")
+    @Schema(description = "Origin")
     private String origin;
 
     /**
      * 引用页
      */
-    @FieldDesc(value = "引用页")
+    @Schema(description = "引用页")
     private String referer;
 
     /**
      * 客户端地址
      */
-    @FieldDesc(value = "客户端地址")
+    @Schema(description = "客户端地址")
     private String remoteAddr;
 
     /**
      * 请求方式
      */
-    @FieldDesc(value = "请求方式")
+    @Schema(description = "请求方式")
     private String method;
 
     /**
      * 请求协议
      */
-    @FieldDesc(value = "请求协议")
+    @Schema(description = "请求协议")
     private String httpProtocol;
 
     /**
      * 请求 主机
      */
-    @FieldDesc(value = "请求 主机")
+    @Schema(description = "请求 主机")
     private String requestHost;
 
     /**
      * 请求 URI
      */
-    @FieldDesc(value = "请求 URI")
+    @Schema(description = "请求 URI")
     private String requestUri;
 
     /**
      * 查询内容
      */
-    @FieldDesc(value = "查询内容")
+    @Schema(description = "查询内容")
     private String queryString;
 
     /**
      * 请求体
      */
-    @FieldDesc(value = "请求体")
+    @Schema(description = "请求体")
     private String requestBody;
 
     /**
      * 响应体
      */
-    @FieldDesc(value = "响应体")
+    @Schema(description = "响应体")
     private String responseBody;
 
     /**
      * 响应状态
      */
-    @FieldDesc(value = "响应状态")
+    @Schema(description = "响应状态")
     private Integer httpStatus;
 
     /**
      * 地区
      */
-    @FieldDesc(value = "地区")
+    @Schema(description = "地区")
     private String location;
 
     /**
      * ISP运营商
      */
-    @FieldDesc(value = "ISP运营商")
+    @Schema(description = "ISP运营商")
     private String isp;
 
     /**
      * 用户token
      */
-    @FieldDesc(value = "用户token")
+    @Schema(description = "用户token")
     private String token;
 
     /**
      * 用户编码
      */
-    @FieldDesc(value = "用户编码")
+    @Schema(description = "用户编码")
     private String userCode;
 
     /**
      * 用户名
      */
-    @FieldDesc(value = "用户名")
+    @Schema(description = "用户名")
     private String username;
 
     /**
      * 用户昵称
      */
-    @FieldDesc(value = "用户昵称")
+    @Schema(description = "用户昵称")
     private String nickname;
 
     /**
      * 耗时
      */
-    @FieldDesc(value = "耗时")
+    @Schema(description = "耗时")
     private Long costTime;
 
     /**
      * 异常信息
      */
-    @FieldDesc(value = "异常信息")
+    @Schema(description = "异常信息")
     private String errorMsg;
 
 

@@ -7,10 +7,14 @@ import com.wkclz.iam.admin.mapper.IamUserAuthPasswordMapper;
 import com.wkclz.iam.admin.mapper.IamUserPasswordHisMapper;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
+import com.wkclz.iam.common.event.AdminSecurityEvent;
+import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.tool.utils.SecretUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -23,10 +27,16 @@ import java.util.List;
  * @author shrimp
  * @table iam_user_auth_password (密码认证表) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_user_auth_password 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword, IamUserAuthPasswordMapper> {
 
+    private static final Logger log = LoggerFactory.getLogger(IamUserAuthPasswordService.class);
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
     @Autowired
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
 
@@ -68,7 +78,7 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
         if (true) {
             return;
         }
-        
+
         // 唯一条件不为空，请设置唯一条件
         IamUserAuthPassword param = new IamUserAuthPassword();
         // 唯一条件
@@ -95,12 +105,14 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
         }
 
         List<IamUserPasswordHis> historyList = iamUserPasswordHisMapper.selectByUserCodeOrderByCreateTimeDesc(userCode, 3);
-        if (PasswordHelper.isPasswordInHistory(newPassword, historyList)) {
-            throw UserException.of("新密码不能与最近3次使用过的密码相同");
+        for (IamUserPasswordHis his : historyList) {
+            if (passwordEncoder.matches(newPassword, his.getSalt(), his.getPassword())) {
+                throw UserException.of("新密码不能与最近3次使用过的密码相同");
+            }
         }
 
         String newSalt = SecretUtil.getKey();
-        String encryptedPassword = PasswordHelper.generatePassword(newPassword, newSalt);
+        String encryptedPassword = passwordEncoder.encode(newPassword, newSalt);
 
         IamUserAuthPassword updatePwd = new IamUserAuthPassword();
         updatePwd.setId(currentPwd.getId());
@@ -115,6 +127,10 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
         his.setPassword(encryptedPassword);
         his.setSalt(newSalt);
         iamUserPasswordHisMapper.insert(his);
+
+        // 发布管理员重置密码事件 → 触发全会话失效
+        eventPublisher.publishEvent(AdminSecurityEvent.passwordReset(userCode));
+        log.info("管理员重置密码完成，已发布 AdminSecurityEvent.PASSWORD_RESET: userCode={}", userCode);
     }
 
 

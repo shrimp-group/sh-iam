@@ -23,6 +23,9 @@ public class IamSsoConfig {
     @Value("${iam.sso.max-concurrent-sessions:0}")
     private Integer maxConcurrentSessions;
 
+    @Value("${iam.sso.password-history-size:5}")
+    private Integer passwordHistorySize;
+
 
 
 }

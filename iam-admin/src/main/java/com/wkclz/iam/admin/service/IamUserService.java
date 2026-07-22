@@ -13,15 +13,19 @@ import com.wkclz.iam.common.entity.IamUser;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
-import com.wkclz.iam.common.helper.PasswordHelper;
-import com.wkclz.iam.sdk.bean.enums.AuthType;
+import com.wkclz.iam.common.event.AdminSecurityEvent;
+import com.wkclz.iam.session.enums.AuthType;
+import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
-import com.wkclz.tool.utils.SecretUtil;
 import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.tool.utils.SecretUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -33,15 +37,20 @@ import java.time.LocalDateTime;
  * @author shrimp
  * @table iam_user (用户表) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_user 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamUserService extends BaseService<IamUser, IamUserMapper> {
 
+    private static final Logger log = LoggerFactory.getLogger(IamUserService.class);
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @Autowired
     private RedisIdGenerator redisIdGenerator;
     @Autowired
     private IamUserAuthMapper iamUserAuthMapper;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
     @Autowired
     private IamUserPasswordHisMapper iamUserPasswordHisMapper;
     @Autowired
@@ -58,8 +67,20 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 保存旧状态用于检测变更
+        Integer oldStatus = oldEntity.getUserStatus();
         IamUser.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
+
+        // 检测用户状态变更为禁用(2)或锁定(3)，发布事件
+        if (entity.getUserStatus() != null
+            && (entity.getUserStatus() == 2 || entity.getUserStatus() == 3)
+            && !entity.getUserStatus().equals(oldStatus)) {
+            eventPublisher.publishEvent(AdminSecurityEvent.statusChanged(oldEntity.getUserCode(), entity.getUserStatus()));
+            log.info("用户状态变更 — 已发布 AdminSecurityEvent.STATUS_CHANGED: userCode={}, oldStatus={}, newStatus={}",
+                oldEntity.getUserCode(), oldStatus, entity.getUserStatus());
+        }
+
         return oldEntity;
     }
 
@@ -105,7 +126,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         IamUserAuthPassword pwd = new IamUserAuthPassword();
         pwd.setUserCode(dto.getUserCode());
         pwd.setSalt(SecretUtil.getKey());
-        pwd.setPassword(PasswordHelper.generatePassword(dto.getPassword(), pwd.getSalt()));
+        pwd.setPassword(passwordEncoder.encode(dto.getPassword(), pwd.getSalt()));
         pwd.setLastChangedTime(LocalDateTime.now());
         iamUserAuthPasswordMapper.insert(pwd);
 

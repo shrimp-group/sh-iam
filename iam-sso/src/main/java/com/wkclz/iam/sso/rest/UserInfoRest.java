@@ -1,13 +1,13 @@
 package com.wkclz.iam.sso.rest;
 
 import com.wkclz.core.base.R;
+import com.wkclz.core.identity.IdentityContext;
+import com.wkclz.core.identity.UserIdentity;
 import com.wkclz.iam.common.dto.IamMenuDto;
-import com.wkclz.iam.sdk.bean.UserSession;
-import com.wkclz.iam.sdk.bean.req.ChangePasswordReq;
-import com.wkclz.iam.sdk.helper.SessionHelper;
 import com.wkclz.iam.sso.Route;
+import com.wkclz.iam.sso.bean.req.ChangePasswordReq;
 import com.wkclz.iam.sso.entity.VueRouterMenu;
-import com.wkclz.iam.sso.service.IamLoginService;
+import com.wkclz.iam.sso.service.PasswordLoginService;
 import com.wkclz.iam.sso.service.SsoResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,21 +30,21 @@ import java.util.List;
 public class UserInfoRest {
 
     @Autowired
-    private IamLoginService iamLoginService;
+    private PasswordLoginService passwordLoginService;
     @Autowired
     private SsoResourceService ssoResourceService;
 
     @GetMapping(Route.USER_INFO)
     @Operation(summary = "获取用户信息")
-    public R<UserSession> userInfo(HttpServletRequest request) {
-        UserSession userSession = SessionHelper.getUserSession(request);
-        return R.ok(userSession);
+    public R<UserIdentity> userInfo(HttpServletRequest request) {
+        UserIdentity userIdentity = IdentityContext.get();
+        return R.ok(userIdentity);
     }
 
     @GetMapping(Route.USER_MENU_TREE)
     @Operation(summary = "获取用户菜单树")
     public R<List<IamMenuDto>> userMenuTree(HttpServletRequest request) {
-        String appCode = SessionHelper.getAppCode(request);
+        String appCode = IdentityContext.getAppCode();
         if (StringUtils.isBlank(appCode)) {
             return R.error("appCode is blank in Headers");
         }
@@ -55,7 +55,7 @@ public class UserInfoRest {
     @GetMapping(Route.USER_MENU_TREE_RUOYI)
     @Operation(summary = "获取若依格式菜单树")
     public R<List<VueRouterMenu>> userMenuTreeRuoyi(HttpServletRequest request) {
-        String appCode = SessionHelper.getAppCode(request);
+        String appCode = IdentityContext.getAppCode();
         if (StringUtils.isBlank(appCode)) {
             return R.error("appCode is blank in Headers");
         }
@@ -67,7 +67,7 @@ public class UserInfoRest {
     @PostMapping(Route.USER_CHANGE_PASSWORD)
     @Operation(summary = "修改密码")
     public R<Void> changePassword(@Valid @RequestBody ChangePasswordReq changePasswordReq) {
-        iamLoginService.changePassword(changePasswordReq);
+        passwordLoginService.changePassword(changePasswordReq);
         return R.ok();
     }
 

@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.wkclz.framework</groupId>
         <artifactId>sh-parent</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>5.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>com.wkclz.iam</groupId>
@@ -18,16 +18,16 @@
     <name>sh-iam</name>
 
     <modules>
+        <module>iam-session</module>
         <module>iam-common</module>
         <module>iam-sso</module>
         <module>iam-sso-starter</module>
         <module>iam-admin</module>
         <module>iam-admin-starter</module>
-        <module>iam-sdk</module>
     </modules>
 
     <properties>
-        <revision>5.0.0-SNAPSHOT</revision>
+        <revision>5.0.1-SNAPSHOT</revision>
 
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
