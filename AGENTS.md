@@ -51,25 +51,25 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-session (`com.wkclz.iam.session`) — 会话管理层（新增）
 
-| 包         | 类                          | 说明                                                 |
-|-----------|----------------------------|----------------------------------------------------|
-| `bean`    | `Session`                  | 会话领域模型（8 字段，不含 clientIp/userAgent）                 |
-| `bean`    | `SessionCreateResult`      | 会话创建结果（token + session）                            |
-| `bean`    | `TokenInfo`                | Token 解析结果（userCode/username/nickname）             |
-| `bean`    | `RequestRecordData`        | 请求日志数据载体（RequestRecordFilter 与 SPI 之间传递）           |
-| `enums`   | `AuthType`                 | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）  |
-| `enums`   | `DestroyReason`            | 会话销毁原因枚举（6 个值）                                     |
-| `service` | `SessionManager`           | 会话管理器（@Component，createSession + Lua 并发控制）         |
-| `service` | `SessionStore`             | 会话持久化（@Component，Redis Hash+ZSet）                  |
-| `service` | `TokenService`             | JWT 令牌服务（@Service，HS256 签名）                        |
-| `filter`  | `SessionAuthFilter`        | 会话认证过滤器（Token 提取 → 验证 → IdentityContext 设置）        |
-| `filter`  | `RequestRecordFilter`      | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → SPI 异步持久化）              |
-| `filter`  | `TokenResolver`            | Token 提取 SPI（Authorization: Bearer → token）        |
-| `filter`  | `WhiteListMatcher`         | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）      |
-| `spi`     | `RequestRecordHandler`     | 请求日志持久化 SPI（iam-sso 提供实现）                          |
-| `spi`     | `NoOpRequestRecordHandler` | RequestRecordHandler 空实现（默认，静默跳过）                  |
-| `config`  | `IamSessionConfig`         | iam-session 全局配置（secret-key / ttl / maxConcurrent） |
-| 根包        | `IamSessionAutoConfig`     | 自动配置（@AutoConfiguration + @ComponentScan）          |
+| 包         | 类                          | 说明                                                                   |
+|-----------|----------------------------|----------------------------------------------------------------------|
+| `bean`    | `Session`                  | 会话领域模型（8 字段，不含 clientIp/userAgent）                                   |
+| `bean`    | `SessionCreateResult`      | 会话创建结果（token + session）                                              |
+| `bean`    | `TokenInfo`                | Token 解析结果（userCode/username/nickname）                               |
+| `bean`    | `RequestRecordData`        | 请求日志数据载体（RequestRecordFilter 与 SPI 之间传递）                             |
+| `enums`   | `AuthType`                 | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）                    |
+| `enums`   | `DestroyReason`            | 会话销毁原因枚举（6 个值）                                                       |
+| `service` | `SessionManager`           | 会话管理器（@Component，createSession + Lua 并发控制）                           |
+| `service` | `SessionStore`             | 会话持久化（@Component，Redis Hash+ZSet）                                    |
+| `service` | `TokenService`             | JWT 令牌服务（@Service，HS256 签名，含 parseClaimsBestEffort 过期 token 尽力解析）    |
+| `filter`  | `SessionAuthFilter`        | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断，不做 clear） |
+| `filter`  | `RequestRecordFilter`      | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）      |
+| `filter`  | `TokenResolver`            | Token 提取 SPI（Authorization: Bearer → token）                          |
+| `filter`  | `WhiteListMatcher`         | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）                        |
+| `spi`     | `RequestRecordHandler`     | 请求日志持久化 SPI（iam-sso 提供实现）                                            |
+| `spi`     | `NoOpRequestRecordHandler` | RequestRecordHandler 空实现（默认，静默跳过）                                    |
+| `config`  | `IamSessionConfig`         | iam-session 全局配置（secret-key / ttl / maxConcurrent）                   |
+| 根包        | `IamSessionAutoConfig`     | 自动配置（@AutoConfiguration + @ComponentScan）                            |
 
 > 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）。认证方式无关，仅管理会话生命周期。
 
@@ -245,15 +245,17 @@ iam_request_record ── 请求日志 (独立)
          9. 记录登录日志 + 更新登录信息
 ```
 
-### 鉴权流程 (JwtAuthContract)
+### 鉴权流程 (SessionAuthFilter)
 
 ```
-请求 → RequestWrapperFilter → LoggingFilter → JwtAuthContract:
-  1. 放行 /*/public/** 路径
-  2. 从 Header 获取 token (Authorization 或 token)
-  3. JWT 验证 + 解析 UserJwt
-  4. JwtAuthContract.authenticate() → 验证令牌有效性
-  5. 缓存用户信息到请求上下文
+请求 → RequestRecordFilter → SessionAuthFilter:
+  1. 无条件设置 appCode + tenantCode（每个请求）
+  2. Best-effort 获取身份：resolve token → validateAndRefresh → 失败则 parseClaimsBestEffort
+  3. 准入判断：
+     - 白名单 (/*/public/**) → 无论有无身份，放行
+     - 非白名单 + 无身份 → 401
+     - 非白名单 + 有身份 → 放行
+  4. IdentityContext.clear() 由外层 RequestRecordFilter.finally 负责
 ```
 
 ### 用户创建流程 (IamUserService.customCreate)

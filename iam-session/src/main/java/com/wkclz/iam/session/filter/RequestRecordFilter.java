@@ -101,8 +101,10 @@ public class RequestRecordFilter extends OncePerRequestFilter {
             log.debug("Request processing error: {}", e.getMessage());
             throw e;
         } finally {
-            // 收集日志信息（在 SessionAuthFilter 的 finally 已清理 IdentityContext 后执行）
+            // 收集日志信息（此时 IdentityContext 尚未清理，可直接读取）
             RequestRecord logData = collectLogData(wrappedRequest, wrappedResponse, startTime, errorMsg);
+            // 清理 IdentityContext，防止 ThreadLocal 内存泄漏（从 SessionAuthFilter 移入）
+            IdentityContext.clear();
             // 必须执行，否则客户端收不到响应体
             wrappedResponse.copyBodyToResponse();
             // 异步持久化
@@ -112,8 +114,8 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
     /**
      * 收集请求/响应日志数据。
-     * <p>用户信息从请求属性获取——由 {@link SessionAuthFilter} 在设置完 IdentityContext 后
-     * 存入请求属性，然后在 finally 中清理 IdentityContext。</p>
+     * <p>用户信息直接从 IdentityContext 读取——由 {@link SessionAuthFilter} 在请求处理时设置，
+     * 在本方法执行后才由 finally 块清理。</p>
      */
     private RequestRecord collectLogData(ContentCachingRequestWrapper request,
                                          ContentCachingResponseWrapper response,
@@ -164,7 +166,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         String rawToken = extractToken(request);
         record.setToken(maskToken(rawToken));
 
-        // 用户信息（从请求属性获取，由 SessionAuthFilter 在清理 IdentityContext 前存入）
+        // 用户信息（直接从 IdentityContext 读取，此时尚未清理）
         record.setUserCode(IdentityContext.getUserCode());
         record.setUsername(IdentityContext.getUsername());
         record.setNickname(IdentityContext.getNickname());
