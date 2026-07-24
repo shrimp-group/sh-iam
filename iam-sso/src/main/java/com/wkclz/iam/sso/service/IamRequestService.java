@@ -1,9 +1,9 @@
 package com.wkclz.iam.sso.service;
 
-import com.wkclz.iam.common.entity.IamRequestLog;
+import com.wkclz.iam.common.entity.IamRequestRecord;
 import com.wkclz.iam.common.helper.IpLocalCacheHelper;
 import com.wkclz.iam.session.bean.RequestRecord;
-import com.wkclz.iam.sso.mapper.SsoRequestLogMapper;
+import com.wkclz.iam.sso.mapper.SsoRequestRecordMapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +14,13 @@ import org.springframework.stereotype.Service;
 public class IamRequestService {
 
     @Resource
-    private SsoRequestLogMapper ssoRequestLogMapper;
+    private SsoRequestRecordMapper ssoRequestRecordMapper;
 
     public void insertRecord(RequestRecord record) {
         if (record == null) {
             return;
         }
-        IamRequestLog iLog = new IamRequestLog();
+        IamRequestRecord iLog = new IamRequestRecord();
         iLog.setTenantCode(record.getTenantCode());
         iLog.setAppCode(record.getAppCode());
         iLog.setUserAgent(record.getUserAgent());
@@ -54,7 +54,7 @@ public class IamRequestService {
         iLog.setResponseBody(record.getResponseBody());
 
         // 缓存的地址信息
-        IamRequestLog location = IpLocalCacheHelper.offerQueue(iLog.getRemoteAddr());
+        IamRequestRecord location = IpLocalCacheHelper.offerQueue(iLog.getRemoteAddr());
         if (location != null) {
             iLog.setLocation(location.getLocation());
             iLog.setIsp(location.getIsp());
@@ -64,7 +64,7 @@ public class IamRequestService {
             iLog.setCreateBy(iLog.getUserCode());
             iLog.setUpdateBy(iLog.getUserCode());
         }
-        ssoRequestLogMapper.insertLog(iLog);
+        ssoRequestRecordMapper.insertRecord(iLog);
     }
 
 }

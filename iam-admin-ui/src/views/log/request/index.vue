@@ -81,8 +81,8 @@
   </div>
 </template>
 
-<script setup name="IamRequestLog">
-import { requestLogPage } from "@/api/log/requestlog";
+<script setup name="IamRequestRecord">
+import { requestRecordPage } from "@/api/log/requestRecord";
 import {timeRangeShortcuts} from "@/utils/shrimp.js";
 import Detail from "./components/detail";
 
@@ -118,7 +118,7 @@ function init() {
 /** 查询参数列表 */
 function getList() {
   loading.value = true;
-  requestLogPage(proxy.addDateRange(queryParams.value, dateRange.value)).then(res => {
+  requestRecordPage(proxy.addDateRange(queryParams.value, dateRange.value)).then(res => {
     const data = res.data;
     dataList.value = data.records;
     total.value = data.total;

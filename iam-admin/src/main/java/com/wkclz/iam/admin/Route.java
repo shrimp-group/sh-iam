@@ -98,12 +98,12 @@ public interface Route {
     String API_DOC = "/api/doc";
 
     // 登录日志
-    String LOGIN_LOG_PAGE = "/login-log/page";
-    String LOGIN_LOG_INFO = "/login-log/info";
+    String LOGIN_RECORD_PAGE = "/login-record/page";
+    String LOGIN_RECORD_INFO = "/login-record/info";
 
     // 请求日志
-    String REQUEST_LOG_PAGE = "/request-log/page";
-    String REQUEST_LOG_INFO = "/request-log/info";
+    String REQUEST_RECORD_PAGE = "/request-record/page";
+    String REQUEST_RECORD_INFO = "/request-record/info";
 
     // 访问密钥管理
     String ACCESS_KEY_PAGE = "/access-key/page";

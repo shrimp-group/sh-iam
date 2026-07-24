@@ -7,7 +7,8 @@
 ## 用户故事
 
 **作为** 系统
-**我想要** 在 iam-sso 中实现 `SessionEventListener` 接口，将 onCreated / onDestroyed / onExpired 事件写入 `iam_login_log`
+**我想要** 在 iam-sso 中实现 `SessionEventListener` 接口，将 onCreated / onDestroyed / onExpired 事件写入
+`iam_login_record`
 表
 **以便** 所有会话生命周期事件都有持久化的审计记录
 
@@ -20,14 +21,14 @@
 ## 明确不包含
 
 - 不做 `SessionEventListener` 接口定义（属于 US-08）
-- 不做 `iam_login_log` 表结构定义（使用现有表结构）
+- 不做 `iam_login_record` 表结构定义（使用现有表结构）
 - 不做事件发布逻辑（US-08 已定义）
 - 不做请求日志（属于独立基础设施）
 
 ## 输入
 
 - US-08：`SessionEventListener` 接口
-- 现有：`iam_login_log` 表结构
+- 现有：`iam_login_record` 表结构
 
 ## 输出
 
@@ -42,10 +43,10 @@ sequenceDiagram
     autonumber
     participant Event as Spring EventBus
     participant Listener as SessionEventListenerImpl<br/>(@Async)
-    participant DB as Database<br/>iam_login_log
+    participant DB as Database<br/>iam_login_record
     Note over Event, DB: === onCreated: 登录成功 ===
     Event ->> Listener: onCreated(session)
-    Listener ->> DB: INSERT iam_login_log<br/>username, loginStatus=SUCCESS,<br/>clientIp, userAgent, loginTime, sessionId
+    Listener ->> DB: INSERT iam_login_record<br/>username, loginStatus=SUCCESS,<br/>clientIp, userAgent, loginTime, sessionId
     Note over Event, DB: === onDestroyed: 登出/失效 ===
     Event ->> Listener: onDestroyed(sessionId, subjectId, reason)
     alt reason == LOGOUT
@@ -57,7 +58,7 @@ sequenceDiagram
     end
     Note over Event, DB: === onExpired: 自然过期 ===
     Event ->> Listener: onExpired(sessionId, subjectId)
-    Listener ->> DB: UPDATE iam_login_log<br/>SET expired=true<br/>WHERE sessionId=sessionId
+    Listener ->> DB: UPDATE iam_login_record<br/>SET expired=true<br/>WHERE sessionId=sessionId
 ```
 
 ## 核心实现
@@ -67,7 +68,7 @@ sequenceDiagram
 class SessionEventListenerImpl implements SessionEventListener {
 
     void onCreated(Session session) {
-        // INSERT iam_login_log:
+        // INSERT iam_login_record:
         //   username = session.subjectId
         //   loginStatus = SUCCESS
         //   clientIp = session.clientIp
@@ -78,14 +79,14 @@ class SessionEventListenerImpl implements SessionEventListener {
     }
 
     void onDestroyed(String sessionId, String subjectId, DestroyReason reason) {
-        // INSERT 或 UPDATE iam_login_log:
+        // INSERT 或 UPDATE iam_login_record:
         //   记录登出/失效事件，标记 reason
         log.info("会话销毁日志: username={}, sessionId={}, reason={}",
                  subjectId, mask(sessionId), reason);
     }
 
     void onExpired(String sessionId, String subjectId) {
-        // UPDATE iam_login_log:
+        // UPDATE iam_login_record:
         //   标记对应登录记录为已过期
         log.info("会话过期日志: username={}, sessionId={}",
                  subjectId, mask(sessionId));

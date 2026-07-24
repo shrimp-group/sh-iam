@@ -5,7 +5,7 @@ import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSONPath;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.wkclz.iam.common.entity.IamRequestLog;
+import com.wkclz.iam.common.entity.IamRequestRecord;
 import com.wkclz.tool.utils.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -27,21 +27,21 @@ public class IpLocalCacheHelper {
     private static final Set<String> IP_QUEUED_SET = ConcurrentHashMap.newKeySet();
     private static final Queue<String> IP_QUEUE = new ConcurrentLinkedQueue<>();
 
-    private static final Cache<String, IamRequestLog> IP_ADDR_CACHE = CacheBuilder.newBuilder()
+    private static final Cache<String, IamRequestRecord> IP_ADDR_CACHE = CacheBuilder.newBuilder()
         .maximumSize(10_000)
         .expireAfterWrite(24, TimeUnit.HOURS)
         .build();
 
     // 写队列
-    public static IamRequestLog offerQueue(String remoteAddr) {
+    public static IamRequestRecord offerQueue(String remoteAddr) {
         if (StringUtils.isBlank(remoteAddr)) {
             return null;
         }
 
         // 不为空，实时返回
-        IamRequestLog authRequestLog = IP_ADDR_CACHE.getIfPresent(remoteAddr);
-        if (authRequestLog != null) {
-            return authRequestLog;
+        IamRequestRecord authRequestRecord = IP_ADDR_CACHE.getIfPresent(remoteAddr);
+        if (authRequestRecord != null) {
+            return authRequestRecord;
         }
 
         // Set.add 是原子操作：返回 true 表示之前不存在（成功入队），返回 false 表示已存在
@@ -66,23 +66,23 @@ public class IpLocalCacheHelper {
 
 
     // 从网络上解析 IP 为地址
-    public static IamRequestLog getLocation(String remoteAddr) {
+    public static IamRequestRecord getLocation(String remoteAddr) {
         if (StringUtils.isBlank(remoteAddr)) {
             return null;
         }
-        IamRequestLog authRequestLog = IP_ADDR_CACHE.getIfPresent(remoteAddr);
-        if (authRequestLog != null) {
-            return authRequestLog;
+        IamRequestRecord authRequestRecord = IP_ADDR_CACHE.getIfPresent(remoteAddr);
+        if (authRequestRecord != null) {
+            return authRequestRecord;
         }
-        IamRequestLog requestLog = new IamRequestLog();
-        requestLog.setRemoteAddr(remoteAddr);
+        IamRequestRecord requestRecord = new IamRequestRecord();
+        requestRecord.setRemoteAddr(remoteAddr);
 
         // 局域网 IP
         if (NetworkUtil.isInnerAddress(remoteAddr)) {
-            requestLog.setLocation("本地局域网");
-            requestLog.setIsp("本地局域网");
-            IP_ADDR_CACHE.put(remoteAddr, requestLog);
-            return requestLog;
+            requestRecord.setLocation("本地局域网");
+            requestRecord.setIsp("本地局域网");
+            IP_ADDR_CACHE.put(remoteAddr, requestRecord);
+            return requestRecord;
         }
 
         String url = IP_LOCATION_SERVER + remoteAddr + "&_=" + System.currentTimeMillis();
@@ -100,18 +100,18 @@ public class IpLocalCacheHelper {
 
             int spr = location.indexOf(" ");
             if (spr != -1) {
-                requestLog.setLocation(location.substring(0, spr));
-                requestLog.setIsp(location.substring(spr+1));
+                requestRecord.setLocation(location.substring(0, spr));
+                requestRecord.setIsp(location.substring(spr + 1));
             } else {
-                requestLog.setLocation(location);
-                requestLog.setIsp(location);
+                requestRecord.setLocation(location);
+                requestRecord.setIsp(location);
             }
         } else {
-            requestLog.setLocation("未知");
-            requestLog.setIsp("未知");
+            requestRecord.setLocation("未知");
+            requestRecord.setIsp("未知");
         }
-        IP_ADDR_CACHE.put(remoteAddr, requestLog);
-        return requestLog;
+        IP_ADDR_CACHE.put(remoteAddr, requestRecord);
+        return requestRecord;
     }
 
 }

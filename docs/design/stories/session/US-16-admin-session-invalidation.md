@@ -57,7 +57,7 @@ sequenceDiagram
     participant Manager as SessionManager<br/>(iam-session)
     participant Store as SessionStore<br/>(Redis)
     participant Audit as SessionEventListenerImpl<br/>(审计)
-    participant DB as Database<br/>iam_login_log
+    participant DB as Database<br/>iam_login_record
     Admin ->> Admin: resetPassword(userCode, newPassword)
     Admin ->> Event: publish(PasswordResetByAdminEvent(userCode))
     Event ->> Listener: onPasswordReset(event) (@Async)
@@ -82,7 +82,7 @@ sequenceDiagram
     participant Manager as SessionManager<br/>(iam-session)
     participant Store as SessionStore<br/>(Redis)
     participant Audit as SessionEventListenerImpl<br/>(审计)
-    participant DB as Database<br/>iam_login_log
+    participant DB as Database<br/>iam_login_record
     Admin ->> Admin: updateUserStatus(userCode, DISABLED/LOCKED)
     Admin ->> Event: publish(UserStatusChangedEvent(userCode, newStatus))
     Event ->> Listener: onUserStatusChanged(event) (@Async)

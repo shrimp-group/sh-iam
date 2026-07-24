@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.wkclz.iam.admin.mapper.IamLoginLogMapper">
+<mapper namespace="com.wkclz.iam.admin.mapper.IamLoginRecordMapper">
 
-    <select id="getLoginLogList" parameterType="com.wkclz.iam.common.entity.IamLoginLog" resultType="com.wkclz.iam.common.entity.IamLoginLog">
+    <select id="getLoginRecordList" parameterType="com.wkclz.iam.common.entity.IamLoginRecord"
+            resultType="com.wkclz.iam.common.entity.IamLoginRecord">
         SELECT
             id,
             auth_identifier,
@@ -20,7 +21,7 @@
             remark,
             version
         FROM
-            iam_login_log
+        iam_login_record
         WHERE
             deleted = 0
             <if test="authIdentifier != null">AND auth_identifier = #{authIdentifier}</if>

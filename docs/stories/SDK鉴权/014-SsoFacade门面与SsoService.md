@@ -15,11 +15,11 @@ SSO 服务端交互，同时支持 iam-sso 模块覆盖为本地实现。
 
 ## 验收标准
 
-1. `SsoFacade` 接口定义 `saveLog(RequestLog)` 方法
+1. `SsoFacade` 接口定义 `saveLog(RequestRecord)` 方法
 2. SDK 默认实现 `SsoFacadeImpl`：通过 HTTP POST 将日志发送到 SSO 服务端
     - 请求路径：`{serverUrl}/sign/saveLog`
     - 认证方式：请求头携带 `app-id` + `sign`（AkSignHelper 生成 AK 签名）
-    - 请求体：RequestLog 的 JSON 序列化
+   - 请求体：RequestRecord 的 JSON 序列化
 3. `IamSsoService` 接口定义 `tokenCheck(token, authIdentifier)` 方法
 4. SDK 默认实现：远程调用 SSO 服务端校验 Token
 5. `IamSdkConfig` 中通过 `@Bean @ConditionalOnMissingBean` 注册 SsoFacade 默认实现

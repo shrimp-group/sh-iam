@@ -231,7 +231,7 @@ enum DestroyReason {
 | **SSO-10**  | 登录成功处理        | 凭证校验通过 → 构建 UserIdentity → 调用 SessionManager.createSession() → 发布 LoginSuccessEvent → 返回 LoginResp                               | **重新编排**（现状的 IamLoginService 逻辑下沉到 SessionManager） |
 | **SSO-11**  | 登录失败处理        | 记录失败次数 → 发布 LoginFailedEvent → 返回错误信息                                                                                            | 现状 #34                                             |
 | **SSO-12**  | 登录审计事件        | `LoginSuccessEvent` / `LoginFailedEvent`，含 username、ip、userAgent、timestamp、failureReason。审计日志服务独立消费                              | **新增**（解耦，替代现状 #34 的 recordLoginLog 硬编码）           |
-| **SSO-12a** | 会话事件监听实现      | 实现 `SessionEventListener` 接口，将 onCreated/onDestroyed/onExpired 写入登录日志表（iam_login_log）                                            | **新增**（会话层定义接口，SSO 层提供审计实现）                        |
+| **SSO-12a** | 会话事件监听实现      | 实现 `SessionEventListener` 接口，将 onCreated/onDestroyed/onExpired 写入登录日志表（iam_login_record）                                         | **新增**（会话层定义接口，SSO 层提供审计实现）                        |
 | **SSO-13**  | 登出端点          | `GET /iam-sso/logout`：从 IdentityContext 取当前 token → 调用 SessionManager.destroySession() → 发布 LogoutEvent                          | 现状 #28                                             |
 | **SSO-14**  | 登出审计事件        | `LogoutEvent`，含 username、token（脱敏）、timestamp                                                                                     | **新增**                                             |
 | **SSO-15**  | 修改密码          | 旧密码校验 → 历史密码检查（最近 N 条不重复）→ 编码新密码 → 更新 DB → 调用 SessionManager.destroyAllSessions() → 发布 PasswordChangedEvent                      | 现状 #29                                             |
@@ -355,7 +355,7 @@ sequenceDiagram
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
     participant Listener as iam-sso<br/>SessionEventListenerImpl
-    participant LogDB as DB<br/>iam_login_log
+    participant LogDB as DB<br/>iam_login_record
     Note over Client, LogDB: === 阶段1：验证码判断 ===
     Client ->> SSO: POST /iam-sso/login {username, password, captchaId, captchaCode}
     SSO ->> SSO: RSA 私钥解密密码
@@ -441,7 +441,7 @@ sequenceDiagram
     Controller -->> Client: 响应
     Note over Client, Controller: === 阶段5：身份清理 & 请求日志落库 ===
     Filter ->> Identity: clear()
-    ReqLog ->> ReqLog: 采集请求/响应/耗时/用户 → 脱敏 → 异步写入 iam_request_log
+    ReqLog ->> ReqLog: 采集请求/响应/耗时/用户 → 脱敏 → 异步写入 iam_request_record
 ```
 
 ### 7.3 登出流程
@@ -455,7 +455,7 @@ sequenceDiagram
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
     participant Listener as iam-sso<br/>SessionEventListenerImpl
-    participant LogDB as DB<br/>iam_login_log
+    participant LogDB as DB<br/>iam_login_record
     Client ->> SSO: GET /iam-sso/logout
     SSO ->> Identity: getToken()
     Identity -->> SSO: token
@@ -480,7 +480,7 @@ sequenceDiagram
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
     participant Audit as iam-sso<br/>SessionEventListenerImpl
-    participant LogDB as DB<br/>iam_login_log
+    participant LogDB as DB<br/>iam_login_record
     Note over Admin, LogDB: === 场景1：管理员重置密码 ===
     Admin ->> Admin: resetPassword(userCode, newPassword)
     Admin ->> Event: publish PasswordResetByAdminEvent(userCode)

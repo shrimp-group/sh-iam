@@ -86,8 +86,8 @@
   </el-dialog>
 </template>
 
-<script setup name="IamRequestLogDetail">
-import { requestLogInfo } from "@/api/log/requestlog";
+<script setup name="IamRequestRecordDetail">
+import { requestRecordInfo } from "@/api/log/requestRecord";
 import MonacoEditor from "@/components/MonacoEditor";
 
 defineExpose({init})
@@ -111,7 +111,7 @@ function cancel() {
 // 新增/修改按钮操作
 function init(row) {
   reset();
-  requestLogInfo({id: row.id}).then(res => {
+  requestRecordInfo({id: row.id}).then(res => {
     form.value = res.data;
     if (form.value.requestBody) {
       try {

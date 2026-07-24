@@ -1,10 +1,10 @@
 package com.wkclz.iam.sso.service;
 
-import com.wkclz.iam.common.entity.IamRequestLog;
+import com.wkclz.iam.common.entity.IamRequestRecord;
 import com.wkclz.iam.common.helper.IpLocalCacheHelper;
 import com.wkclz.iam.session.bean.RequestRecord;
 import com.wkclz.iam.session.spi.RequestRecordHandler;
-import com.wkclz.iam.sso.mapper.SsoRequestLogMapper;
+import com.wkclz.iam.sso.mapper.SsoRequestRecordMapper;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ public class RequestRecordHandlerImpl implements RequestRecordHandler {
     private static final Logger log = LoggerFactory.getLogger(RequestRecordHandlerImpl.class);
 
     @Resource
-    private SsoRequestLogMapper ssoRequestLogMapper;
+    private SsoRequestRecordMapper ssoRequestRecordMapper;
 
     @Override
     public void handle(RequestRecord data) {
@@ -29,15 +29,15 @@ public class RequestRecordHandlerImpl implements RequestRecordHandler {
             return;
         }
         try {
-            IamRequestLog entity = mapToEntity(data);
-            ssoRequestLogMapper.insertLog(entity);
+            IamRequestRecord entity = mapToEntity(data);
+            ssoRequestRecordMapper.insertRecord(entity);
         } catch (Exception e) {
             log.warn("Failed to save request log: uri={}, error={}", data.getRequestUri(), e.getMessage());
         }
     }
 
-    private IamRequestLog mapToEntity(RequestRecord data) {
-        IamRequestLog entity = new IamRequestLog();
+    private IamRequestRecord mapToEntity(RequestRecord data) {
+        IamRequestRecord entity = new IamRequestRecord();
 
         entity.setTenantCode(data.getTenantCode());
         entity.setAppCode(data.getAppCode());
@@ -66,7 +66,7 @@ public class RequestRecordHandlerImpl implements RequestRecordHandler {
         entity.setErrorMsg(truncate(data.getErrorMsg(), 4095));
 
         // IP 归属地查询（缓存）
-        IamRequestLog location = IpLocalCacheHelper.offerQueue(entity.getRemoteAddr());
+        IamRequestRecord location = IpLocalCacheHelper.offerQueue(entity.getRemoteAddr());
         if (location != null) {
             entity.setLocation(location.getLocation());
             entity.setIsp(location.getIsp());

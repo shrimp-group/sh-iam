@@ -11,12 +11,12 @@ import lombok.EqualsAndHashCode;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_login_log (登录记录表) 重新生成代码会覆盖
+ * @table iam_login_record (登录记录表) 重新生成代码会覆盖
  */
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class IamLoginLog extends BaseEntity {
+public class IamLoginRecord extends BaseEntity {
 
     /**
      * 认证标识
@@ -67,8 +67,10 @@ public class IamLoginLog extends BaseEntity {
     private String userAgent;
 
 
-    public static IamLoginLog copy(IamLoginLog source, IamLoginLog target) {
-        if (target == null ) { target = new IamLoginLog();}
+    public static IamLoginRecord copy(IamLoginRecord source, IamLoginRecord target) {
+        if (target == null) {
+            target = new IamLoginRecord();
+        }
         if (source == null) { return target; }
         target.setId(source.getId());
         target.setAuthIdentifier(source.getAuthIdentifier());
@@ -89,8 +91,10 @@ public class IamLoginLog extends BaseEntity {
         return target;
     }
 
-    public static IamLoginLog copyIfNotNull(IamLoginLog source, IamLoginLog target) {
-        if (target == null ) { target = new IamLoginLog();}
+    public static IamLoginRecord copyIfNotNull(IamLoginRecord source, IamLoginRecord target) {
+        if (target == null) {
+            target = new IamLoginRecord();
+        }
         if (source == null) { return target; }
         if (source.getId() != null) { target.setId(source.getId()); }
         if (source.getAuthIdentifier() != null) { target.setAuthIdentifier(source.getAuthIdentifier()); }

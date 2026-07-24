@@ -11,12 +11,12 @@ import lombok.EqualsAndHashCode;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_request_log (系统请求日志) 重新生成代码会覆盖
+ * @table iam_request_record (系统请求日志) 重新生成代码会覆盖
  */
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class IamRequestLog extends BaseEntity {
+public class IamRequestRecord extends BaseEntity {
 
     /**
      * 租户编码
@@ -217,8 +217,10 @@ public class IamRequestLog extends BaseEntity {
     private String errorMsg;
 
 
-    public static IamRequestLog copy(IamRequestLog source, IamRequestLog target) {
-        if (target == null ) { target = new IamRequestLog();}
+    public static IamRequestRecord copy(IamRequestRecord source, IamRequestRecord target) {
+        if (target == null) {
+            target = new IamRequestRecord();
+        }
         if (source == null) { return target; }
         target.setId(source.getId());
         target.setTenantCode(source.getTenantCode());
@@ -264,8 +266,10 @@ public class IamRequestLog extends BaseEntity {
         return target;
     }
 
-    public static IamRequestLog copyIfNotNull(IamRequestLog source, IamRequestLog target) {
-        if (target == null ) { target = new IamRequestLog();}
+    public static IamRequestRecord copyIfNotNull(IamRequestRecord source, IamRequestRecord target) {
+        if (target == null) {
+            target = new IamRequestRecord();
+        }
         if (source == null) { return target; }
         if (source.getId() != null) { target.setId(source.getId()); }
         if (source.getTenantCode() != null) { target.setTenantCode(source.getTenantCode()); }

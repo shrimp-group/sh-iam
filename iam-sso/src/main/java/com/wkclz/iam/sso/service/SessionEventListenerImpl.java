@@ -2,14 +2,14 @@ package com.wkclz.iam.sso.service;
 
 import com.alibaba.fastjson2.JSON;
 import com.wkclz.core.identity.UserIdentity;
-import com.wkclz.iam.common.entity.IamLoginLog;
+import com.wkclz.iam.common.entity.IamLoginRecord;
 import com.wkclz.iam.session.bean.Session;
 import com.wkclz.iam.session.enums.DestroyReason;
 import com.wkclz.iam.session.enums.LoginStatus;
 import com.wkclz.iam.session.event.SessionEvent;
 import com.wkclz.iam.session.event.SessionEventListener;
 import com.wkclz.iam.sso.event.LoginEvent;
-import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
+import com.wkclz.iam.sso.mapper.SsoLoginRecordMapper;
 import com.wkclz.web.helper.IpHelper;
 import com.wkclz.web.helper.RequestHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +20,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * 会话审计事件监听器实现 — 将会话生命周期事件和登录事件写入 iam_login_log 表。
+ * 会话审计事件监听器实现 — 将会话生命周期事件和登录事件写入 iam_login_record 表。
  *
  * <p>实现 {@link SessionEventListener} 处理会话创建/销毁/过期，
  * 同时通过 {@code @EventListener} 监听 {@link LoginEvent} 处理登录失败。</p>
@@ -32,7 +32,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
     private static final Logger log = LoggerFactory.getLogger(SessionEventListenerImpl.class);
 
     @Autowired
-    private SsoLoginLogMapper ssoLoginLogMapper;
+    private SsoLoginRecordMapper ssoLoginRecordMapper;
 
     // ========== SessionEvent 桥接（Spring Event → 接口方法） ==========
 
@@ -57,7 +57,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
     @Override
     public void onCreated(Session session) {
         try {
-            IamLoginLog loginLog = new IamLoginLog();
+            IamLoginRecord loginLog = new IamLoginRecord();
             loginLog.setUserCode(session.getSubjectId());
             loginLog.setAuthType(session.getAuthType() != null ? session.getAuthType().name() : null);
             loginLog.setLoginStatus(LoginStatus.SUCCESS.getCode());
@@ -76,7 +76,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
             loginLog.setCreateBy(loginLog.getUsername() != null ? loginLog.getUsername() : session.getSubjectId());
             loginLog.setUpdateBy(loginLog.getUsername() != null ? loginLog.getUsername() : session.getSubjectId());
 
-            ssoLoginLogMapper.insertLoginLog(loginLog);
+            ssoLoginRecordMapper.insertLoginRecord(loginLog);
             log.info("登录日志记录成功: username={}, ip={}", loginLog.getUsername(), loginLog.getIpAddress());
         } catch (Exception e) {
             log.error("onCreated 审计日志写入失败: sessionId={}, error={}", session.getSessionId(), e.getMessage(), e);
@@ -86,7 +86,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
     @Override
     public void onDestroyed(String sessionId, String subjectId, DestroyReason reason) {
         try {
-            IamLoginLog loginLog = new IamLoginLog();
+            IamLoginRecord loginLog = new IamLoginRecord();
             loginLog.setAuthIdentifier(subjectId);
             loginLog.setUserCode(subjectId);
             loginLog.setMessage(reason.name());
@@ -104,7 +104,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
             loginLog.setCreateBy(subjectId);
             loginLog.setUpdateBy(subjectId);
 
-            ssoLoginLogMapper.insertLoginLog(loginLog);
+            ssoLoginRecordMapper.insertLoginRecord(loginLog);
             log.info("会话销毁日志记录: subjectId={}, reason={}", subjectId, reason);
         } catch (Exception e) {
             log.error("onDestroyed 审计日志写入失败: sessionId={}, subjectId={}, reason={}, error={}",
@@ -115,14 +115,14 @@ public class SessionEventListenerImpl implements SessionEventListener {
     @Override
     public void onExpired(String sessionId, String subjectId) {
         try {
-            IamLoginLog loginLog = new IamLoginLog();
+            IamLoginRecord loginLog = new IamLoginRecord();
             loginLog.setAuthIdentifier(subjectId);
             loginLog.setUserCode(subjectId);
             loginLog.setMessage("会话自然过期");
             loginLog.setCreateBy(subjectId);
             loginLog.setUpdateBy(subjectId);
 
-            ssoLoginLogMapper.insertLoginLog(loginLog);
+            ssoLoginRecordMapper.insertLoginRecord(loginLog);
             log.info("会话过期日志记录: subjectId={}, sessionId={}", subjectId, masked(sessionId));
         } catch (Exception e) {
             log.error("onExpired 审计日志写入失败: sessionId={}, subjectId={}, error={}",
@@ -142,7 +142,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
             return;
         }
         try {
-            IamLoginLog loginLog = new IamLoginLog();
+            IamLoginRecord loginLog = new IamLoginRecord();
             loginLog.setAuthIdentifier(event.getUsername());
             loginLog.setUsername(event.getUsername());
             loginLog.setLoginStatus(event.getLoginStatus().getCode());
@@ -152,7 +152,7 @@ public class SessionEventListenerImpl implements SessionEventListener {
             loginLog.setCreateBy(event.getUsername());
             loginLog.setUpdateBy(event.getUsername());
 
-            ssoLoginLogMapper.insertLoginLog(loginLog);
+            ssoLoginRecordMapper.insertLoginRecord(loginLog);
             log.info("登录失败日志记录: username={}, loginStatus={}, ip={}",
                 event.getUsername(), event.getLoginStatus(), event.getIp());
         } catch (Exception e) {
@@ -164,9 +164,9 @@ public class SessionEventListenerImpl implements SessionEventListener {
     // ========== 内部方法 ==========
 
     /**
-     * 从 UserIdentity JSON 中提取 username/nickname 等字段回填到 IamLoginLog。
+     * 从 UserIdentity JSON 中提取 username/nickname 等字段回填到 IamLoginRecord。
      */
-    private static void parseUserIdentity(String userIdentityJson, IamLoginLog loginLog) {
+    private static void parseUserIdentity(String userIdentityJson, IamLoginRecord loginLog) {
         if (userIdentityJson == null || userIdentityJson.isEmpty()) {
             return;
         }

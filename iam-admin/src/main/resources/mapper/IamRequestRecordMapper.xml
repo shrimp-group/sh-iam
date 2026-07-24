@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.wkclz.iam.admin.mapper.IamRequestLogMapper">
+<mapper namespace="com.wkclz.iam.admin.mapper.IamRequestRecordMapper">
 
 
-    <select id="getRequestLogCount" parameterType="com.wkclz.iam.common.entity.IamRequestLog" resultType="java.lang.Long">
+    <select id="getRequestRecordCount" parameterType="com.wkclz.iam.common.entity.IamRequestRecord"
+            resultType="java.lang.Long">
         SELECT
             COUNT(*) count
         FROM
-            iam_request_log
+        iam_request_record
         WHERE
             deleted = 0
             <if test="tenantCode != null">AND tenant_code = #{tenantCode}</if>
@@ -23,7 +24,8 @@
     </select>
 
 
-    <select id="getRequestLogList" parameterType="com.wkclz.iam.common.entity.IamRequestLog" resultType="com.wkclz.iam.common.entity.IamRequestLog">
+    <select id="getRequestRecordList" parameterType="com.wkclz.iam.common.entity.IamRequestRecord"
+            resultType="com.wkclz.iam.common.entity.IamRequestRecord">
         SELECT
             id,
             tenant_code,
@@ -66,7 +68,7 @@
             remark,
             version
         FROM
-            iam_request_log
+        iam_request_record
         WHERE
             deleted = 0
             <if test="tenantCode != null">AND tenant_code = #{tenantCode}</if>

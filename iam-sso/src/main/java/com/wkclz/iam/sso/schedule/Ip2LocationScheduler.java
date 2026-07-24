@@ -1,9 +1,9 @@
 package com.wkclz.iam.sso.schedule;
 
 
-import com.wkclz.iam.common.entity.IamRequestLog;
+import com.wkclz.iam.common.entity.IamRequestRecord;
 import com.wkclz.iam.common.helper.IpLocalCacheHelper;
-import com.wkclz.iam.sso.mapper.SsoRequestLogMapper;
+import com.wkclz.iam.sso.mapper.SsoRequestRecordMapper;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class Ip2LocationScheduler implements ApplicationRunner {
     private final AtomicBoolean running = new AtomicBoolean(true);
 
     @Resource
-    private SsoRequestLogMapper ssoRequestLogMapper;
+    private SsoRequestRecordMapper ssoRequestRecordMapper;
 
     // 消化队列
     @Override
@@ -53,14 +53,14 @@ public class Ip2LocationScheduler implements ApplicationRunner {
                     Thread.sleep(120);
                     continue;
                 }
-                IamRequestLog location = IpLocalCacheHelper.getLocation(poll);
+                IamRequestRecord location = IpLocalCacheHelper.getLocation(poll);
 
                 if (location == null) {
                     continue;
                 }
 
                 location.setCreateTime(LocalDateTime.now().plusMonths(-1));
-                Integer count = ssoRequestLogMapper.updateMostLocation(location);
+                Integer count = ssoRequestRecordMapper.updateMostLocation(location);
                 log.info("remoteAddr 2 location --->, ip: {}, count : {} ", location.getRemoteAddr(), count);
 
                 // 更新 DB

@@ -5,8 +5,8 @@ import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
-import com.wkclz.iam.admin.mapper.IamLoginLogMapper;
-import com.wkclz.iam.common.entity.IamLoginLog;
+import com.wkclz.iam.admin.mapper.IamLoginRecordMapper;
+import com.wkclz.iam.common.entity.IamLoginRecord;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
@@ -20,15 +20,15 @@ import java.time.temporal.ChronoUnit;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_login_log (登录记录表) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_login_log 的逻辑. 其他逻辑放 custom 中
+ * @table iam_login_record (登录记录表) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_login_record 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
-public class IamLoginLogService extends BaseService<IamLoginLog, IamLoginLogMapper> {
+public class IamLoginRecordService extends BaseService<IamLoginRecord, IamLoginRecordMapper> {
 
-    private static final Logger log = LoggerFactory.getLogger(IamLoginLogService.class);
+    private static final Logger log = LoggerFactory.getLogger(IamLoginRecordService.class);
 
-    public PageData<IamLoginLog> getLoginLogPage(IamLoginLog entity) {
+    public PageData<IamLoginRecord> getLoginRecordPage(IamLoginRecord entity) {
         // 时间间隔校验：不能超过30天
         LocalDateTime timeFrom = entity.getTimeFrom();
         LocalDateTime timeTo = entity.getTimeTo();
@@ -39,35 +39,35 @@ public class IamLoginLogService extends BaseService<IamLoginLog, IamLoginLogMapp
             }
         }
         log.info("查询登录日志分页, timeFrom={}, timeTo={}", timeFrom, timeTo);
-        return PageQuery.page(entity, mapper::getLoginLogList);
+        return PageQuery.page(entity, mapper::getLoginRecordList);
     }
 
-    public IamLoginLog create(IamLoginLog entity) {
+    public IamLoginRecord create(IamLoginRecord entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
         return entity;
     }
 
-    public IamLoginLog update(IamLoginLog entity) {
+    public IamLoginRecord update(IamLoginRecord entity) {
         duplicateCheck(entity);
         Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
         Assert.notNull(entity.getVersion(), "请求错误！参数[version]不能为空");
-        IamLoginLog oldEntity = selectById(entity.getId());
+        IamLoginRecord oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
-        IamLoginLog.copyIfNotNull(entity, oldEntity);
+        IamLoginRecord.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
         return oldEntity;
     }
 
-    public IamLoginLog save(IamLoginLog entity) {
+    public IamLoginRecord save(IamLoginRecord entity) {
         return entity.getId() == null ? create(entity) : update(entity);
     }
 
-    public IamLoginLog remove(IamLoginLog entity) {
+    public IamLoginRecord remove(IamLoginRecord entity) {
         Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
-        IamLoginLog oldEntity = selectById(entity.getId());
+        IamLoginRecord oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
@@ -75,14 +75,14 @@ public class IamLoginLogService extends BaseService<IamLoginLog, IamLoginLogMapp
         return oldEntity;
     }
 
-    private void duplicateCheck(IamLoginLog entity) {
+    private void duplicateCheck(IamLoginRecord entity) {
         // 唯一条件为空，直接通过
         if (true) {
             return;
         }
-        
+
         // 唯一条件不为空，请设置唯一条件
-        IamLoginLog param = new IamLoginLog();
+        IamLoginRecord param = new IamLoginRecord();
         // 唯一条件
         param = selectOneByEntity(param);
         if (param == null) {

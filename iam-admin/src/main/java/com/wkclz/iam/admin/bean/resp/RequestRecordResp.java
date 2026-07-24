@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(description = "请求日志响应")
-public class RequestLogResp extends EntityResp {
+public class RequestRecordResp extends EntityResp {
 
     @Schema(description = "租户编码")
     private String tenantCode;

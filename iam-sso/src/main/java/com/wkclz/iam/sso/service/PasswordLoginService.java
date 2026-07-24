@@ -3,7 +3,7 @@ package com.wkclz.iam.sso.service;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.core.identity.UserIdentity;
-import com.wkclz.iam.common.entity.IamLoginLog;
+import com.wkclz.iam.common.entity.IamLoginRecord;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
@@ -19,8 +19,8 @@ import com.wkclz.iam.sso.config.IamSsoConfig;
 import com.wkclz.iam.sso.event.LoginEvent;
 import com.wkclz.iam.sso.event.LogoutEvent;
 import com.wkclz.iam.sso.event.PasswordChangedEvent;
-import com.wkclz.iam.sso.mapper.SsoLoginLogMapper;
 import com.wkclz.iam.sso.mapper.SsoLoginMapper;
+import com.wkclz.iam.sso.mapper.SsoLoginRecordMapper;
 import com.wkclz.iam.sso.spi.CredentialChecker;
 import com.wkclz.iam.sso.spi.PasswordEncoder;
 import com.wkclz.tool.tools.Md5Tool;
@@ -50,7 +50,7 @@ public class PasswordLoginService {
     @Autowired
     private SsoLoginMapper ssoLoginMapper;
     @Autowired
-    private SsoLoginLogMapper ssoLoginLogMapper;
+    private SsoLoginRecordMapper ssoLoginRecordMapper;
     @Autowired
     private CredentialChecker credentialChecker;
     @Autowired
@@ -81,10 +81,10 @@ public class PasswordLoginService {
         }
 
         // 阶段2：验证码判断
-        IamLoginLog param = new IamLoginLog();
+        IamLoginRecord param = new IamLoginRecord();
         param.setAuthIdentifier(username);
         param.setAuthType(AuthType.PASSWORD.name());
-        IamLoginLog lastLoginIn1Hour = ssoLoginLogMapper.getLastLoginIn1Hour(param);
+        IamLoginRecord lastLoginIn1Hour = ssoLoginRecordMapper.getLastLoginIn1Hour(param);
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
             && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 1h 内有失败记录，需要验证码", username);

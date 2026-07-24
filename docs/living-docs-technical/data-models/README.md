@@ -19,8 +19,8 @@
 | IamAccessKeyApi     | AK-API 关联 | iam-common |
 | IamRoleData         | 角色-数据维度关联 | iam-common |
 | IamDataDimension    | 数据维度      | iam-common |
-| IamLoginLog         | 登录日志      | iam-common |
-| IamRequestLog       | 请求日志      | iam-common |
+| IamLoginRecord      | 登录日志      | iam-common |
+| IamRequestRecord    | 请求日志      | iam-common |
 | IamApiField         | API 字段    | iam-common |
 | IamMenuField        | 菜单字段      | iam-common |
 | IamTenant           | 租户        | iam-common |

@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Schema(description = "登录日志响应")
-public class LoginLogResp extends EntityResp {
+public class LoginRecordResp extends EntityResp {
 
     @Schema(description = "认证标识")
     private String authIdentifier;

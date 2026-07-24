@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 请求日志数据载体 — 用于在 RequestLogFilter 和 SPI 实现之间传递请求/响应日志信息。
  *
- * <p>纯 JDK 依赖，不依赖任何框架或模块。字段与 {@code IamRequestLog} 实体对应，
+ * <p>纯 JDK 依赖，不依赖任何框架或模块。字段与 {@code IamRequestRecord} 实体对应，
  * 由 SPI 实现方负责 UA 解析、IP 归属地查询和持久化。</p>
  *
  * @see com.wkclz.iam.session.spi.RequestRecordHandler

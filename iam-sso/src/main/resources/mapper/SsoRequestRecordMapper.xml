@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.wkclz.iam.sso.mapper.SsoRequestLogMapper">
+<mapper namespace="com.wkclz.iam.sso.mapper.SsoRequestRecordMapper">
 
-  <insert id="insertLog" parameterType="com.wkclz.iam.common.entity.IamRequestLog">
-    INSERT INTO iam_request_log (
+    <insert id="insertRecord" parameterType="com.wkclz.iam.common.entity.IamRequestRecord">
+        INSERT INTO iam_request_record (
       <trim suffixOverrides=",">
           <if test="tenantCode != null">tenant_code, </if>
           <if test="appCode != null">app_code, </if>
@@ -84,9 +84,9 @@
     )
   </insert>
 
-    <update id="updateMostLocation" parameterType="com.wkclz.iam.common.entity.IamRequestLog">
+    <update id="updateMostLocation" parameterType="com.wkclz.iam.common.entity.IamRequestRecord">
         UPDATE
-          iam_request_log
+        iam_request_record
         SET
           location = #{location},
           isp = #{isp},

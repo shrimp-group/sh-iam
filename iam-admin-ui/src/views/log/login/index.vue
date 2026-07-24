@@ -57,8 +57,8 @@
   </div>
 </template>
 
-<script setup name="IamLoginLog">
-import {loginLogPage} from "@/api/log/loginlog";
+<script setup name="IamLoginRecord">
+import {loginRecordPage} from "@/api/log/loginRecord";
 import {timeRangeShortcuts} from "@/utils/shrimp";
 
 const { proxy } = getCurrentInstance();
@@ -102,7 +102,7 @@ function init() {
 /** 查询参数列表 */
 function getList() {
   loading.value = true;
-  loginLogPage(proxy.addDateRange(queryParams.value, dateRange.value)).then(res => {
+  loginRecordPage(proxy.addDateRange(queryParams.value, dateRange.value)).then(res => {
     const data = res.data;
     dataList.value = data.records;
     total.value = data.total;

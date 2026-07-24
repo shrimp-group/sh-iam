@@ -9,12 +9,12 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 /**
- * 请求日志分页查询请求
+ * 登录日志分页查询请求
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Schema(description = "请求日志分页查询请求")
-public class RequestLogPageReq extends PageReq {
+@Schema(description = "登录日志分页查询请求")
+public class LoginRecordPageReq extends PageReq {
 
     @NotNull(message = "timeFrom 不能为空")
     @Schema(description = "查询开始时间", requiredMode = Schema.RequiredMode.REQUIRED)
