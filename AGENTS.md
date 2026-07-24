@@ -424,18 +424,18 @@ iam_request_record ── 请求日志 (独立)
 
 ### SSO 登录认证模块 (iam-sso)
 
-| Story ID  | 故事名称             | 优先级 | 文档                                                             |
-|-----------|------------------|-----|----------------------------------------------------------------|
-| STORY-015 | ✅ 用户名密码登录        | P0  | [STORY-015](docs/stories/STORY-015-username-password-login.md) |
-| STORY-016 | ✅ 图形验证码接口        | P0  | [STORY-016](docs/stories/STORY-016-captcha-rest.md)            |
-| STORY-017 | ⚠️ 用户注册接口（空占位实现） | P2  | [STORY-017](docs/stories/STORY-017-user-register.md)           |
-| STORY-018 | ✅ 用户登出           | P0  | [STORY-018](docs/stories/STORY-018-user-logout.md)             |
-| STORY-019 | ✅ 用户信息与菜单资源查询    | P0  | [STORY-019](docs/stories/STORY-019-user-info-menu-resource.md) |
-| STORY-020 | ✅ 若依格式菜单树适配      | P1  | [STORY-020](docs/stories/STORY-020-ruoyi-menu-tree.md)         |
-| STORY-021 | ✅ Token 校验服务实现   | P0  | [STORY-021](docs/stories/STORY-021-token-check-service.md)     |
-| STORY-022 | ✅ 请求日志持久化服务      | P1  | [STORY-022](docs/stories/STORY-022-request-log-persistence.md) |
-| STORY-023 | ✅ 用户名缓存服务        | P1  | [STORY-023](docs/stories/STORY-023-username-cache-service.md)  |
-| STORY-024 | ✅ SSO 配置与自动装配    | P0  | [STORY-024](docs/stories/STORY-024-sso-auto-config.md)         |
+| Story ID  | 故事名称             | 优先级 | 文档                                                                |
+|-----------|------------------|-----|-------------------------------------------------------------------|
+| STORY-015 | ✅ 用户名密码登录        | P0  | [STORY-015](docs/stories/STORY-015-username-password-login.md)    |
+| STORY-016 | ✅ 图形验证码接口        | P0  | [STORY-016](docs/stories/STORY-016-captcha-rest.md)               |
+| STORY-017 | ⚠️ 用户注册接口（空占位实现） | P2  | [STORY-017](docs/stories/STORY-017-user-register.md)              |
+| STORY-018 | ✅ 用户登出           | P0  | [STORY-018](docs/stories/STORY-018-user-logout.md)                |
+| STORY-019 | ✅ 用户信息与菜单资源查询    | P0  | [STORY-019](docs/stories/STORY-019-user-info-menu-resource.md)    |
+| STORY-020 | ✅ 若依格式菜单树适配      | P1  | [STORY-020](docs/stories/STORY-020-ruoyi-menu-tree.md)            |
+| STORY-021 | ✅ Token 校验服务实现   | P0  | [STORY-021](docs/stories/STORY-021-token-check-service.md)        |
+| STORY-022 | ✅ 请求日志持久化服务      | P1  | [STORY-022](docs/stories/STORY-022-request-record-persistence.md) |
+| STORY-023 | ✅ 用户名缓存服务        | P1  | [STORY-023](docs/stories/STORY-023-username-cache-service.md)     |
+| STORY-024 | ✅ SSO 配置与自动装配    | P0  | [STORY-024](docs/stories/STORY-024-sso-auto-config.md)            |
 
 ### 管理后台模块 (iam-admin)
 
@@ -457,8 +457,8 @@ iam_request_record ── 请求日志 (独立)
 | STORY-036-01 | ⚠️ 菜单详情页与穿梭框绑定（部分实现）   | P1  | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列，已绑定角色（roleCode+roleName），关联用户（username/nickname/roleName/startTime/endTime/enableStatus） |
 | STORY-037    | ⚠️ 数据权限维度管理（部分实现）      | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)                                                                                           |
 | STORY-038    | ⚠️ 角色-数据权限关联管理（部分实现）   | P1  | [STORY-038](docs/stories/STORY-038-role-data-binding.md)                                                                                             |
-| STORY-039    | ⚠️ 登录日志查询（部分实现）        | P1  | [STORY-039](docs/stories/STORY-039-login-log-query.md)                                                                                               |
-| STORY-040    | ⚠️ 请求日志查询（部分实现）        | P1  | [STORY-040](docs/stories/STORY-040-request-log-query.md)                                                                                             |
+| STORY-039    | ⚠️ 登录日志查询（部分实现）        | P1  | [STORY-039](docs/stories/STORY-039-login-record-query.md)                                                                                            |
+| STORY-040    | ⚠️ 请求日志查询（部分实现）        | P1  | [STORY-040](docs/stories/STORY-040-request-record-query.md)                                                                                          |
 | STORY-041    | ✅ 当前用户菜单查询             | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)                                                                                               |
 | STORY-042    | ✅ Admin 自动配置与路由常量      | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                             |
 
