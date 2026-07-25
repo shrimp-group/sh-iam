@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,21 +31,21 @@ public class IamTenant extends BaseEntity {
     private String tenantName;
 
     /**
-     * 可用状态
+     * 可用状态：1-启用，0-禁用
      */
-    @Schema(description = "可用状态")
-    private Integer enableFlag;
+    @Schema(description = "可用状态：1-启用，0-禁用")
+    private Integer enableStatus;
 
     /**
      * 可用开始
      */
     @Schema(description = "可用开始")
-    private LocalDateTime enableBegin;
+    private LocalDateTime enableStart;
 
     /**
-     * 可用结束
+     * 可用结束(NULL表示永不过期)
      */
-    @Schema(description = "可用结束")
+    @Schema(description = "可用结束(NULL表示永不过期)")
     private LocalDateTime enableEnd;
 
 
@@ -59,8 +59,8 @@ public class IamTenant extends BaseEntity {
         target.setId(source.getId());
         target.setTenantCode(source.getTenantCode());
         target.setTenantName(source.getTenantName());
-        target.setEnableFlag(source.getEnableFlag());
-        target.setEnableBegin(source.getEnableBegin());
+        target.setEnableStatus(source.getEnableStatus());
+        target.setEnableStart(source.getEnableStart());
         target.setEnableEnd(source.getEnableEnd());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
@@ -88,11 +88,11 @@ public class IamTenant extends BaseEntity {
         if (source.getTenantName() != null) {
             target.setTenantName(source.getTenantName());
         }
-        if (source.getEnableFlag() != null) {
-            target.setEnableFlag(source.getEnableFlag());
+        if (source.getEnableStatus() != null) {
+            target.setEnableStatus(source.getEnableStatus());
         }
-        if (source.getEnableBegin() != null) {
-            target.setEnableBegin(source.getEnableBegin());
+        if (source.getEnableStart() != null) {
+            target.setEnableStart(source.getEnableStart());
         }
         if (source.getEnableEnd() != null) {
             target.setEnableEnd(source.getEnableEnd());

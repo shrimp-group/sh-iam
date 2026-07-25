@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_access_key_api (AK 接口) 重新生成代码会覆盖
+ * @table iam_access_key_api (AK-API关联) 重新生成代码会覆盖
  */
 
 @Data

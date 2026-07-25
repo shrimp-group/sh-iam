@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -55,9 +55,9 @@ public class IamApi extends BaseEntity {
     private String apiName;
 
     /**
-     * 白名单
+     * 是否写操作：0-否，1-是
      */
-    @Schema(description = "白名单")
+    @Schema(description = "是否写操作：0-否，1-是")
     private Integer writeFlag;
 
 

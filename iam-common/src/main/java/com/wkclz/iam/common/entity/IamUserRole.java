@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_user_role (用户-角色关系) 重新生成代码会覆盖
+ * @table iam_user_role (用户-角色关联) 重新生成代码会覆盖
  */
 
 @Data
@@ -55,9 +55,9 @@ public class IamUserRole extends BaseEntity {
     private LocalDateTime endTime;
 
     /**
-     * 当前有效状态
+     * 当前有效状态：1-启用，0-禁用
      */
-    @Schema(description = "当前有效状态")
+    @Schema(description = "当前有效状态：1-启用，0-禁用")
     private Integer enableStatus;
 
 

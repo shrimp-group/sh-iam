@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_request_record (系统请求日志) 重新生成代码会覆盖
+ * @table iam_request_record (请求日志) 重新生成代码会覆盖
  */
 
 @Data
@@ -97,9 +97,9 @@ public class IamRequestRecord extends BaseEntity {
     private String acceptEncoding;
 
     /**
-     * Cookie
+     * Cookie(脱敏)
      */
-    @Schema(description = "Cookie")
+    @Schema(description = "Cookie(脱敏)")
     private String cookie;
 
     /**
@@ -133,15 +133,15 @@ public class IamRequestRecord extends BaseEntity {
     private String httpProtocol;
 
     /**
-     * 请求 主机
+     * 请求主机
      */
-    @Schema(description = "请求 主机")
+    @Schema(description = "请求主机")
     private String requestHost;
 
     /**
-     * 请求 URI
+     * 请求URI
      */
-    @Schema(description = "请求 URI")
+    @Schema(description = "请求URI")
     private String requestUri;
 
     /**
@@ -181,9 +181,9 @@ public class IamRequestRecord extends BaseEntity {
     private String isp;
 
     /**
-     * 用户token
+     * 用户token(脱敏)
      */
-    @Schema(description = "用户token")
+    @Schema(description = "用户token(脱敏)")
     private String token;
 
     /**
@@ -205,9 +205,9 @@ public class IamRequestRecord extends BaseEntity {
     private String nickname;
 
     /**
-     * 耗时
+     * 耗时(ms)
      */
-    @Schema(description = "耗时")
+    @Schema(description = "耗时(ms)")
     private Long costTime;
 
     /**

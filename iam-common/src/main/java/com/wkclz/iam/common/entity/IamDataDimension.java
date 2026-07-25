@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,27 +25,27 @@ public class IamDataDimension extends BaseEntity {
     private String appCode;
 
     /**
-     * 元数据编码
+     * 维度编码
      */
-    @Schema(description = "元数据编码")
+    @Schema(description = "维度编码")
     private String dimensionCode;
 
     /**
-     * 元数据名称
+     * 维度名称
      */
-    @Schema(description = "元数据名称")
+    @Schema(description = "维度名称")
     private String dimensionName;
 
     /**
-     * 元数据数组(优先于脚本)
+     * 维度数据JSON(优先于脚本)
      */
-    @Schema(description = "元数据数组(优先于脚本)")
+    @Schema(description = "维度数据JSON(优先于脚本)")
     private String dimensionDataJson;
 
     /**
-     * 元数据脚本(优先级低)
+     * 维度脚本(优先级低)
      */
-    @Schema(description = "元数据脚本(优先级低)")
+    @Schema(description = "维度脚本(优先级低)")
     private String dimensionScript;
 
 

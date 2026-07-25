@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_role_data (角色-数据关系) 重新生成代码会覆盖
+ * @table iam_role_data (角色-数据关联) 重新生成代码会覆盖
  */
 
 @Data
@@ -37,9 +37,9 @@ public class IamRoleData extends BaseEntity {
     private String dimensionCode;
 
     /**
-     * 数据维度
+     * 数据维度值编码
      */
-    @Schema(description = "数据维度")
+    @Schema(description = "数据维度值编码")
     private String dataCode;
 
 

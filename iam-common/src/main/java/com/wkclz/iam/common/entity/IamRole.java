@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,9 +31,9 @@ public class IamRole extends BaseEntity {
     private String appCode;
 
     /**
-     * 父角色
+     * 父角色编码，顶级为0
      */
-    @Schema(description = "父角色")
+    @Schema(description = "父角色编码，顶级为0")
     private String parentCode;
 
     /**
@@ -43,15 +43,15 @@ public class IamRole extends BaseEntity {
     private String roleCode;
 
     /**
-     * 名称
+     * 角色名称
      */
-    @Schema(description = "名称")
+    @Schema(description = "角色名称")
     private String roleName;
 
     /**
-     * 是否可申请
+     * 是否可申请：1-是，0-否
      */
-    @Schema(description = "是否可申请")
+    @Schema(description = "是否可申请：1-是，0-否")
     private Integer applicable;
 
 

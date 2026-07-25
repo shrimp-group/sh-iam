@@ -1,7 +1,7 @@
 package com.wkclz.iam.common.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.wkclz.core.base.BaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 /**
  * Description Create by sh-generator
  * @author shrimp
- * @table iam_access_key (AK 密钥) 重新生成代码会覆盖
+ * @table iam_access_key (AK密钥) 重新生成代码会覆盖
  */
 
 @Data
@@ -43,9 +43,9 @@ public class IamAccessKey extends BaseEntity {
     private String secretKey;
 
     /**
-     * 生效状态
+     * 生效状态：1-启用，0-禁用
      */
-    @Schema(description = "生效状态")
+    @Schema(description = "生效状态：1-启用，0-禁用")
     private Integer enableStatus;
 
     /**
