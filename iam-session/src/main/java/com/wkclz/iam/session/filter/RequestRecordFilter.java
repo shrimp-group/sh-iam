@@ -79,7 +79,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         .expireAfterWrite(1, TimeUnit.HOURS)
         .build();
 
-    @Autowired
+    @Autowired(required = false)
     private RequestRecordHandler requestRecordHandler;
 
     @Override
@@ -212,6 +212,10 @@ public class RequestRecordFilter extends OncePerRequestFilter {
             log.info("{}ms|{}|{}|{}", record.getCostTime(), method, uri, args);
         }
 
+        // 无 RequestRecordHandler 实现时静默跳过，不记录日志也不影响启动
+        if (requestRecordHandler == null) {
+            return;
+        }
         CompletableFuture.runAsync(() -> {
             try {
                 requestRecordHandler.handle(record);
