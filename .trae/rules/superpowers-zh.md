@@ -4,7 +4,7 @@ alwaysApply: true
 
 # Superpowers-ZH 中文增强版
 
-你已加载 superpowers-zh 技能框架（21 个 skills）。
+你已加载 superpowers-zh 技能框架（22 个 skills）。
 
 ## 核心规则
 
@@ -41,6 +41,7 @@ Skills 位于 `.trae/skills/` 目录，每个 skill 有独立的 `SKILL.md` 文�
 | writing-skills                 | 当创建新技能、编辑现有技能或在部署前验证技能是否有效时使用                                                                                                                                          |
 | sh-framework                   | 框架知识总索引——涉及框架编码、模块选择、依赖管理时调用。包含 13 个子技能。                                                                                                                               |
 | micro-apps                     | 微应用模块知识总索引——涉及微应用编码、模块选择、依赖管理时调用。包含 19 个子技能（数据字典、文件存储、支付、积分、微信、消息、审计等）。                                                                                                |
+| iam-session-usage              | iam-session 模块使用指南——接入项目添加依赖、配置、调用 SessionManager/TokenService/SessionAuthFilter/IdentityContext（登录、获取用户信息、登出、销毁会话、客户端远程接入 SSO）。当用户在项目中接入 iam-session、调用会话管理 API、读取当前登录用户、扩展 SPI 时调用。 |
 
 ## 如何使用
 
