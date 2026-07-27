@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Validated
@@ -51,7 +52,26 @@ public class MenuRest {
     public R<List<MenuResp>> menuTree(@Valid MenuListReq req) {
         IamMenu entity = BeanUtil.cp(req, IamMenu.class);
         List<IamMenuDto> tree = iamMenuService.menuTree(entity);
-        return R.ok(BeanUtil.cp(tree, MenuResp.class));
+        List<MenuResp> result = convertTree(tree);
+        return R.ok(result);
+    }
+
+    /**
+     * 递归转换 IamMenuDto 树为 MenuResp 树，确保 children 深拷贝
+     */
+    private List<MenuResp> convertTree(List<IamMenuDto> dtoList) {
+        if (dtoList == null) {
+            return null;
+        }
+        List<MenuResp> result = new ArrayList<>();
+        for (IamMenuDto dto : dtoList) {
+            MenuResp resp = BeanUtil.cp(dto, MenuResp.class);
+            if (dto.getChildren() != null && !dto.getChildren().isEmpty()) {
+                resp.setChildren(convertTree(dto.getChildren()));
+            }
+            result.add(resp);
+        }
+        return result;
     }
 
     @GetMapping(Route.MENU_INFO)

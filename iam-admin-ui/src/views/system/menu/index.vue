@@ -103,6 +103,7 @@
             <div class="tree-toolbar">
               <el-input v-model="queryParams.appCode" disabled style="width: 160px" />
               <el-input v-model="treeKeyword" placeholder="菜单名称搜索" clearable style="width: 200px" />
+              <el-button type="primary" icon="Refresh" @click="handleQuery">刷新</el-button>
               <el-button size="small" @click="expandAll">一键展开</el-button>
               <el-button size="small" @click="collapseAll">一键折叠</el-button>
             </div>
@@ -155,7 +156,7 @@
         </el-tabs>
       </template>
     </layout-split>
-    <edit ref="editRef" @change="getList"/>
+    <edit ref="editRef" @change="handleEditChange"/>
     <detail ref="detailRef" />
   </div>
 </template>
@@ -315,14 +316,11 @@ function selectApp(row) {
   // 重置导航状态
   keyword.value = '';
   resetNavigation();
-  handleQuery();
   // 重置树形视图数据
   menuTreeDataLoaded.value = false
   menuTreeData.value = []
   treeKeyword.value = ''
-  if (activeTab.value === 'tree') {
-    loadMenuTreeData()
-  }
+  handleQuery();
 }
 
 function resetNavigation() {
@@ -331,22 +329,22 @@ function resetNavigation() {
 }
 
 function handleQuery() {
-  getList();
+  if (activeTab.value === 'tree') {
+    loadMenuTreeData();
+  } else {
+    getList();
+  }
 }
 
 function getList() {
   loading.value = true;
   menuList(queryParams.value).then(res => {
-    dataList.value = res.data;
+    dataList.value = res.data || [];
     keyword.value = '';
     handleFilter();
   }).finally(() => {
     loading.value = false;
   });
-  // 如果树形视图已加载过数据，同步刷新
-  if (menuTreeDataLoaded.value) {
-    loadMenuTreeData()
-  }
 }
 
 function handleFilter() {
@@ -443,16 +441,21 @@ function handleDelete(row) {
       navigateToLevel(currentPath.value.length - 1);
     }
     getList();
-    // 如果树形视图已加载过数据，同步刷新
-    if (menuTreeDataLoaded.value) {
-      loadMenuTreeData()
-    }
   })
 }
 
 /** 详情按钮操作 */
 function handleDetail(row) {
   proxy.$refs["detailRef"].init(row);
+}
+
+/** 编辑/新增成功后，根据当前 tab 刷新对应数据 */
+function handleEditChange() {
+  if (activeTab.value === 'tree') {
+    loadMenuTreeData();
+  } else {
+    getList();
+  }
 }
 
 </script>

@@ -45,6 +45,12 @@ public class MenuResp extends EntityResp {
     @Schema(description = "隐藏")
     private Integer hidden;
 
+    @Schema(description = "子菜单数量")
+    private Integer childrenCount;
+
+    @Schema(description = "已绑定接口数量")
+    private Integer apiBindCount;
+
     @Schema(description = "子菜单列表")
     private List<MenuResp> children;
 
