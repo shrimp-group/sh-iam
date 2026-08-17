@@ -250,11 +250,11 @@ iam_request_record ── 请求日志 (独立)
 ```
 请求 → RequestRecordFilter → SessionAuthFilter:
   1. 无条件设置 appCode + tenantCode（每个请求）
-  2. Best-effort 获取身份：resolve token → validateAndRefresh → 失败则 parseClaimsBestEffort
+  2. 获取身份（准入唯一依据 = 完整会话）：resolve token → validateAndRefresh（JWT 有效 + Redis 会话存在）
   3. 准入判断：
-     - 白名单 (/*/public/**) → 无论有无身份，放行
-     - 非白名单 + 无身份 → 401
-     - 非白名单 + 有身份 → 放行
+     - 白名单 (/*/public/**) → 无论有无身份，放行；无有效会话时 best-effort 解析 claims 仅用于审计日志
+     - 非白名单 + 无有效会话 → 401（JWT 过期 / 登出后 Redis 会话已删 均被拦截）
+     - 非白名单 + 有效会话 → 放行
   4. IdentityContext.clear() 由外层 RequestRecordFilter.finally 负责
 ```
 
