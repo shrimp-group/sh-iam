@@ -13,6 +13,7 @@
         a.api_uri,
         a.api_name,
         a.write_flag,
+        a.request_control,
         a.create_time,
         a.create_by,
         a.update_time,
@@ -53,7 +54,8 @@
             api_method,
             api_uri,
             api_name,
-            write_flag
+        write_flag,
+        request_control
         FROM
             iam_api
         WHERE
@@ -73,6 +75,7 @@
             api_uri,
             api_name,
             write_flag,
+        request_control,
             remark
         FROM
             iam_api
@@ -96,6 +99,7 @@
             api_uri,
             api_name,
             write_flag,
+        request_control,
             remark
         FROM
             iam_api

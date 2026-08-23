@@ -60,6 +60,12 @@ public class IamApi extends BaseEntity {
     @Schema(description = "是否写操作：0-否，1-是")
     private Integer writeFlag;
 
+    /**
+     * 请求控制配置(JSON)
+     */
+    @Schema(description = "请求控制配置(JSON)")
+    private String requestControl;
+
 
     public static IamApi copy(IamApi source, IamApi target) {
         if (target == null ) { target = new IamApi();}
@@ -72,6 +78,7 @@ public class IamApi extends BaseEntity {
         target.setApiUri(source.getApiUri());
         target.setApiName(source.getApiName());
         target.setWriteFlag(source.getWriteFlag());
+        target.setRequestControl(source.getRequestControl());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -93,6 +100,9 @@ public class IamApi extends BaseEntity {
         if (source.getApiUri() != null) { target.setApiUri(source.getApiUri()); }
         if (source.getApiName() != null) { target.setApiName(source.getApiName()); }
         if (source.getWriteFlag() != null) { target.setWriteFlag(source.getWriteFlag()); }
+        if (source.getRequestControl() != null) {
+            target.setRequestControl(source.getRequestControl());
+        }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }

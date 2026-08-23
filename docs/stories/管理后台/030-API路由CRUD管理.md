@@ -31,6 +31,8 @@
 - module 标识 API 所属模块（如 iam-sso、iam-admin）
 - apiCode 由 RedisIdGenerator 生成（前缀 `api_`）
 - copy/paste 功能支持跨应用复制 API 配置
+- requestControl 为请求控制配置（互斥/限流），实体 IamApi 存 JSON 字符串，Req/Resp 用 ApiRequestControl 对象，Rest 层通过
+  fastjson2 转换（JSON.toJSONString / JSON.parseObject）
 
 ## 依赖故事
 

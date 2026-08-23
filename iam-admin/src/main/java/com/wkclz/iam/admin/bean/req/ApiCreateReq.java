@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.bean.req;
 
+import com.wkclz.iam.common.bean.ApiRequestControl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -38,6 +39,9 @@ public class ApiCreateReq implements Serializable {
 
     @Schema(description = "白名单标识")
     private Integer writeFlag;
+
+    @Schema(description = "请求控制配置")
+    private ApiRequestControl requestControl;
 
     @Schema(description = "备注")
     private String remark;

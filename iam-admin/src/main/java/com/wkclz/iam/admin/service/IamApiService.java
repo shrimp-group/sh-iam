@@ -9,6 +9,7 @@ import com.wkclz.iam.admin.bean.resp.*;
 import com.wkclz.iam.admin.helper.EntityFieldAnalyzer;
 import com.wkclz.iam.admin.mapper.IamApiMapper;
 import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
+import com.wkclz.iam.common.bean.ApiRequestControl;
 import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.mybatis.helper.PageQuery;
@@ -132,11 +133,33 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
             oldEntity.setWriteFlag(newEntity.getWriteFlag());
             chageFlag = true;
         }
+        // requestControl 为 JSON 字符串，按规范化后对比，忽略字段顺序等差异
+        if (!StringUtils.equals(normalizeJson(newEntity.getRequestControl()), normalizeJson(oldEntity.getRequestControl()))) {
+            oldEntity.setRequestControl(newEntity.getRequestControl());
+            chageFlag = true;
+        }
         if (!StringUtils.equals(newEntity.getRemark(), oldEntity.getRemark())) {
             oldEntity.setRemark(newEntity.getRemark());
             chageFlag = true;
         }
         return chageFlag;
+    }
+
+    /**
+     * JSON 字符串规范化，用于忽略字段顺序等差异后对比；空白串返回空串，解析失败返回原串
+     *
+     * @param json JSON 字符串
+     * @return 规范化后的字符串
+     */
+    private String normalizeJson(String json) {
+        if (StringUtils.isBlank(json)) {
+            return "";
+        }
+        try {
+            return JSON.toJSONString(JSON.parse(json));
+        } catch (Exception e) {
+            return json;
+        }
     }
 
 
@@ -186,6 +209,9 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
         ApiDetailResp resp = new ApiDetailResp();
         BeanUtils.copyProperties(api, resp);
+
+        // requestControl 为 JSON 字符串，解析为对象返回；空白或解析失败返回 null
+        resp.setRequestControl(ApiRequestControl.parse(api.getRequestControl()));
 
         // 使用 RECURSIVE CTE 一次性查询所有已绑定菜单的全路径，避免 N+1 查询
         List<String> boundMenuPaths = iamMenuApiMapper.getBoundMenuPathsByApiCode(api.getApiCode());

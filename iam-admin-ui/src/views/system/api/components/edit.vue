@@ -45,6 +45,55 @@
               </el-form-item>
             </el-col>
           </el-row>
+
+          <!-- 请求控制 -->
+          <el-divider content-position="left">请求控制</el-divider>
+          <el-row :gutter="20">
+            <el-col :span="14">
+              <el-form-item label="开启请求控制">
+                <el-switch v-model="form.requestControl.enable" />
+                <form-tip text="开启后该 API 受互斥/限流规则约束（默认关闭）"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-divider content-position="left">互斥控制</el-divider>
+          <el-row :gutter="20">
+            <el-col :span="14">
+              <el-form-item label="启用互斥">
+                <el-switch v-model="form.requestControl.mutex.enable" :disabled="!form.requestControl.enable" />
+                <form-tip text="同一用户前一请求未完成时，拒绝新请求（默认关闭）"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="10">
+              <el-form-item label="互斥超时(秒)">
+                <el-input-number v-model="form.requestControl.mutex.timeoutSeconds" :min="1" :max="3600" :disabled="!form.requestControl.enable || !form.requestControl.mutex.enable" />
+                <form-tip text="互斥锁超时，防止请求异常导致死锁，默认 30"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-divider content-position="left">滑动窗口限流</el-divider>
+          <el-row :gutter="20">
+            <el-col :span="14">
+              <el-form-item label="启用限流">
+                <el-switch v-model="form.requestControl.rateLimit.enable" :disabled="!form.requestControl.enable" />
+                <form-tip text="基于滑动窗口的请求频率限制（默认关闭）"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="10">
+              <el-form-item label="窗口时长(秒)">
+                <el-input-number v-model="form.requestControl.rateLimit.windowSeconds" :min="1" :max="86400" :disabled="!form.requestControl.enable || !form.requestControl.rateLimit.enable" />
+                <form-tip text="统计窗口时长，默认 60"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="14">
+              <el-form-item label="窗口内最大请求数">
+                <el-input-number v-model="form.requestControl.rateLimit.maxRequests" :min="1" :max="1000000" :disabled="!form.requestControl.enable || !form.requestControl.rateLimit.enable" />
+                <form-tip text="窗口内最大请求次数，默认 100"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
         </el-form>
       </el-tab-pane>
 
@@ -159,9 +208,37 @@ function actionTagType(action) {
   return actionMap[action]?.type || 'info'
 }
 
+/** 请求控制默认值（与后端 ApiRequestControl 结构一致） */
+function defaultRequestControl() {
+  return {
+    enable: false,
+    mutex: { enable: false, timeoutSeconds: 30 },
+    rateLimit: { enable: false, windowSeconds: 60, maxRequests: 100 }
+  };
+}
+
+/** 请求控制回显合并：逐层合并后端返回对象，缺失字段保留默认值（避免整体覆盖丢失深层结构） */
+function mergeRequestControl(source) {
+  const target = defaultRequestControl();
+  if (!source) return target;
+  if (typeof source.enable === "boolean") target.enable = source.enable;
+  const mutex = source.mutex;
+  if (mutex) {
+    if (typeof mutex.enable === "boolean") target.mutex.enable = mutex.enable;
+    if (Number.isFinite(mutex.timeoutSeconds)) target.mutex.timeoutSeconds = mutex.timeoutSeconds;
+  }
+  const rateLimit = source.rateLimit;
+  if (rateLimit) {
+    if (typeof rateLimit.enable === "boolean") target.rateLimit.enable = rateLimit.enable;
+    if (Number.isFinite(rateLimit.windowSeconds)) target.rateLimit.windowSeconds = rateLimit.windowSeconds;
+    if (Number.isFinite(rateLimit.maxRequests)) target.rateLimit.maxRequests = rateLimit.maxRequests;
+  }
+  return target;
+}
+
 /** 表单重置 */
 function reset() {
-  form.value = {};
+  form.value = { requestControl: defaultRequestControl() };
   activeTab.value = "basic";
   fieldList.value = [];
   proxy.resetForm("editRef");
@@ -186,6 +263,8 @@ function init(row) {
   } else {
     apiInfo({id: row.id}).then(res => {
       form.value = res.data;
+      // 请求控制逐层合并回显，缺失字段保留默认值
+      form.value.requestControl = mergeRequestControl(res.data.requestControl);
       open.value = true;
       title.value = "修改";
       // 加载字段权限列表

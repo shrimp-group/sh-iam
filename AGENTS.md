@@ -95,14 +95,15 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-sso (`com.wkclz.iam.sso`)
 
-| 包          | 类                                                                                                                                   | 说明                                                               |
-|------------|-------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| `config`   | IamSsoConfig                                                                                                                        | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
-| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                  | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
-| `contract` | LocalSsoFacadeContract                                                                                                              | SSO 门面本地实现                                                       |
-| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestRecordHandlerImpl | SSO 核心业务逻辑                                                       |
-| `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper                                                     | SSO 数据访问                                                         |
-| 根包         | IamSsoAutoConfig, Route                                                                                                             | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
+| 包          | 类                                                                                                                                                                                                                      | 说明                                                                                                                             |
+|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| `config`   | IamSsoConfig, IamRequestControlConfig(API 请求控制全局默认值: 互斥超时30s / 限流窗口60s·100次)                                                                                                                                           | SSO 配置 (密码过期天数、RSA 公私钥、请求控制默认值)                                                                                                |
+| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                                                     | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现)                                                               |
+| `contract` | LocalSsoFacadeContract                                                                                                                                                                                                 | SSO 门面本地实现                                                                                                                     |
+| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestRecordHandlerImpl, RequestControlResolver(API 请求控制配置解析), SlidingWindowRateLimiter(Redis ZSet 滑动窗口限流) | SSO 核心业务逻辑                                                                                                                     |
+| `filter`   | ApiControlCache(请求控制API配置缓存, Guava Cache 5min + AntPathMatcher 最长匹配), RequestControlFilter(请求控制过滤器, 互斥RedisLock+滑动窗口限流, 拒绝返回429, @Order最低优先级)                                                                          | 请求控制过滤器(链顺序: RequestRecordFilter → SessionAuthFilter → RequestControlFilter, SessionAuthFilter 显式 @Order(LOWEST_PRECEDENCE-5)) |
+| `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper, SsoApiControlMapper                                                                                                                   | SSO 数据访问                                                                                                                       |
+| 根包         | IamSsoAutoConfig, Route                                                                                                                                                                                                | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                                                                                  |
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
@@ -175,7 +176,7 @@ iam_request_record ── 请求日志 (独立)
 | IamUser      | userCode, username, nickname, email, phone, avatar, userStatus(1启用/2禁用/3锁定)                      |
 | IamRole      | tenantCode, appCode, parentCode, roleCode, roleName, applicable(1=可申请/0=仅树节点)                    |
 | IamMenu      | appCode, parentCode, menuCode, menuName, menuType(MENU/BUTTON), routePath, component, buttonCode |
-| IamApi       | module, appCode, apiCode, apiMethod, apiUri, apiName, writeFlag                                  |
+| IamApi       | module, appCode, apiCode, apiMethod, apiUri, apiName, writeFlag, requestControl(JSON 请求控制配置)     |
 | IamUserAuth  | userCode, authType(PASSWORD/LDAP), authIdentifier, authStatus(0禁用/1启用)                           |
 | IamAccessKey | appCode, appId, accessKey, secretKey, enableStatus                                               |
 
@@ -307,6 +308,15 @@ iam_request_record ── 请求日志 (独立)
 | `iam.sso.password-expire-days` | 密码过期天数 | 180 |
 | `iam.sso.private-key` | RSA 私钥 (密码解密) | - |
 | `iam.sso.public-key` | RSA 公钥 (密码加密) | - |
+
+### iam-api 请求控制配置 (`iam.request-control.*`)
+
+| 配置                                              | 说明                 | 默认值  |
+|-------------------------------------------------|--------------------|------|
+| `iam.request-control.enabled`                   | 全局开关（API 请求控制是否生效） | true |
+| `iam.request-control.mutex.timeout-seconds`     | 互斥锁超时时间（秒）         | 30   |
+| `iam.request-control.rate-limit.window-seconds` | 限流滑动窗口（秒）          | 60   |
+| `iam.request-control.rate-limit.max-requests`   | 窗口内最大请求数           | 100  |
 
 ### iam-admin 定时任务配置 (`iam.job.*`)
 
@@ -463,6 +473,7 @@ iam_request_record ── 请求日志 (独立)
 | STORY-040    | ⚠️ 请求日志查询（部分实现）        | P1  | [STORY-040](docs/stories/STORY-040-request-record-query.md)                                                                                          |
 | STORY-041    | ✅ 当前用户菜单查询             | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)                                                                                               |
 | STORY-042    | ✅ Admin 自动配置与路由常量      | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                             |
+| STORY-043    | ✅ API 请求控制（互斥+滑动窗口限流）  | P1  | [STORY-043](docs/stories/管理后台/043-API请求控制.md)                                                                                                        |
 
 ### 故事依赖关系概览
 

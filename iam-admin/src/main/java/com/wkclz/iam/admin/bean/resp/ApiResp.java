@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.bean.resp;
 
+import com.wkclz.iam.common.bean.ApiRequestControl;
 import com.wkclz.web.bean.EntityResp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -33,5 +34,8 @@ public class ApiResp extends EntityResp {
 
     @Schema(description = "白名单标识")
     private Integer writeFlag;
+
+    @Schema(description = "请求控制配置")
+    private ApiRequestControl requestControl;
 
 }

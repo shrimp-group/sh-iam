@@ -161,13 +161,15 @@ iam-session 通过 Spring Boot 3.x 自动配置机制注册：
 `com.wkclz.iam.session.filter.SessionAuthFilter`（`@Component`，继承 `OncePerRequestFilter`）。每次请求执行流程：
 
 1. **无条件设置 appCode + tenantCode**（从请求头 `app-code` / `tenant-code`）
-2. **Best-effort 获取用户身份**（允许失败，不阻断）：
-   - 优先 `sessionManager.validateAndRefresh(token)` → 反序列化 `UserIdentity` → `IdentityContext.set(identity, token)`
-   - 兜底 `tokenService.parseClaimsBestEffort(token)` → 构建 `UserIdentity` → `IdentityContext.set`
+2. **获取身份（准入唯一依据 = 完整会话）**：
+    - `sessionManager.validateAndRefresh(token)`（JWT 有效 + Redis 会话存在）→ 反序列化 `UserIdentity` →
+      `IdentityContext.set(identity, token)`
 3. **准入判断**：
-   - 白名单（`WhiteListMatcher` 默认 `/**/public/**`）→ 放行
-   - 非白名单 + 无身份 → 返回 401 JSON：`{"message":"缺少认证 Token"}` 或 `{"message":"会话无效或已过期"}`
-   - 非白名单 + 有身份 → 放行
+    - 白名单（`WhiteListMatcher` 默认 `/**/public/**`）→ 放行；无有效会话时 `tokenService.parseClaimsBestEffort(token)`
+      仅用于审计日志，不作为准入依据
+    - 非白名单 + 无有效会话 → 返回 401 JSON：`{"message":"缺少认证 Token"}` 或 `{"message":"会话无效或已过期"}`（JWT
+      过期 / 登出后 Redis 会话已删均被拦截）
+    - 非白名单 + 有效会话 → 放行
 4. **不调用 `IdentityContext.clear()`**（由外层 `RequestRecordFilter` 在 finally 中清理）
 
 ### RequestRecordFilter — 请求日志采集过滤器

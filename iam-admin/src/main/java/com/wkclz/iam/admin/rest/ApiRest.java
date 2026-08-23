@@ -1,5 +1,6 @@
 package com.wkclz.iam.admin.rest;
 
+import com.alibaba.fastjson2.JSON;
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
@@ -14,6 +15,7 @@ import com.wkclz.iam.admin.bean.resp.ApiDocResp;
 import com.wkclz.iam.admin.bean.resp.ApiResp;
 import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
+import com.wkclz.iam.common.bean.ApiRequestControl;
 import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.tool.utils.BeanUtil;
@@ -26,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @Validated
@@ -44,14 +47,19 @@ public class ApiRest {
     public R<PageData<ApiResp>> apiPage(@Valid ApiPageReq req) {
         IamApiDto entity = BeanUtil.cp(req, IamApiDto.class);
         PageData<IamApiDto> page = iamApiService.getApiPage(entity);
-        return R.ok(page.convert(ApiResp.class));
+        // 实体中 requestControl 为 JSON 字符串，逐行解析为对象返回（BeanUtil.cp 不做跨类型转换）
+        List<IamApiDto> records = page.getRecords();
+        List<ApiResp> respList = records == null ? Collections.emptyList()
+            : records.stream().map(this::convertApiResp).toList();
+        PageData<ApiResp> pageResp = PageData.convert(page, respList);
+        return R.ok(pageResp);
     }
 
     @GetMapping(Route.API_INFO)
     @Operation(summary = "API详情")
     public R<ApiResp> apiInfo(@Valid IdReq req) {
         IamApi api = iamApiService.selectById(req.getId());
-        return R.ok(BeanUtil.cp(api, ApiResp.class));
+        return R.ok(convertApiResp(api));
     }
 
     @GetMapping(Route.API_DETAIL)
@@ -65,16 +73,18 @@ public class ApiRest {
     @Operation(summary = "API创建")
     public R<ApiResp> apiCreate(@Valid @RequestBody ApiCreateReq req) {
         IamApi entity = BeanUtil.cp(req, IamApi.class);
+        entity.setRequestControl(toRequestControlJson(req.getRequestControl()));
         entity = iamApiService.create(entity);
-        return R.ok(BeanUtil.cp(entity, ApiResp.class));
+        return R.ok(convertApiResp(entity));
     }
 
     @PostMapping(Route.API_UPDATE)
     @Operation(summary = "API更新")
     public R<ApiResp> apiUpdate(@Valid @RequestBody ApiUpdateReq req) {
         IamApi entity = BeanUtil.cp(req, IamApi.class);
+        entity.setRequestControl(toRequestControlJson(req.getRequestControl()));
         entity = iamApiService.update(entity);
-        return R.ok(BeanUtil.cp(entity, ApiResp.class));
+        return R.ok(convertApiResp(entity));
     }
 
     @PostMapping(Route.API_REMOVE)
@@ -99,7 +109,7 @@ public class ApiRest {
     public R<List<ApiResp>> apiOptions(@Valid ApiListReq req) {
         IamApi entity = BeanUtil.cp(req, IamApi.class);
         List<IamApi> list = iamApiService.getApiOptions(entity);
-        return R.ok(BeanUtil.cp(list, ApiResp.class));
+        return R.ok(convertApiRespList(list));
     }
 
     @PostMapping(Route.API_SYNC)
@@ -114,7 +124,7 @@ public class ApiRest {
     public R<List<ApiResp>> apiCopy(@Valid ApiListReq req) {
         IamApi entity = BeanUtil.cp(req, IamApi.class);
         List<IamApi> list = iamApiService.getApis4Copy(entity);
-        return R.ok(BeanUtil.cp(list, ApiResp.class));
+        return R.ok(convertApiRespList(list));
     }
 
     @PostMapping(Route.API_PASTE)
@@ -129,6 +139,54 @@ public class ApiRest {
     public R<ApiDocResp> apiDoc(@Valid ApiDocReq req) {
         ApiDocResp docResp = iamApiService.getApiDoc(req.getMethod(), req.getUri());
         return R.ok(docResp);
+    }
+
+    /**
+     * 实体转响应对象，并将 requestControl JSON 字符串解析为对象
+     *
+     * @param api API 实体
+     * @return API 响应
+     */
+    private ApiResp convertApiResp(IamApi api) {
+        if (api == null) {
+            return null;
+        }
+        ApiResp resp = BeanUtil.cp(api, ApiResp.class);
+        resp.setRequestControl(parseRequestControl(api.getRequestControl()));
+        return resp;
+    }
+
+    /**
+     * 实体列表转响应对象列表，逐行解析 requestControl
+     *
+     * @param list API 实体列表
+     * @return API 响应列表
+     */
+    private List<ApiResp> convertApiRespList(List<IamApi> list) {
+        if (list == null) {
+            return Collections.emptyList();
+        }
+        return list.stream().map(this::convertApiResp).toList();
+    }
+
+    /**
+     * 将 requestControl JSON 字符串解析为 ApiRequestControl 对象，空白或解析失败返回 null
+     *
+     * @param requestControl JSON 字符串
+     * @return 请求控制配置对象
+     */
+    private ApiRequestControl parseRequestControl(String requestControl) {
+        return ApiRequestControl.parse(requestControl);
+    }
+
+    /**
+     * 将请求控制配置对象序列化为 JSON 字符串，空值返回 null
+     *
+     * @param control 请求控制配置对象
+     * @return JSON 字符串
+     */
+    private String toRequestControlJson(ApiRequestControl control) {
+        return control == null ? null : JSON.toJSONString(control);
     }
 
 }
