@@ -1,6 +1,6 @@
 package com.wkclz.iam.admin.bean.resp;
 
-import com.wkclz.iam.common.bean.ApiRequestControl;
+import com.wkclz.iam.session.bean.ApiRequestControl;
 import com.wkclz.web.bean.EntityResp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

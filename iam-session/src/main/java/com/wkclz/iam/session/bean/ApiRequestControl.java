@@ -1,4 +1,4 @@
-package com.wkclz.iam.common.bean;
+package com.wkclz.iam.session.bean;
 
 import com.alibaba.fastjson2.JSON;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -6,8 +6,10 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * API 请求控制配置模型（纯 Bean，不包含任何 JSON 解析逻辑）
- * enable 默认 false，需显式开启；与全局开关 iam.request-control.enabled（默认 true）含义不同
+ * API 请求控制配置模型（对应 iam_api.request_control 列 JSON，由 iam-session 模块持有，
+ * 供管理端 Req/Resp 与请求控制过滤器共用）。
+ *
+ * <p>enable 默认 false，需显式开启；与全局开关 iam.request-control.enabled（默认 true）含义不同。</p>
  *
  * @author shrimp
  */

@@ -14,6 +14,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,8 +25,11 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * 会话认证过滤器 — 每次请求时尽力设置 IdentityContext，再做准入判断。
+ * <p>显式指定 Order（LOWEST_PRECEDENCE - 5），保证位于 RequestRecordFilter（LOWEST_PRECEDENCE - 10）之后、
+ * RequestControlFilter（LOWEST_PRECEDENCE）之前，确保身份设置先于请求控制执行。</p>
  */
 @Component
+@Order(Ordered.LOWEST_PRECEDENCE - 5)
 public class SessionAuthFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(SessionAuthFilter.class);

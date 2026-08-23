@@ -15,7 +15,7 @@ import com.wkclz.iam.admin.bean.resp.ApiDocResp;
 import com.wkclz.iam.admin.bean.resp.ApiResp;
 import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
-import com.wkclz.iam.common.bean.ApiRequestControl;
+import com.wkclz.iam.session.bean.ApiRequestControl;
 import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.tool.utils.BeanUtil;

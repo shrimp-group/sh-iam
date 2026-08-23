@@ -1,6 +1,6 @@
 package com.wkclz.iam.admin.bean.req;
 
-import com.wkclz.iam.common.bean.ApiRequestControl;
+import com.wkclz.iam.session.bean.ApiRequestControl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

@@ -48,7 +48,7 @@ import java.util.regex.Pattern;
  *   <li>字段截断 + 密码脱敏后通过 {@link RequestRecordHandler} SPI 异步持久化</li>
  * </ol>
  *
- * <p>Order 优先级高于 {@link SessionAuthFilter}（无显式 Order），作为最外层包装过滤器。</p>
+ * <p>Order 优先级高于 {@link SessionAuthFilter}（@Order(LOWEST_PRECEDENCE - 5)），作为最外层包装过滤器。</p>
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 10)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.sso.mapper.SsoApiControlMapper">
+    <select id="listRequestControlApis" resultType="com.wkclz.iam.common.entity.IamApi">
+        SELECT api_code, api_method, api_uri, app_code, request_control
+        FROM iam_api
+        WHERE request_control IS NOT NULL AND request_control != ''
+        AND deleted = 0
+    </select>
+</mapper>

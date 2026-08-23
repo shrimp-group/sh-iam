@@ -9,7 +9,7 @@ import com.wkclz.iam.admin.bean.resp.*;
 import com.wkclz.iam.admin.helper.EntityFieldAnalyzer;
 import com.wkclz.iam.admin.mapper.IamApiMapper;
 import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
-import com.wkclz.iam.common.bean.ApiRequestControl;
+import com.wkclz.iam.session.bean.ApiRequestControl;
 import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.mybatis.helper.PageQuery;

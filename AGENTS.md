@@ -25,12 +25,12 @@ sh-iam/
 
 ```
 iam-admin-starter → iam-admin → iam-sso → iam-session → sh-core
-                                       └→ iam-sdk
-                                       └→ iam-common
+                                        └→ iam-sdk    └→ sh-redis
+                                        └→ iam-common └→ sh-web
 
 iam-sso-starter → iam-sso → iam-session → sh-core
-                          └→ iam-sdk
-                          └→ iam-common
+                          └→ iam-sdk    └→ sh-redis
+                          └→ iam-common └→ sh-web
 ```
 
 ### 框架依赖（来自 sh-parent BOM）
@@ -51,27 +51,35 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-session (`com.wkclz.iam.session`) — 会话管理层（新增）
 
-| 包         | 类                          | 说明                                                                   |
-|-----------|----------------------------|----------------------------------------------------------------------|
-| `bean`    | `Session`                  | 会话领域模型（8 字段，不含 clientIp/userAgent）                                   |
-| `bean`    | `SessionCreateResult`      | 会话创建结果（token + session）                                              |
-| `bean`    | `TokenInfo`                | Token 解析结果（userCode/username/nickname）                               |
-| `bean`    | `RequestRecordData`        | 请求日志数据载体（RequestRecordFilter 与 SPI 之间传递）                             |
-| `enums`   | `AuthType`                 | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）                    |
-| `enums`   | `DestroyReason`            | 会话销毁原因枚举（6 个值）                                                       |
-| `service` | `SessionManager`           | 会话管理器（@Component，createSession + Lua 并发控制）                           |
-| `service` | `SessionStore`             | 会话持久化（@Component，Redis Hash+ZSet）                                    |
-| `service` | `TokenService`             | JWT 令牌服务（@Service，HS256 签名，含 parseClaimsBestEffort 过期 token 尽力解析）    |
-| `filter`  | `SessionAuthFilter`        | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断，不做 clear） |
-| `filter`  | `RequestRecordFilter`      | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）      |
-| `filter`  | `TokenResolver`            | Token 提取 SPI（Authorization: Bearer → token）                          |
-| `filter`  | `WhiteListMatcher`         | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）                        |
-| `spi`     | `RequestRecordHandler`     | 请求日志持久化 SPI（iam-sso 提供实现）                                            |
-| `spi`     | `NoOpRequestRecordHandler` | RequestRecordHandler 空实现（默认，静默跳过）                                    |
-| `config`  | `IamSessionConfig`         | iam-session 全局配置（secret-key / ttl / maxConcurrent）                   |
-| 根包        | `IamSessionAutoConfig`     | 自动配置（@AutoConfiguration + @ComponentScan）                            |
+| 包         | 类                               | 说明                                                                         |
+|-----------|---------------------------------|----------------------------------------------------------------------------|
+| `bean`    | `Session`                       | 会话领域模型（8 字段，不含 clientIp/userAgent）                                         |
+| `bean`    | `SessionCreateResult`           | 会话创建结果（token + session）                                                    |
+| `bean`    | `TokenInfo`                     | Token 解析结果（userCode/username/nickname）                                     |
+| `bean`    | `RequestRecordData`             | 请求日志数据载体（RequestRecordFilter 与 SPI 之间传递）                                   |
+| `bean`    | `ApiRequestControl`             | API 请求控制配置模型（enable/mutex/rateLimit，含 parse 静态方法，管理端 Req/Resp 共用）          |
+| `bean`    | `ApiControlConfig`              | API 请求控制配置轻量数据载体（appCode/apiCode/apiMethod/apiUri/requestControl，SPI 返回类型） |
+| `enums`   | `AuthType`                      | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）                          |
+| `enums`   | `DestroyReason`                 | 会话销毁原因枚举（6 个值）                                                             |
+| `service` | `SessionManager`                | 会话管理器（@Component，createSession + Lua 并发控制）                                 |
+| `service` | `SessionStore`                  | 会话持久化（@Component，Redis Hash+ZSet）                                          |
+| `service` | `TokenService`                  | JWT 令牌服务（@Service，HS256 签名，含 parseClaimsBestEffort 过期 token 尽力解析）          |
+| `service` | `RequestControlResolver`        | API 请求控制配置解析（enable 校验 + 默认值回落，@Component）                                 |
+| `service` | `SlidingWindowRateLimiter`      | Redis ZSet 滑动窗口限流（Lua 原子操作，fail-open）                                      |
+| `filter`  | `SessionAuthFilter`             | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断，不做 clear）       |
+| `filter`  | `RequestRecordFilter`           | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）            |
+| `filter`  | `TokenResolver`                 | Token 提取 SPI（Authorization: Bearer → token）                                |
+| `filter`  | `WhiteListMatcher`              | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）                              |
+| `filter`  | `ApiControlCache`               | 请求控制 API 配置缓存（Guava Cache 5min + AntPathMatcher 最长匹配，数据来自 SPI）             |
+| `filter`  | `RequestControlFilter`          | 请求控制过滤器（用户级互斥 RedisLock + 滑动窗口限流，拒绝 429，@Order 最低优先级）                      |
+| `spi`     | `RequestRecordHandler`          | 请求日志持久化 SPI（iam-sso 提供实现）                                                  |
+| `spi`     | `NoOpRequestRecordHandler`      | RequestRecordHandler 空实现（默认，静默跳过）                                          |
+| `spi`     | `ApiRequestControlProvider`     | API 请求控制配置提供 SPI（iam-sso 提供实现，返回 ApiControlConfig 轻量模型）                    |
+| `spi`     | `NoOpApiRequestControlProvider` | ApiRequestControlProvider 空实现（默认，返回空列表）                                    |
+| `config`  | `IamSessionConfig`              | iam-session 全局配置（secret-key / ttl / maxConcurrent / 请求控制默认值）               |
+| 根包        | `IamSessionAutoConfig`          | 自动配置（@AutoConfiguration + @ComponentScan）                                  |
 
-> 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）。认证方式无关，仅管理会话生命周期。
+> 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）、sh-web。不依赖 iam-common，请求控制模型自持。认证方式无关，仅管理会话生命周期与请求控制。
 
 ### iam-common (`com.wkclz.iam.common`)
 
@@ -95,15 +103,14 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 
 ### iam-sso (`com.wkclz.iam.sso`)
 
-| 包          | 类                                                                                                                                                                                                                      | 说明                                                                                                                             |
-|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `config`   | IamSsoConfig, IamRequestControlConfig(API 请求控制全局默认值: 互斥超时30s / 限流窗口60s·100次)                                                                                                                                           | SSO 配置 (密码过期天数、RSA 公私钥、请求控制默认值)                                                                                                |
-| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                                                     | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现)                                                               |
-| `contract` | LocalSsoFacadeContract                                                                                                                                                                                                 | SSO 门面本地实现                                                                                                                     |
-| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestRecordHandlerImpl, RequestControlResolver(API 请求控制配置解析), SlidingWindowRateLimiter(Redis ZSet 滑动窗口限流) | SSO 核心业务逻辑                                                                                                                     |
-| `filter`   | ApiControlCache(请求控制API配置缓存, Guava Cache 5min + AntPathMatcher 最长匹配), RequestControlFilter(请求控制过滤器, 互斥RedisLock+滑动窗口限流, 拒绝返回429, @Order最低优先级)                                                                          | 请求控制过滤器(链顺序: RequestRecordFilter → SessionAuthFilter → RequestControlFilter, SessionAuthFilter 显式 @Order(LOWEST_PRECEDENCE-5)) |
-| `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper, SsoApiControlMapper                                                                                                                   | SSO 数据访问                                                                                                                       |
-| 根包         | IamSsoAutoConfig, Route                                                                                                                                                                                                | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                                                                                  |
+| 包          | 类                                                                                                                                                                                               | 说明                                                               |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| `config`   | IamSsoConfig                                                                                                                                                                                    | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
+| `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                              | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
+| `contract` | LocalSsoFacadeContract                                                                                                                                                                          | SSO 门面本地实现                                                       |
+| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestRecordHandlerImpl, ApiRequestControlProviderImpl(请求控制配置 SPI 实现, 查询 iam_api 表) | SSO 核心业务逻辑                                                       |
+| `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper, SsoApiControlMapper                                                                                            | SSO 数据访问                                                         |
+| 根包         | IamSsoAutoConfig, Route                                                                                                                                                                         | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
@@ -309,14 +316,14 @@ iam_request_record ── 请求日志 (独立)
 | `iam.sso.private-key` | RSA 私钥 (密码解密) | - |
 | `iam.sso.public-key` | RSA 公钥 (密码加密) | - |
 
-### iam-api 请求控制配置 (`iam.request-control.*`)
+### iam-session 请求控制配置 (`iam.request-control.*`，位于 IamSessionConfig)
 
-| 配置                                              | 说明                 | 默认值  |
-|-------------------------------------------------|--------------------|------|
-| `iam.request-control.enabled`                   | 全局开关（API 请求控制是否生效） | true |
-| `iam.request-control.mutex.timeout-seconds`     | 互斥锁超时时间（秒）         | 30   |
-| `iam.request-control.rate-limit.window-seconds` | 限流滑动窗口（秒）          | 60   |
-| `iam.request-control.rate-limit.max-requests`   | 窗口内最大请求数           | 100  |
+| 配置                                              | 说明                                       | 默认值  |
+|-------------------------------------------------|------------------------------------------|------|
+| `iam.request-control.enabled`                   | 全局开关（API 请求控制是否生效，API 级开关默认 false 需显式开启） | true |
+| `iam.request-control.mutex.timeout-seconds`     | 互斥锁超时时间（秒）                               | 30   |
+| `iam.request-control.rate-limit.window-seconds` | 限流滑动窗口（秒）                                | 60   |
+| `iam.request-control.rate-limit.max-requests`   | 窗口内最大请求数                                 | 100  |
 
 ### iam-admin 定时任务配置 (`iam.job.*`)
 

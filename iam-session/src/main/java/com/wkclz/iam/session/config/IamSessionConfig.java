@@ -49,4 +49,28 @@ public class IamSessionConfig {
     @Value(("${iam.session.renewal.interval:300}"))
     private Long renewalInterval;
 
+    /**
+     * 请求控制全局开关，默认 true（API 级开关默认 false，需在 API 管理页面显式开启）
+     */
+    @Value("${iam.request-control.enabled:true}")
+    private Boolean requestControlEnabled;
+
+    /**
+     * 请求控制互斥锁默认超时（秒），防止请求异常导致死锁，默认 30
+     */
+    @Value("${iam.request-control.mutex.timeout-seconds:30}")
+    private Integer requestControlMutexTimeoutSeconds;
+
+    /**
+     * 请求控制限流默认统计窗口时长（秒），默认 60
+     */
+    @Value("${iam.request-control.rate-limit.window-seconds:60}")
+    private Integer requestControlRateLimitWindowSeconds;
+
+    /**
+     * 请求控制限流默认窗口内最大请求次数，默认 100
+     */
+    @Value("${iam.request-control.rate-limit.max-requests:100}")
+    private Integer requestControlRateLimitMaxRequests;
+
 }
