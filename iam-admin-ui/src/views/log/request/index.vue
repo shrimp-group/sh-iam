@@ -82,7 +82,7 @@
 </template>
 
 <script setup name="IamRequestRecord">
-import { requestRecordPage } from "@/api/log/requestRecord";
+import { requestRecordPage } from "@/api/log/requestlog";
 import {timeRangeShortcuts} from "@/utils/shrimp.js";
 import Detail from "./components/detail";
 

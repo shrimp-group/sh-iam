@@ -87,7 +87,7 @@
 </template>
 
 <script setup name="IamRequestRecordDetail">
-import { requestRecordInfo } from "@/api/log/requestRecord";
+import { requestRecordInfo } from "@/api/log/requestlog";
 import MonacoEditor from "@/components/MonacoEditor";
 
 defineExpose({init})
