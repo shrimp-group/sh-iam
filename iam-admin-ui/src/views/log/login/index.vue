@@ -58,7 +58,7 @@
 </template>
 
 <script setup name="IamLoginRecord">
-import {loginRecordPage} from "@/api/log/loginRecord";
+import {loginRecordPage} from "@/api/log/loginlog";
 import {timeRangeShortcuts} from "@/utils/shrimp";
 
 const { proxy } = getCurrentInstance();
