@@ -5,7 +5,7 @@
       <el-tab-pane label="基本信息" name="basic">
         <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
           <el-row :gutter="20">
-            <el-col :span="14">
+            <el-col :span="12">
               <el-form-item label="模块" prop="module">
                 <el-input v-model="form.module" placeholder="请输入模块" />
                 <form-tip text="API所属的模块，用于分类管理"/>
@@ -25,7 +25,7 @@
                 <form-tip html="API的访问路径，例如：/api/user/list<br>以斜杠开头, 支持 AntPathMatcher 匹配机制"/>
               </el-form-item>
             </el-col>
-            <el-col :span="10">
+            <el-col :span="12">
               <el-form-item label="应用编码" prop="appCode">
                 <el-input v-model="form.appCode" placeholder="请输入应用编码" disabled/>
                 <form-tip text="关联的应用编码，用于权限控制"/>
@@ -45,59 +45,45 @@
               </el-form-item>
             </el-col>
           </el-row>
-
-          <!-- 请求控制 -->
-          <el-divider content-position="left">请求控制</el-divider>
-          <el-row :gutter="20">
-            <el-col :span="14">
-              <el-form-item label="开启请求控制">
-                <el-switch v-model="form.requestControl.enable" />
-                <form-tip text="开启后该 API 受互斥/限流规则约束（默认关闭）"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-divider content-position="left">互斥控制</el-divider>
-          <el-row :gutter="20">
-            <el-col :span="14">
-              <el-form-item label="启用互斥">
-                <el-switch v-model="form.requestControl.mutex.enable" :disabled="!form.requestControl.enable" />
-                <form-tip text="同一用户前一请求未完成时，拒绝新请求（默认关闭）"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="10">
-              <el-form-item label="互斥超时(秒)">
-                <el-input-number v-model="form.requestControl.mutex.timeoutSeconds" :min="1" :max="3600" :disabled="!form.requestControl.enable || !form.requestControl.mutex.enable" />
-                <form-tip text="互斥锁超时，防止请求异常导致死锁，默认 30"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-divider content-position="left">滑动窗口限流</el-divider>
-          <el-row :gutter="20">
-            <el-col :span="14">
-              <el-form-item label="启用限流">
-                <el-switch v-model="form.requestControl.rateLimit.enable" :disabled="!form.requestControl.enable" />
-                <form-tip text="基于滑动窗口的请求频率限制（默认关闭）"/>
-              </el-form-item>
-            </el-col>
-            <el-col :span="10">
-              <el-form-item label="窗口时长(秒)">
-                <el-input-number v-model="form.requestControl.rateLimit.windowSeconds" :min="1" :max="86400" :disabled="!form.requestControl.enable || !form.requestControl.rateLimit.enable" />
-                <form-tip text="统计窗口时长，默认 60"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="14">
-              <el-form-item label="窗口内最大请求数">
-                <el-input-number v-model="form.requestControl.rateLimit.maxRequests" :min="1" :max="1000000" :disabled="!form.requestControl.enable || !form.requestControl.rateLimit.enable" />
-                <form-tip text="窗口内最大请求次数，默认 100"/>
-              </el-form-item>
-            </el-col>
-          </el-row>
         </el-form>
       </el-tab-pane>
 
-      <!-- Tab 2: 字段权限 (仅编辑模式可用) -->
+      <!-- Tab 2: 请求控制 -->
+      <el-tab-pane label="请求控制" name="requestControl">
+        <!-- 单列设置面板布局：灰色提示独占整行，避免窄列换行 -->
+        <el-form :model="form" label-width="140px" style="max-width: 700px">
+          <el-form-item label="开启请求控制">
+            <el-switch v-model="form.requestControl.enable" />
+            <form-tip text="开启后该 API 受互斥/限流规则约束（默认关闭）"/>
+          </el-form-item>
+
+          <el-divider content-position="left">互斥控制</el-divider>
+          <el-form-item label="启用互斥">
+            <el-switch v-model="form.requestControl.mutex.enable" :disabled="!form.requestControl.enable" />
+            <form-tip text="同一用户前一请求未完成时，拒绝新请求（默认关闭）"/>
+          </el-form-item>
+          <el-form-item label="互斥超时(秒)">
+            <el-input-number v-model="form.requestControl.mutex.timeoutSeconds" :min="1" :max="3600" :disabled="!form.requestControl.enable || !form.requestControl.mutex.enable" />
+            <form-tip text="互斥锁超时，防止请求异常导致死锁，默认 30"/>
+          </el-form-item>
+
+          <el-divider content-position="left">滑动窗口限流</el-divider>
+          <el-form-item label="启用限流">
+            <el-switch v-model="form.requestControl.rateLimit.enable" :disabled="!form.requestControl.enable" />
+            <form-tip text="基于滑动窗口的请求频率限制（默认关闭）"/>
+          </el-form-item>
+          <el-form-item label="窗口时长(秒)">
+            <el-input-number v-model="form.requestControl.rateLimit.windowSeconds" :min="1" :max="86400" :disabled="!form.requestControl.enable || !form.requestControl.rateLimit.enable" />
+            <form-tip text="统计窗口时长，默认 60"/>
+          </el-form-item>
+          <el-form-item label="窗口内最大请求数">
+            <el-input-number v-model="form.requestControl.rateLimit.maxRequests" :min="1" :max="1000000" :disabled="!form.requestControl.enable || !form.requestControl.rateLimit.enable" />
+            <form-tip text="窗口内最大请求次数，默认 100"/>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+
+      <!-- Tab 3: 字段权限 (仅编辑模式可用) -->
       <el-tab-pane label="字段权限" name="field" :disabled="!form.id">
         <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 14px; font-weight: 600; color: #303133;">
