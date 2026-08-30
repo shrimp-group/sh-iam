@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -88,13 +89,17 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
         long startTime = System.currentTimeMillis();
 
-        // 包装 request（缓存请求体）和 response（仅 JSON 响应缓存，SSE 等流式响应直写底层）
+        // SSE/流式请求（Accept: text/event-stream）不包装 response：
+        // ContentCachingResponseWrapper.flushBuffer() 为 no-op，SseEmitter 每次 send 后的 flush 无法到达容器，
+        // SSE 数据会滞留输出缓冲（攒满才发送，页面日志不及时）；直连原始 response 后 flushBuffer 正常生效。
+        // 普通请求仍包装 response 用于请求日志记录。
+        boolean streaming = isStreamingRequest(request);
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request, 0);
-        StreamingContentCachingResponseWrapper wrappedResponse = new StreamingContentCachingResponseWrapper(response);
+        ContentCachingResponseWrapper wrappedResponse = streaming ? null : new ContentCachingResponseWrapper(response);
 
         String errorMsg = null;
         try {
-            chain.doFilter(wrappedRequest, wrappedResponse);
+            chain.doFilter(wrappedRequest, streaming ? response : wrappedResponse);
         } catch (Exception e) {
             // 捕获异常信息，不影响上层异常处理
             errorMsg = e.getMessage();
@@ -105,11 +110,22 @@ public class RequestRecordFilter extends OncePerRequestFilter {
             RequestRecord logData = collectLogData(wrappedRequest, wrappedResponse, startTime, errorMsg);
             // 清理 IdentityContext，防止 ThreadLocal 内存泄漏（从 SessionAuthFilter 移入）
             IdentityContext.clear();
-            // 必须执行，否则客户端收不到响应体
-            wrappedResponse.copyBodyToResponse();
+            // 普通请求必须执行，否则客户端收不到响应体
+            if (wrappedResponse != null) {
+                wrappedResponse.copyBodyToResponse();
+            }
             // 异步持久化
             persistAsync(logData, request);
         }
+    }
+
+    /**
+     * 是否流式请求（SSE 等）：Accept 头包含 text/event-stream。
+     * 流式请求不包装 response，保证 flushBuffer 直达容器、数据实时下发。
+     */
+    private static boolean isStreamingRequest(HttpServletRequest request) {
+        String accept = request.getHeader("Accept");
+        return accept != null && accept.toLowerCase(Locale.ROOT).contains("text/event-stream");
     }
 
     /**
@@ -118,7 +134,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
      * 在本方法执行后才由 finally 块清理。</p>
      */
     private RequestRecord collectLogData(ContentCachingRequestWrapper request,
-                                         StreamingContentCachingResponseWrapper response,
+                                         ContentCachingResponseWrapper response,
                                          long startTime,
                                          String errorMsg) {
         RequestRecord record = new RequestRecord();
@@ -171,10 +187,12 @@ public class RequestRecordFilter extends OncePerRequestFilter {
         record.setUsername(IdentityContext.getUsername());
         record.setNickname(IdentityContext.getNickname());
 
-        // 响应信息
-        record.setHttpStatus(response.getStatus());
-        String responseBody = getCachedResponseBody(response);
-        record.setResponseBody(maskPassword(responseBody));
+        // 响应信息（流式请求未包装 response，不记录响应状态/响应体）
+        if (response != null) {
+            record.setHttpStatus(response.getStatus());
+            String responseBody = getCachedResponseBody(response);
+            record.setResponseBody(maskPassword(responseBody));
+        }
 
         // 耗时
         record.setCostTime(System.currentTimeMillis() - startTime);
@@ -319,7 +337,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
     }
 
 
-    private static String getCachedResponseBody(StreamingContentCachingResponseWrapper response) {
+    private static String getCachedResponseBody(ContentCachingResponseWrapper response) {
         String contentType = response.getContentType();
         if (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("application/json")) {
             return null;
