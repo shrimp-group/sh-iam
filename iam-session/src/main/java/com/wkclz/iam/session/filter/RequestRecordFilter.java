@@ -21,11 +21,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -88,9 +88,9 @@ public class RequestRecordFilter extends OncePerRequestFilter {
 
         long startTime = System.currentTimeMillis();
 
-        // 包装 request（缓存请求体）和 response（缓存响应体）
+        // 包装 request（缓存请求体）和 response（仅 JSON 响应缓存，SSE 等流式响应直写底层）
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request, 0);
-        ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
+        StreamingContentCachingResponseWrapper wrappedResponse = new StreamingContentCachingResponseWrapper(response);
 
         String errorMsg = null;
         try {
@@ -118,7 +118,7 @@ public class RequestRecordFilter extends OncePerRequestFilter {
      * 在本方法执行后才由 finally 块清理。</p>
      */
     private RequestRecord collectLogData(ContentCachingRequestWrapper request,
-                                         ContentCachingResponseWrapper response,
+                                         StreamingContentCachingResponseWrapper response,
                                          long startTime,
                                          String errorMsg) {
         RequestRecord record = new RequestRecord();
@@ -319,9 +319,9 @@ public class RequestRecordFilter extends OncePerRequestFilter {
     }
 
 
-    private static String getCachedResponseBody(ContentCachingResponseWrapper response) {
+    private static String getCachedResponseBody(StreamingContentCachingResponseWrapper response) {
         String contentType = response.getContentType();
-        if (contentType == null || !contentType.toLowerCase().contains("application/json")) {
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("application/json")) {
             return null;
         }
         byte[] body = response.getContentAsByteArray();
