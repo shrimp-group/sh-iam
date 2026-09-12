@@ -44,14 +44,12 @@ steps:                             # 执行步骤
 **忽略 `llm`、`concurrency`、`timeout`、`retry` 配置**——Skill 模式使用当前会话的 LLM，这些字段仅用于 CLI 模式。
 
 **定位角色目录**：用 Bash `test -d` 按以下顺序检查，用第一个存在的：
-
 1. 当前工作目录下的 `{agents_dir}/`（如 `./agency-agents-zh/`）
 2. `../{agents_dir}/`（上级目录）
 3. 相对于 YAML 文件所在目录的 `{agents_dir}/`
 4. `node_modules/agency-agents-zh/`
 
 如果全部找不到，**停止执行**并提示用户：
-
 ```
 找不到角色目录。请先安装：
   git clone --depth 1 https://github.com/jnMetaCode/agency-agents-zh.git
@@ -74,7 +72,6 @@ steps:                             # 执行步骤
 - **同一层内的步骤**互不依赖，可并行
 
 在回复中展示执行计划：
-
 ```
 执行计划（共 N 步）：
   第 1 层: [step_id] — 角色名
@@ -91,14 +88,12 @@ steps:                             # 执行步骤
 用 Read 工具读取该层所有步骤的角色 `.md` 文件：`{角色目录}/{role}.md`
 
 从文件中提取：
-
 - **角色名**：frontmatter 中的 `name` 字段
 - **角色 system prompt**：第二个 `---` 之后的全部 markdown 内容
 
 #### 4b. 渲染 task 模板
 
 将 task 中的 `{{变量名}}` 替换为：
-
 - 来自 inputs 的用户输入值
 - 来自前序步骤 output 的结果文本
 
@@ -113,7 +108,6 @@ steps:                             # 执行步骤
 ```
 
 **多步骤层（并行）**：使用 Agent 工具为每个步骤启动子代理。每个子代理的 prompt 必须包含：
-
 - 角色文件的**完整文本内容**（不是路径——子代理可能无法读文件）
 - 渲染后的 task 文本
 - 指令："以上是你的角色定义，请以该角色身份完成以下任务，直接输出结果"
@@ -137,7 +131,6 @@ steps:                             # 执行步骤
 ```
 
 metadata.json 格式：
-
 ```json
 {
   "name": "工作流名称",
@@ -151,7 +144,6 @@ metadata.json 格式：
 ```
 
 执行完毕后，向用户展示：
-
 1. 最终成果（summary.md 的内容）
 2. 文件保存位置
 3. 执行了几个步骤
@@ -175,7 +167,6 @@ metadata.json 格式：
 3. 确认后按上述流程执行
 
 示例：
-
 - 用户说"帮我用叙事学家和心理学家写个故事" → 生成 story-creation 类似的工作流
 - 用户说"让产品经理和架构师评审这个 PRD" → 生成 product-review 类似的工作流
 

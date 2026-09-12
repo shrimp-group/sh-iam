@@ -10,17 +10,14 @@
 
 ### 简洁是关键
 
-[上下文窗口](https://platform.claude.com/docs/en/build-with-claude/context-windows)是公共资源。你的技能与 Claude
-需要知道的所有其他内容共享上下文窗口，包括：
+[上下文窗口](https://platform.claude.com/docs/en/build-with-claude/context-windows)是公共资源。你的技能与 Claude 需要知道的所有其他内容共享上下文窗口，包括：
 
 * 系统提示
 * 对话历史
 * 其他技能的元数据
 * 你的实际请求
 
-并非技能中的每个 token 都有即时成本。启动时，只有所有技能的元数据（name 和 description）被预加载。Claude 只在技能变得相关时才读取
-SKILL.md，并且只在需要时才读取额外文件。然而，在 SKILL.md 中保持简洁仍然很重要：一旦 Claude 加载它，每个 token
-都在与对话历史和其他上下文竞争。
+并非技能中的每个 token 都有即时成本。启动时，只有所有技能的元数据（name 和 description）被预加载。Claude 只在技能变得相关时才读取 SKILL.md，并且只在需要时才读取额外文件。然而，在 SKILL.md 中保持简洁仍然很重要：一旦 Claude 加载它，每个 token 都在与对话历史和其他上下文竞争。
 
 **默认假设**：Claude 已经非常聪明
 
@@ -148,10 +145,10 @@ python scripts/migrate.py --verify --backup
 <Note>
   **YAML Frontmatter**：SKILL.md 的 frontmatter 支持两个字段：
 
-* `name` - 技能的可读名称（最多 64 个字符）
-* `description` - 技能做什么以及何时使用的一行描述（最多 1024 个字符）
+  * `name` - 技能的可读名称（最多 64 个字符）
+  * `description` - 技能做什么以及何时使用的一行描述（最多 1024 个字符）
 
-完整的技能结构细节请参阅[技能概述](/en/docs/agents-and-tools/agent-skills/overview#skill-structure)。
+  完整的技能结构细节请参阅[技能概述](/en/docs/agents-and-tools/agent-skills/overview#skill-structure)。
 </Note>
 
 ### 命名约定
@@ -191,15 +188,14 @@ python scripts/migrate.py --verify --backup
 <Warning>
   **始终用第三人称写**。描述被注入系统提示中，不一致的人称视角会导致发现问题。
 
-* **好的：** "Processes Excel files and generates reports"
-* **避免：** "I can help you process Excel files"
-* **避免：** "You can use this to process Excel files"
-  </Warning>
+  * **好的：** "Processes Excel files and generates reports"
+  * **避免：** "I can help you process Excel files"
+  * **避免：** "You can use this to process Excel files"
+</Warning>
 
 **具体且包含关键术语**。同时包含技能做什么和何时使用的具体触发条件/上下文。
 
-每个技能只有一个描述字段。描述对技能选择至关重要：Claude 使用它从可能 100 多个可用技能中选择正确的技能。你的描述必须提供足够的细节让
-Claude 知道何时选择此技能，而 SKILL.md 的其余部分提供实现细节。
+每个技能只有一个描述字段。描述对技能选择至关重要：Claude 使用它从可能 100 多个可用技能中选择正确的技能。你的描述必须提供足够的细节让 Claude 知道何时选择此技能，而 SKILL.md 的其余部分提供实现细节。
 
 有效的示例：
 
@@ -237,8 +233,7 @@ description: Does stuff with files
 
 ### 渐进式披露模式
 
-SKILL.md
-作为概述，按需指向详细材料，就像入门指南中的目录。关于渐进式披露如何工作的解释，请参阅概述中的[技能工作原理](/en/docs/agents-and-tools/agent-skills/overview#how-skills-work)。
+SKILL.md 作为概述，按需指向详细材料，就像入门指南中的目录。关于渐进式披露如何工作的解释，请参阅概述中的[技能工作原理](/en/docs/agents-and-tools/agent-skills/overview#how-skills-work)。
 
 **实用指导：**
 
@@ -300,8 +295,7 @@ Claude 只在需要时才加载 FORMS.md、REFERENCE.md 或 EXAMPLES.md。
 
 #### 模式 2：领域特定组织
 
-对于有多个领域的技能，按领域组织内容以避免加载不相关的上下文。当用户询问销售指标时，Claude 只需要读取销售相关的
-schema，而非财务或营销数据。这保持了 token 使用低和上下文聚焦。
+对于有多个领域的技能，按领域组织内容以避免加载不相关的上下文。当用户询问销售指标时，Claude 只需要读取销售相关的 schema，而非财务或营销数据。这保持了 token 使用低和上下文聚焦。
 
 ```
 bigquery-skill/
@@ -760,8 +754,7 @@ chore: update dependencies and refactor error handling
 
 ### 与 Claude 一起迭代开发技能
 
-最有效的技能开发过程涉及 Claude 本身。与一个 Claude 实例（"Claude A"）一起创建技能，该技能将被其他实例（"Claude B"）使用。Claude
-A 帮助你设计和优化指令，而 Claude B 在真实任务中测试它们。这之所以有效，是因为 Claude 模型既理解如何编写有效的智能体指令，也理解智能体需要什么信息。
+最有效的技能开发过程涉及 Claude 本身。与一个 Claude 实例（"Claude A"）一起创建技能，该技能将被其他实例（"Claude B"）使用。Claude A 帮助你设计和优化指令，而 Claude B 在真实任务中测试它们。这之所以有效，是因为 Claude 模型既理解如何编写有效的智能体指令，也理解智能体需要什么信息。
 
 **创建新技能：**
 
@@ -771,8 +764,7 @@ A 帮助你设计和优化指令，而 Claude B 在真实任务中测试它们�
 
    **示例**：如果你完成了一个 BigQuery 分析，你可能提供了表名、字段定义、过滤规则（如"始终排除测试账户"）和常见查询模式。
 
-3. **让 Claude A 创建技能**："创建一个技能来捕获我们刚刚使用的 BigQuery 分析模式。包含表
-   schema、命名约定和关于过滤测试账户的规则。"
+3. **让 Claude A 创建技能**："创建一个技能来捕获我们刚刚使用的 BigQuery 分析模式。包含表 schema、命名约定和关于过滤测试账户的规则。"
 
    <Tip>
      Claude 模型原生理解技能的格式和结构。你不需要特殊的系统提示或"编写技能"技能来让 Claude 帮助创建技能。只需让 Claude 创建技能，它就会生成结构正确的 SKILL.md 内容，包含适当的 frontmatter 和正文。
@@ -780,13 +772,11 @@ A 帮助你设计和优化指令，而 Claude B 在真实任务中测试它们�
 
 4. **审查简洁性**：检查 Claude A 是否添加了不必要的解释。问："去掉关于什么是胜率的解释——Claude 已经知道了。"
 
-5. **改善信息架构**：让 Claude A 更有效地组织内容。例如："组织一下，让表 schema
-   在一个独立的参考文件中。我们以后可能会添加更多表。"
+5. **改善信息架构**：让 Claude A 更有效地组织内容。例如："组织一下，让表 schema 在一个独立的参考文件中。我们以后可能会添加更多表。"
 
 6. **在类似任务上测试**：用 Claude B（加载了技能的全新实例）在相关用例上使用技能。观察 Claude B 是否找到了正确的信息、正确应用规则、成功处理了任务。
 
-7. **基于观察迭代**：如果 Claude B 遇到困难或遗漏了什么，带着具体情况回到 Claude A："当 Claude 使用这个技能时，它忘了在 Q4
-   按日期过滤。我们应该添加一个关于日期过滤模式的章节吗？"
+7. **基于观察迭代**：如果 Claude B 遇到困难或遗漏了什么，带着具体情况回到 Claude A："当 Claude 使用这个技能时，它忘了在 Q4 按日期过滤。我们应该添加一个关于日期过滤模式的章节吗？"
 
 **迭代现有技能：**
 
@@ -802,8 +792,7 @@ A 帮助你设计和优化指令，而 Claude B 在真实任务中测试它们�
 
    **观察示例**："当我让 Claude B 做区域销售报告时，它写了查询但忘了过滤测试账户，尽管技能提到了这条规则。"
 
-3. **回到 Claude A 进行改进**：分享当前 SKILL.md 并描述你观察到的。问："我注意到 Claude B
-   在我要求区域报告时忘了过滤测试账户。技能提到了过滤，但也许不够突出？"
+3. **回到 Claude A 进行改进**：分享当前 SKILL.md 并描述你观察到的。问："我注意到 Claude B 在我要求区域报告时忘了过滤测试账户。技能提到了过滤，但也许不够突出？"
 
 4. **审查 Claude A 的建议**：Claude A 可能建议重组以使规则更突出，使用更强的语言如"必须过滤"而非"始终过滤"，或重构工作流章节。
 
@@ -998,8 +987,7 @@ Claude 的视觉能力有助于理解布局和结构。
 
 **示例**：想象让 Claude 根据电子表格更新 PDF 中的 50 个表单字段。没有验证的话，Claude 可能引用不存在的字段、创建冲突的值、遗漏必填字段或错误地应用更新。
 
-**解决方案**：使用上面展示的工作流模式（PDF 表单填写），但添加一个中间 `changes.json`
-文件在应用更改前进行验证。工作流变为：分析 → **创建计划文件** → **验证计划** → 执行 → 验证。
+**解决方案**：使用上面展示的工作流模式（PDF 表单填写），但添加一个中间 `changes.json` 文件在应用更改前进行验证。工作流变为：分析 → **创建计划文件** → **验证计划** → 执行 → 验证。
 
 **为什么这个模式有效：**
 
@@ -1010,8 +998,7 @@ Claude 的视觉能力有助于理解布局和结构。
 
 **何时使用**：批量操作、破坏性更改、复杂验证规则、高风险操作。
 
-**实现提示**：让验证脚本输出详细的具体错误消息，如"字段 'signature\_date'
-未找到。可用字段：customer\_name、order\_total、signature\_date\_signed"，以帮助 Claude 修复问题。
+**实现提示**：让验证脚本输出详细的具体错误消息，如"字段 'signature\_date' 未找到。可用字段：customer\_name、order\_total、signature\_date\_signed"，以帮助 Claude 修复问题。
 
 ### 打包依赖
 
@@ -1024,8 +1011,7 @@ Claude 的视觉能力有助于理解布局和结构。
 
 ### 运行时环境
 
-技能在具有文件系统访问、bash
-命令和代码执行能力的代码执行环境中运行。关于此架构的概念解释，请参阅概述中的[技能架构](/en/docs/agents-and-tools/agent-skills/overview#the-skills-architecture)。
+技能在具有文件系统访问、bash 命令和代码执行能力的代码执行环境中运行。关于此架构的概念解释，请参阅概述中的[技能架构](/en/docs/agents-and-tools/agent-skills/overview#the-skills-architecture)。
 
 **这对你的编写有什么影响：**
 
@@ -1039,13 +1025,13 @@ Claude 的视觉能力有助于理解布局和结构。
 * **文件路径很重要**：Claude 像文件系统一样导航你的技能目录。使用正斜杠（`reference/guide.md`），而非反斜杠
 * **描述性文件命名**：使用表明内容的名称：`form_validation_rules.md`，而非 `doc2.md`
 * **为发现而组织**：按领域或功能组织目录结构
-    * 好的：`reference/finance.md`、`reference/sales.md`
-    * 差的：`docs/file1.md`、`docs/file2.md`
+  * 好的：`reference/finance.md`、`reference/sales.md`
+  * 差的：`docs/file1.md`、`docs/file2.md`
 * **捆绑全面的资源**：包含完整的 API 文档、大量示例、大型数据集；在访问之前没有上下文惩罚
 * **确定性操作优先使用脚本**：编写 `validate_form.py` 而非让 Claude 生成验证代码
 * **明确执行意图**：
-    * "运行 `analyze_form.py` 提取字段"（执行）
-    * "参见 `analyze_form.py` 了解提取算法"（作为参考阅读）
+  * "运行 `analyze_form.py` 提取字段"（执行）
+  * "参见 `analyze_form.py` 了解提取算法"（作为参考阅读）
 * **测试文件访问模式**：通过真实请求测试验证 Claude 能够导航你的目录结构
 
 **示例：**
@@ -1059,9 +1045,7 @@ bigquery-skill/
     └── product.md（使用分析）
 ```
 
-当用户询问收入时，Claude 读取 SKILL.md，看到对 `reference/finance.md` 的引用，并调用 bash 只读取该文件。sales.md 和
-product.md 文件留在文件系统上，在需要之前消耗零上下文 token。这种基于文件系统的模型是渐进式披露的基础。Claude
-可以导航并选择性地加载每个任务所需的内容。
+当用户询问收入时，Claude 读取 SKILL.md，看到对 `reference/finance.md` 的引用，并调用 bash 只读取该文件。sales.md 和 product.md 文件留在文件系统上，在需要之前消耗零上下文 token。这种基于文件系统的模型是渐进式披露的基础。Claude 可以导航并选择性地加载每个任务所需的内容。
 
 完整的技术架构细节请参阅技能概述中的[技能工作原理](/en/docs/agents-and-tools/agent-skills/overview#how-skills-work)。
 
@@ -1107,13 +1091,11 @@ reader = PdfReader("file.pdf")
 
 ### YAML frontmatter 要求
 
-SKILL.md 的 frontmatter 只包含 `name`（最多 64 字符）和 `description`（最多 1024
-字符）字段。完整的结构细节请参阅[技能概述](/en/docs/agents-and-tools/agent-skills/overview#skill-structure)。
+SKILL.md 的 frontmatter 只包含 `name`（最多 64 字符）和 `description`（最多 1024 字符）字段。完整的结构细节请参阅[技能概述](/en/docs/agents-and-tools/agent-skills/overview#skill-structure)。
 
 ### Token 预算
 
-保持 SKILL.md 正文在 500
-行以内以获得最佳性能。如果内容超过此限制，使用前面描述的渐进式披露模式将其拆分到独立文件。架构细节请参阅[技能概述](/en/docs/agents-and-tools/agent-skills/overview#how-skills-work)。
+保持 SKILL.md 正文在 500 行以内以获得最佳性能。如果内容超过此限制，使用前面描述的渐进式披露模式将其拆分到独立文件。架构细节请参阅[技能概述](/en/docs/agents-and-tools/agent-skills/overview#how-skills-work)。
 
 ## 有效技能清单
 

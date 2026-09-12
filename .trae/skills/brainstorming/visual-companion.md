@@ -26,12 +26,9 @@
 
 ## 工作原理
 
-服务器监视一个目录中的 HTML 文件，将最新的文件提供给浏览器。你写入 HTML 内容，用户在浏览器中看到它，并可以点击选择选项。选择结果被记录到一个
-`.events` 文件中，你在下一轮会话中读取它。
+服务器监视一个目录中的 HTML 文件，将最新的文件提供给浏览器。你写入 HTML 内容，用户在浏览器中看到它，并可以点击选择选项。选择结果被记录到一个 `.events` 文件中，你在下一轮会话中读取它。
 
-**内容片段 vs 完整文档：** 如果你的 HTML 文件以 `<!DOCTYPE` 或 `<html`
-开头，服务器会原样提供（仅注入辅助脚本）。否则，服务器会自动将你的内容包裹在框架模板中——添加头部、CSS 主题、选择指示器和所有交互基础设施。
-**默认写内容片段即可。** 只有当你需要完全控制页面时才写完整文档。
+**内容片段 vs 完整文档：** 如果你的 HTML 文件以 `<!DOCTYPE` 或 `<html` 开头，服务器会原样提供（仅注入辅助脚本）。否则，服务器会自动将你的内容包裹在框架模板中——添加头部、CSS 主题、选择指示器和所有交互基础设施。**默认写内容片段即可。** 只有当你需要完全控制页面时才写完整文档。
 
 ## 启动会话
 
@@ -45,34 +42,28 @@ scripts/start-server.sh --project-dir /path/to/project
 
 保存响应中的 `screen_dir`。告诉用户打开该 URL。
 
-**查找连接信息：** 服务器将其启动 JSON 写入 `$SCREEN_DIR/.server-info`。如果你在后台启动了服务器且没有捕获 stdout，读取该文件以获取
-URL 和端口。使用 `--project-dir` 时，检查 `<project>/.superpowers/brainstorm/` 获取会话目录。
+**查找连接信息：** 服务器将其启动 JSON 写入 `$SCREEN_DIR/.server-info`。如果你在后台启动了服务器且没有捕获 stdout，读取该文件以获取 URL 和端口。使用 `--project-dir` 时，检查 `<project>/.superpowers/brainstorm/` 获取会话目录。
 
-**注意：** 传入项目根目录作为 `--project-dir`，这样原型会持久化在 `.superpowers/brainstorm/` 中，不会因服务器重启而丢失。不传的话，文件会保存到
-`/tmp` 并在清理时被删除。提醒用户将 `.superpowers/` 添加到 `.gitignore`（如果尚未添加）。
+**注意：** 传入项目根目录作为 `--project-dir`，这样原型会持久化在 `.superpowers/brainstorm/` 中，不会因服务器重启而丢失。不传的话，文件会保存到 `/tmp` 并在清理时被删除。提醒用户将 `.superpowers/` 添加到 `.gitignore`（如果尚未添加）。
 
 **按平台启动服务器：**
 
 **Claude Code (macOS / Linux)：**
-
 ```bash
 # 默认模式即可——脚本会自动将服务器放到后台
 scripts/start-server.sh --project-dir /path/to/project
 ```
 
 **Claude Code (Windows)：**
-
 ```bash
 # Windows 会自动检测并使用前台模式，这会阻塞工具调用。
 # 在 Bash 工具调用上设置 run_in_background: true，
 # 让服务器在会话轮次之间存活。
 scripts/start-server.sh --project-dir /path/to/project
 ```
-
 通过 Bash 工具调用时，设置 `run_in_background: true`。然后在下一轮读取 `$SCREEN_DIR/.server-info` 获取 URL 和端口。
 
 **Codex：**
-
 ```bash
 # Codex 会回收后台进程。脚本会自动检测 CODEX_CI 并
 # 切换到前台模式。正常运行即可——不需要额外标志。
@@ -80,11 +71,19 @@ scripts/start-server.sh --project-dir /path/to/project
 ```
 
 **Gemini CLI：**
-
 ```bash
 # 使用 --foreground 并在 shell 工具调用上设置 is_background: true，
 # 让进程在轮次之间存活
 scripts/start-server.sh --project-dir /path/to/project --foreground
+```
+
+**Copilot CLI：**
+```bash
+# 用 Copilot CLI 的非阻塞 / 后台 shell 机制启动，让服务器能跨会话轮次存活。
+# 保留 --foreground —— 由 harness 而不是脚本来负责放到后台。
+# 启动器是 .sh，所以要通过 bash 调用（Windows 上用 Git Bash 的 bash.exe，
+# 从 PowerShell 工具里调）。
+bash scripts/start-server.sh --project-dir /path/to/project --open --foreground
 ```
 
 **其他环境：** 服务器必须在会话轮次之间持续在后台运行。如果你的环境会回收分离的进程，使用 `--foreground` 并通过平台的后台执行机制启动命令。
@@ -103,22 +102,21 @@ scripts/start-server.sh \
 ## 工作循环
 
 1. **检查服务器存活**，然后**将 HTML 写入** `screen_dir` 中的新文件：
-    - 每次写入前，检查 `$SCREEN_DIR/.server-info` 是否存在。如果不存在（或 `.server-stopped` 存在），服务器已关闭——在继续之前用
-      `start-server.sh` 重启。服务器在 30 分钟无活动后会自动退出。
-    - 使用语义化文件名：`platform.html`、`visual-style.html`、`layout.html`
-    - **绝不复用文件名** — 每个屏幕用一个新文件
-    - 使用 Write 工具 — **绝不使用 cat/heredoc**（会在终端产生噪音）
-    - 服务器自动提供最新的文件
+   - 每次写入前，检查 `$SCREEN_DIR/.server-info` 是否存在。如果不存在（或 `.server-stopped` 存在），服务器已关闭——在继续之前用 `start-server.sh` 重启。服务器在 30 分钟无活动后会自动退出。
+   - 使用语义化文件名：`platform.html`、`visual-style.html`、`layout.html`
+   - **绝不复用文件名** — 每个屏幕用一个新文件
+   - 使用 Write 工具 — **绝不使用 cat/heredoc**（会在终端产生噪音）
+   - 服务器自动提供最新的文件
 
 2. **告诉用户预期内容并结束你的回合：**
-    - 每一步都提醒他们 URL（不仅仅是第一次）
-    - 简要文字说明屏幕上的内容（例如"展示了 3 个首页布局选项"）
-    - 请他们在终端中回复："看一下，告诉我你的想法。如果你愿意，可以点击选择一个选项。"
+   - 每一步都提醒他们 URL（不仅仅是第一次）
+   - 简要文字说明屏幕上的内容（例如"展示了 3 个首页布局选项"）
+   - 请他们在终端中回复："看一下，告诉我你的想法。如果你愿意，可以点击选择一个选项。"
 
 3. **在你的下一轮** — 用户在终端回复后：
-    - 如果存在 `$SCREEN_DIR/.events`，读取它——其中包含用户的浏览器交互（点击、选择），格式为 JSON 行
-    - 将终端文字和事件合并以获得完整信息
-    - 终端消息是主要反馈；`.events` 提供结构化的交互数据
+   - 如果存在 `$SCREEN_DIR/.events`，读取它——其中包含用户的浏览器交互（点击、选择），格式为 JSON 行
+   - 将终端文字和事件合并以获得完整信息
+   - 终端消息是主要反馈；`.events` 提供结构化的交互数据
 
 4. **迭代或推进** — 如果反馈要求修改当前屏幕，写入新文件（例如 `layout-v2.html`）。只有当前步骤验证通过后才进入下一个问题。
 
