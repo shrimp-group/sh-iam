@@ -7,6 +7,7 @@ import com.wkclz.iam.session.config.IamSessionConfig;
 import com.wkclz.iam.session.enums.AuthType;
 import com.wkclz.iam.session.enums.DestroyReason;
 import com.wkclz.iam.session.event.SessionEvent;
+import com.wkclz.tool.tools.Md5Tool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -140,12 +141,17 @@ class SessionManagerTest {
     class ValidateAndRefresh {
 
         @Test
-        @DisplayName("Token 签发时间离 Redis 过期还很远时走快速路径，不读 Redis")
+        @DisplayName("Token 签发时间离 Redis 过期还很远时走快速路径，跳过续期判断")
         void shouldTakeFastPathWhenTokenIsFresh() {
             // 设置 threshold < redisTtl，触发快速路径判断
             config.setRenewalThreshold(1800L);
             UserIdentity user = createUser("user_fast", "fastpath", "快速路径");
             String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+
+            String sessionId = Md5Tool.md5(token);
+            Session stored = buildSession(sessionId, "user_fast", System.currentTimeMillis() + REDIS_TTL * 1000, System.currentTimeMillis());
+            stored.setToken(token);
+            when(sessionStore.get(sessionId)).thenReturn(stored);
 
             Session result = sessionManager.validateAndRefresh(token);
 
@@ -153,8 +159,9 @@ class SessionManagerTest {
             assertEquals("user_fast", result.getSubjectId());
             assertNotNull(result.getSessionId());
             assertEquals(token, result.getToken());
-            // 快速路径下不应读取 Redis
-            verify(sessionStore, never()).get(anyString());
+            // 快速路径下仍读取 Redis，但跳过续期判断
+            verify(sessionStore, times(1)).get(sessionId);
+            verify(sessionStore, never()).renewSession(anyString(), anyLong());
         }
 
         @Test
@@ -177,7 +184,7 @@ class SessionManagerTest {
             String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
 
             long now = System.currentTimeMillis();
-            Session expired = buildSession("sid_002", "user_002", now - 1000, now - 3600_000);
+            Session expired = buildSession(Md5Tool.md5(token), "user_002", now - 1000, now - 3600_000);
             when(sessionStore.get(anyString())).thenReturn(expired);
 
             Session result = sessionManager.validateAndRefresh(token);
@@ -185,7 +192,7 @@ class SessionManagerTest {
             assertNull(result);
             // 验证发布 SessionExpiredEvent 并删除过期 Session
             verify(eventPublisher, times(1)).publishEvent(any(SessionEvent.class));
-            verify(sessionStore, times(1)).delete("sid_002");
+            verify(sessionStore, times(1)).delete(Md5Tool.md5(token));
         }
 
         @Test
@@ -199,14 +206,14 @@ class SessionManagerTest {
             long redisExpireTime = now + 600_000;
             // 上次续期 1 小时前（> 5min 间隔）
             long lastRenewalTime = now - 3600_000;
-            Session session = buildSession("sid_003", "user_003", redisExpireTime, lastRenewalTime);
+            Session session = buildSession(Md5Tool.md5(token), "user_003", redisExpireTime, lastRenewalTime);
             when(sessionStore.get(anyString())).thenReturn(session);
 
             Session result = sessionManager.validateAndRefresh(token);
 
             assertNotNull(result);
             // 验证续期被调用
-            verify(sessionStore, times(1)).renewSession(eq("sid_003"), anyLong());
+            verify(sessionStore, times(1)).renewSession(eq(Md5Tool.md5(token)), anyLong());
             // 验证内存中字段已更新
             assertTrue(result.getRedisExpireTime() > redisExpireTime, "redisExpireTime 应该已更新");
             assertTrue(result.getLastRenewalTime() > lastRenewalTime, "lastRenewalTime 应该已更新");

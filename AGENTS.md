@@ -74,8 +74,8 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 | `filter`  | `RequestControlFilter`          | 请求控制过滤器（用户级互斥 RedisLock + 滑动窗口限流，拒绝 429，@Order 最低优先级）                      |
 | `spi`     | `RequestRecordHandler`          | 请求日志持久化 SPI（iam-sso 提供实现）                                                  |
 | `spi`     | `NoOpRequestRecordHandler`      | RequestRecordHandler 空实现（默认，静默跳过）                                          |
-| `spi`     | `ApiRequestControlProvider`     | API 请求控制配置提供 SPI（iam-sso 提供实现，返回 ApiControlConfig 轻量模型）                    |
-| `spi`     | `NoOpApiRequestControlProvider` | ApiRequestControlProvider 空实现（默认，返回空列表）                                    |
+| `spi`     | `ApiRequestControlProvider`     | API 请求控制配置提供 SPI（iam-sso 提供 @Primary 实现，返回 ApiControlConfig 轻量模型）          |
+| `spi`     | `NoOpApiRequestControlProvider` | ApiRequestControlProvider 兜底实现（始终注册，返回空列表，可被 @Primary 覆盖）                  |
 | `config`  | `IamSessionConfig`              | iam-session 全局配置（secret-key / ttl / maxConcurrent / 请求控制默认值）               |
 | 根包        | `IamSessionAutoConfig`          | 自动配置（@AutoConfiguration + @ComponentScan）                                  |
 

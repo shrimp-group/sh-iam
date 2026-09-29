@@ -155,12 +155,12 @@ public class SessionManager {
             return null;
         }
 
-        // 5. 快速路径：若 Token 签发时间到 Redis 过期还有大量剩余，跳过 Redis 读取
+        // 5. 快速路径：若 Token 签发时间距 Redis 过期还很远，跳过续期判断（减少 Redis 写操作）
         long redisTtlSec = iamSessionConfig.getRedisTtl() != null ? iamSessionConfig.getRedisTtl() : 86400L;
         long thresholdSec = iamSessionConfig.getRenewalThreshold() != null ? iamSessionConfig.getRenewalThreshold() : 1800L;
         Long issuedAt = tokenInfo.getIssuedAt();
         if (issuedAt != null && now < issuedAt + (redisTtlSec - thresholdSec) * 1000) {
-            log.debug("Session fast-path: Redis expiry is far away, skip read. sessionId={}", sessionId);
+            log.debug("Session fast-path: Redis expiry is far away, skip renewal. sessionId={}", sessionId);
             return session;
         }
 

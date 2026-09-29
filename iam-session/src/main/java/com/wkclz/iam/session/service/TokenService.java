@@ -15,11 +15,12 @@ import org.springframework.util.StringUtils;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * JWT 令牌生成、验证与刷新服务。
  *
- * <p>HS256 签名，claims 仅含 userCode / username / nickname（最小信息集），
+ * <p>HS256 签名，claims 仅含 userCode / username / nickname / jti（最小信息集），
  * TTL 可配置，默认 24h。</p>
  */
 @Service
@@ -47,7 +48,9 @@ public class TokenService {
 
     /**
      * 生成 Token。
-     * <p>claims 仅含 sub(userCode)、username、nickname、iat、exp。</p>
+     * <p>claims 仅含 sub(userCode)、username、nickname、jti、iat、exp。
+     * jti 为随机数，保证同一秒内多次签发的 Token 各不相同，
+     * 避免 sessionId = MD5(token) 碰撞导致会话覆盖。</p>
      */
     public String generateToken(String userCode, String username, String nickname) {
         long now = System.currentTimeMillis();
@@ -55,6 +58,7 @@ public class TokenService {
             .subject(userCode)
             .claim("username", username)
             .claim("nickname", nickname)
+            .id(UUID.randomUUID().toString())
             .issuedAt(new Date(now - 60_000))
             .expiration(new Date(now + iamSessionConfig.getTtl() * 1000))
             .signWith(getSecretKey(), Jwts.SIG.HS256)
