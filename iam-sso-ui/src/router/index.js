@@ -22,7 +22,8 @@ import { Layout } from '@sh/ui-core'
  }
  */
 
-export const routes = [
+// 公共路由（/login 为独立入口 login.html 不在此注册；/redirect 由 @sh/ui-core 内置）
+export const constantRoutes = [
   {
     // 首页落地：登录回跳 /#/ 命中后进入 /index（dashboard 首页，静态兜底不依赖菜单数据修正）
     path: '/',
@@ -56,6 +57,17 @@ export const routes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    // 401/404 兜底页面组件统一由 @sh/ui-core 承载（components/error）
+    path: '/:pathMatch(.*)*',
+    component: () => import('@sh/ui-core/components/error/404.vue.js'),
+    hidden: true
+  },
+  {
+    path: '/401',
+    component: () => import('@sh/ui-core/components/error/401.vue.js'),
+    hidden: true
   }
 ]
 
