@@ -15,7 +15,7 @@ import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.event.AdminSecurityEvent;
 import com.wkclz.iam.session.enums.AuthType;
-import com.wkclz.iam.sso.spi.PasswordEncoder;
+import com.wkclz.iam.portal.spi.PasswordEncoder;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;

@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>com.wkclz.iam</groupId>
-            <artifactId>iam-sso</artifactId>
+            <artifactId>iam-portal</artifactId>
             <version>${revision}</version>
         </dependency>
 

@@ -8,7 +8,7 @@ import com.wkclz.iam.admin.mapper.IamUserPasswordHisMapper;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
 import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.event.AdminSecurityEvent;
-import com.wkclz.iam.sso.spi.PasswordEncoder;
+import com.wkclz.iam.portal.spi.PasswordEncoder;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.tool.utils.SecretUtil;
 import org.slf4j.Logger;

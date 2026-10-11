@@ -20,8 +20,8 @@
     <modules>
         <module>iam-session</module>
         <module>iam-common</module>
-        <module>iam-sso</module>
-        <module>iam-sso-starter</module>
+        <module>iam-portal</module>
+        <module>iam-portal-starter</module>
         <module>iam-admin</module>
         <module>iam-admin-starter</module>
     </modules>

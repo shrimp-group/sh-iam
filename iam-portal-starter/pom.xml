@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.wkclz.iam</groupId>
+        <artifactId>sh-iam</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>iam-portal-starter</artifactId>
+    <name>iam-portal-starter</name>
+    <description>登录/个人中心模块启动器</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>com.wkclz.iam</groupId>
+            <artifactId>iam-portal</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- 跳过 install, 只做启动模块 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <configuration><skip>true</skip></configuration>
+            </plugin>
+            <!-- 跳过 deploy, 只做启动模块 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration><skip>true</skip></configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
