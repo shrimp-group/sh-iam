@@ -62,7 +62,7 @@
 import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
 import resetPwd from "./resetPwd"
-import { getUserInfo } from "@/api/sso"
+import { userInfo as getUserInfo } from '@/api/sso'
 
 const route = useRoute()
 const selectedTab = ref("userinfo")

@@ -1,11 +1,12 @@
 const name = "单点登录";
+// 应用编码与 iam_menu.app_code 数据对齐（localhost 回退值；部署域名首段须与此一致或数据侧同步调整）
 export const appCode = 'iam-sso';
 
 const configs = {
-  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "/api"},
-//  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
-  "uat"  : {"cas": "http://cas.uat.husters.cn", "title": name + "【UAT】",   "baseApi": "https://api.uat.husters.cn"},
-  "prod" : {"cas": "http://cas.husters.cn",     "title": name,               "baseApi": "https://api.husters.cn"}
+//  "local": {"cas": "",                           "title": name + "【LOCAL】", "baseApi": "/api"},
+  "local": {"cas": "", "title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
+  "uat"  : {"cas": "", "title": name + "【UAT】",   "baseApi": "https://api.uat.husters.cn"},
+  "prod" : {"cas": "", "title": name,               "baseApi": "https://api.husters.cn"}
 };
 
 function getEnv() {
@@ -37,3 +38,6 @@ const config = getConfig(env);
 export const title = config['title'];
 export const cas = config['cas'];
 export const baseApi = config['baseApi'];
+
+// 运行时环境聚合（供 @sh/ui-core 运行时注入）
+export const runtimeEnv = { appCode, env, ...config };

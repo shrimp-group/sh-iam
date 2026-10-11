@@ -62,7 +62,7 @@
 import "vue-cropper/dist/index.css"
 import { VueCropper } from "vue-cropper"
 import { uploadAvatar } from "@/api/user"
-import useUserStore from "@/store/modules/user"
+import useUserStore from '@sh/ui-core/store/modules/user'
 
 const userStore = useUserStore()
 const { proxy } = getCurrentInstance()

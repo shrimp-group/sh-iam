@@ -3,19 +3,13 @@
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{ title }}</h3>
       <el-form-item prop="username">
-        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" @keyup.enter="handleLogin">
-          <template #prefix><svg-icon icon-class="user" class="el-input__icon input-icon" /></template>
-        </el-input>
+        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" :prefix-icon="User" @keyup.enter="handleLogin" />
       </el-form-item>
       <el-form-item prop="password">
-        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="密码" @keyup.enter="handleLogin">
-          <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
-        </el-input>
+        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="密码" :prefix-icon="Lock" @keyup.enter="handleLogin" />
       </el-form-item>
       <el-form-item prop="captchaCode" v-if="loginForm.captchaId">
-        <el-input v-model="loginForm.captchaCode" size="large" auto-complete="off" placeholder="验证码" style="width: 63%" @keyup.enter="handleLogin">
-          <template #prefix><svg-icon icon-class="validCode" class="el-input__icon input-icon" /></template>
-        </el-input>
+        <el-input v-model="loginForm.captchaCode" size="large" auto-complete="off" placeholder="验证码" style="width: 63%" :prefix-icon="Key" @keyup.enter="handleLogin" />
         <div class="login-code"><img :src="codeUrl" @click="getCode" class="login-code-img"/></div>
       </el-form-item>
       <el-form-item style="width:100%;">
@@ -28,7 +22,7 @@
         </div>
         <el-divider />
         <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
+          <a class="link-type" :href="'/#/register'">立即注册</a>
         </div>
       </el-form-item>
     </el-form>
@@ -40,15 +34,17 @@
 </template>
 
 <script setup>
-import useUserStore from '@/store/modules/user'
-import defaultSettings from '@/settings'
-import {title} from '~/env';
-import {captchaChart} from "../api/sso.js";
+// CAS 登录页（原 views/login.vue 改造为独立入口）：
+// 登录态经包内 user store 写父域 Cookie；成功后按 redirect 整页回跳（原 hash 路由内 push 无法跳外部子系统）
+import { User, Lock, Key } from '@element-plus/icons-vue'
+import { getToken } from '@sh/ui-core/utils/auth'
+import useUserStore from '@sh/ui-core/store/modules/user'
+import { captchaChart } from '@/api/sso'
+import { runtimeEnv } from '../../env.js'
 
-const footerContent = defaultSettings.footerContent
+const title = runtimeEnv.title
+const footerContent = 'Copyright © 2018-2025 wangkc. All Rights Reserved.'
 const userStore = useUserStore()
-const route = useRoute()
-const router = useRouter()
 const { proxy } = getCurrentInstance()
 
 const loginForm = ref({
@@ -69,36 +65,50 @@ const codeUrl = ref("")
 const loading = ref(false)
 // 注册开关
 const register = ref(true)
-const redirect = ref(undefined)
+// redirect 取自 location.search（本入口无路由，CAS 协议 {cas}/login?redirect= 落点）
+const redirect = new URLSearchParams(window.location.search).get('redirect')
 
-watch(route, (newRoute) => {
-    redirect.value = newRoute.query && newRoute.query.redirect
-}, { immediate: true })
+// 回跳地址校验：相对路径放行；绝对地址仅允许 http(s) 且与本站同 host 或同父域，防开放重定向
+function safeTarget(target) {
+  if (!target) return '/'
+  if (target.startsWith('/')) return target
+  try {
+    const url = new URL(target)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '/'
+    const host = window.location.hostname
+    const parentDomain = host.split('.').slice(-2).join('.')
+    if (url.hostname === host || url.hostname.endsWith('.' + parentDomain)) {
+      return url.href
+    }
+    return '/'
+  } catch {
+    return '/'
+  }
+}
+
+// 已持有登录态：直接回跳，避免重复登录；验证码默认不展示，仅登录失败时拉取
+if (getToken()) {
+  location.href = safeTarget(redirect)
+}
 
 function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
     if (valid) {
       loading.value = true
-      // 调用action的登录方法
+      // 调用包内 action 登录（Cookie 写入由包内 auth.js 承担）
       userStore.login(loginForm.value).then((res) => {
         loginMessage.value = res.data?.loginMessage
         if (res.data?.loginStatus !== 0) {
+          // 登录失败（后端正常响应）：拉取验证码并展示
           getCode()
           return;
         }
-        const query = route.query
-        const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
-          if (cur !== "redirect") {
-            acc[cur] = query[cur]
-          }
-          return acc
-        }, {})
-        // 成功，600ms后跳转
+        // 成功，600ms后按 redirect 整页回跳（无 redirect 时回门户首页）
         setTimeout(() => {
-          router.push({ path: redirect.value || "/", query: otherQueryParams })
+          location.href = safeTarget(redirect)
         }, 600)
       }).catch(() => {
-        getCode()
+        // 接口异常不展示验证码
       }).finally(() => {
         loading.value = false
       })
@@ -108,7 +118,7 @@ function handleLogin() {
 
 function getCode() {
   captchaChart().then(res => {
-    codeUrl.value = res.data.captchaImage
+    codeUrl.value = res.data.base64Image
     loginForm.value.captchaId = res.data.captchaId
   })
 }

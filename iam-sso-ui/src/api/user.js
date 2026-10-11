@@ -1,4 +1,4 @@
-import request from '@/utils/request';
+import request from '@sh/ui-core/utils/request';
 
 
 export function changePassword(data) {

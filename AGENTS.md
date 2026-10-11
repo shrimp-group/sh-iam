@@ -18,7 +18,7 @@ sh-iam/
 ├── iam-admin           # 管理后台业务（用户/角色/菜单/应用等 CRUD）
 ├── iam-admin-starter   # Admin 启动器（可部署 Spring Boot 应用）
 ├── iam-admin-ui/       # Vue3 管理后台前端（不参与 Maven 构建）
-└── iam-sso-ui/         # Vue3 SSO 登录前端（不参与 Maven 构建）
+└── iam-sso-ui/         # Vue3 SSO 门户前端（@sh/ui-core 0.0.4 dist 预构建消费形态：双入口 index.html 主 SPA + login.html CAS 登录页，运行时 env 注入 createAdminApp({ env }) / setRuntimeEnv，父域 Cookie 登录态，不参与 Maven 构建）
 ```
 
 ### 模块依赖关系
