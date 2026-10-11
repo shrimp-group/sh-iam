@@ -1,4 +1,4 @@
-import request from '@/utils/request.js'
+import request from '@sh/ui-core/utils/request'
 
 
 // 根据参数键名查询参数值

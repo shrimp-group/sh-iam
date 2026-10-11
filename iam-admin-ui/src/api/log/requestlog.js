@@ -1,4 +1,4 @@
-import request from '@/utils/request';
+import request from '@sh/ui-core/utils/request';
 
 // 1. 接口请求记录分页
 export function requestRecordPage(params) {

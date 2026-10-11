@@ -1,4 +1,4 @@
-import request from '@/utils/request.js'
+import request from '@sh/ui-core/utils/request'
 
 // 根据字典类型查询字典数据信息
 export function getDicts(dictType) {

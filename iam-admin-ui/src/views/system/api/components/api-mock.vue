@@ -84,7 +84,7 @@
 <script setup name="ApiMock">
 import { apiDoc } from "@/api/system/api";
 import axios from 'axios';
-import { getToken } from '@/utils/auth';
+import { getToken } from '@sh/ui-core/utils/auth';
 import { baseApi } from '~/env';
 
 const props = defineProps({

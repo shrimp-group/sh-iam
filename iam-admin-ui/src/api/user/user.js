@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request from "@sh/ui-core/utils/request";
 
 // 1. 用户-分页
 export const userPage = (params) => {

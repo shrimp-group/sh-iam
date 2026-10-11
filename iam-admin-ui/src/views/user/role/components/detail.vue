@@ -148,7 +148,7 @@ import { menuTree } from "@/api/system/menu";
 import { roleMenuList, roleMenuSave } from "@/api/system/role-menu";
 import { roleUserPage, roleUserBind, roleUserUnbind } from "@/api/user/role-user";
 import { userPage } from "@/api/user/user";
-import { parseTime } from "@/utils/ruoyi";
+import { parseTime } from "@sh/ui-core/utils/ruoyi";
 
 defineExpose({ init });
 const emit = defineEmits(["change"]);

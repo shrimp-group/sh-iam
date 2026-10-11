@@ -101,8 +101,8 @@
 
 <script setup name="IamUserRole">
 import { userRoleList, userRoleBind, userRoleUnbind, userRoleTree } from "@/api/user/user-role";
-import { parseTime } from "@/utils/ruoyi";
-import LayoutSplit from "@/components/LayoutSplit";
+import { parseTime } from "@sh/ui-core/utils/ruoyi";
+import LayoutSplit from "@sh/ui-core/components/LayoutSplit/index.vue.js";
 import AppOptions from "@/views/components/AppOptions";
 
 const props = defineProps({

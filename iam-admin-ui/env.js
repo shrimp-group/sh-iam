@@ -2,7 +2,8 @@ const name = "授权中心";
 export const appCode = 'iam-admin';
 
 const configs = {
-  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "/api"},
+  // local cas 指向 sso-ui dev server（80 端口）
+  "local": {"cas": "http://localhost", "title": name + "【LOCAL】", "baseApi": "/api"},
 //  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
   "uat"  : {"cas": "http://cas.uat.husters.cn", "title": name + "【UAT】",   "baseApi": "https://api.uat.husters.cn"},
   "prod" : {"cas": "http://cas.husters.cn",     "title": name,               "baseApi": "https://api.husters.cn"}
@@ -37,3 +38,6 @@ const config = getConfig(env);
 export const title = config['title'];
 export const cas = config['cas'];
 export const baseApi = config['baseApi'];
+
+// 运行时环境聚合（供 @sh/ui-core 运行时注入，对齐 iam-sso-ui/env.js）
+export const runtimeEnv = {appCode, env, title, cas, baseApi};

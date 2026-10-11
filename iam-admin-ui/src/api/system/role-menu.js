@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request from "@sh/ui-core/utils/request";
 
 // 1. 角色-菜单-列表（返回 menuCode 列表）
 export const roleMenuList = (params) => {

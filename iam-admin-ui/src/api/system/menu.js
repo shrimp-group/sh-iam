@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request from "@sh/ui-core/utils/request";
 
 // 1. 菜单管理-列表
 export const menuList = (params) => {
