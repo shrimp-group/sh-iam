@@ -17,8 +17,8 @@ sh-iam/
 ├── iam-sso-starter     # SSO 启动器（可部署 Spring Boot 应用）
 ├── iam-admin           # 管理后台业务（用户/角色/菜单/应用等 CRUD）
 ├── iam-admin-starter   # Admin 启动器（可部署 Spring Boot 应用）
-├── iam-admin-ui/       # Vue3 管理后台前端（不参与 Maven 构建）
-└── iam-sso-ui/         # Vue3 SSO 登录前端（不参与 Maven 构建）
+├── iam-admin-ui/       # Vue3 管理后台前端（@sh/ui-core dist 消费形态，登录委托 CAS，dev 端口 1024，不参与 Maven 构建）
+└── iam-sso-ui/         # Vue3 SSO 门户前端（@sh/ui-core 0.0.9 dist 预构建消费形态：单入口 index.html，/login 登录页为门户自持应用功能（src/views/login.vue，加入 whiteList），跳转协议 hash 式 {cas}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态，不参与 Maven 构建）
 ```
 
 ### 模块依赖关系
@@ -144,6 +144,13 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 | `system/app/`                               | -                    | 应用管理                                               |
 | `system/ak/`                                | -                    | 访问密钥管理                                             |
 | `components/AppOptions/`                    | AppSelect            | 应用选择公共组件                                           |
+
+**工程形态（@sh/ui-core dist 消费）**：`src/main.js` 经
+`createAdminApp({ env: runtimeEnv, routes: constantRoutes, views, whiteList: [], menuSource: 'remote' })`
+单点装配；layout/store/共享组件/plugins/directive/utils 全部由包承担，仓库仅保留业务 views 与业务 api（request 从
+`@sh/ui-core/utils/request` 引入）。 **登录委托 CAS**：admin 不自持登录页，未登录由包 guard 整页跳转 `env.js` 的 `cas`
+地址（local 指向 sso-ui dev `http://localhost`，Cookie localhost 域端口无关共享），登录成功后整页回跳。dev 端口 1024（sso-ui 占
+80）。401/404 兜底组件与 `/redirect` 均为包内置。
 
 ---
 

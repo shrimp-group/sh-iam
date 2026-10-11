@@ -1,6 +1,4 @@
-import {createRouter, createWebHashHistory} from 'vue-router'
-/* Layout */
-import Layout from '@/layout'
+import {Layout} from '@sh/ui-core'
 
 /**
  * Note: 路由配置项
@@ -21,40 +19,35 @@ import Layout from '@/layout'
     icon: 'svg-name'                // 设置该路由的图标，对应路径src/assets/icons/svg
     breadcrumb: false               // 如果设置为false，则不会在breadcrumb面包屑中显示
     activeMenu: '/system/user'      // 当路由设置了该属性，则会高亮相对应的侧边栏。
-  }
+ }
  */
 
-// 公共路由
+// 公共路由（/login 登录页为门户应用自持——登录页是应用功能而非包组件，0.0.9 起包不再内置；/redirect 由 @sh/ui-core 内置）
 export const constantRoutes = [
   {
-    path: '/redirect',
+    // 登录页：门户自持，免登录直达（需同步加入 main.js whiteList，缺失会与 guard 的 SPA 内导航形成循环）
+    path: '/login',
+    component: () => import('@/views/login.vue'),
+    hidden: true
+  },
+  {
+    // 首页落地：登录回跳 /#/ 命中后进入 /index（dashboard 首页，静态兜底不依赖菜单数据修正）
+    path: '/',
     component: Layout,
+    redirect: '/index',
     hidden: true,
     children: [
       {
-        path: '/redirect/:path(.*)',
-        component: () => import('@/views/redirect/index.vue')
+        path: 'index',
+        component: () => import('@/views/dashboard/index.vue'),
+        name: 'Home',
+        meta: {title: '首页', icon: 'dashboard'}
       }
     ]
   },
   {
-    path: '/login',
-    component: () => import('@/views/login'),
-    hidden: true
-  },
-  {
     path: '/register',
-    component: () => import('@/views/register'),
-    hidden: true
-  },
-  {
-    path: "/:pathMatch(.*)*",
-    component: () => import('@/views/error/404'),
-    hidden: true
-  },
-  {
-    path: '/401',
-    component: () => import('@/views/error/401'),
+    component: () => import('@/views/register.vue'),
     hidden: true
   },
   {
@@ -70,21 +63,19 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    // 401/404 兜底页面组件统一由 @sh/ui-core 承载（components/error）
+    path: '/:pathMatch(.*)*',
+    component: () => import('@sh/ui-core/components/error/404.vue.js'),
+    hidden: true
+  },
+  {
+    path: '/401',
+    component: () => import('@sh/ui-core/components/error/401.vue.js'),
+    hidden: true
   }
 ]
 
-// 动态路由，基于用户权限动态去加载
-export const dynamicRoutes = []
-
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes: [...constantRoutes, ...dynamicRoutes],
-  scrollBehavior(_to, _from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition
-    }
-    return { top: 0 }
-  },
-})
-
-export default router
+// 动态路由 loadView 的组件池（import.meta.glob 必须在消费方求值；相对本文件 src/router/ 需上溯一级到 src/views/）
+export const views = import.meta.glob('../views/**/*.vue')

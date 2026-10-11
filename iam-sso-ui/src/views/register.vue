@@ -45,12 +45,11 @@
 
 <script setup>
 import { ElMessageBox } from "element-plus"
-import { captchaChart, ssoRegister } from "@/api/sso"
-import defaultSettings from '@/settings'
-import {title} from '~/env';
+import { captchaChart, ssoRegister } from '@/api/sso'
+import { runtimeEnv } from '../../env.js';
 
-const footerContent = defaultSettings.footerContent
-const router = useRouter()
+const title = runtimeEnv.title
+const footerContent = 'Copyright © 2018-2025 wangkc. All Rights Reserved.'
 const { proxy } = getCurrentInstance()
 
 const registerForm = ref({
@@ -100,7 +99,8 @@ function handleRegister() {
           dangerouslyUseHTMLString: true,
           type: "success",
         }).then(() => {
-          router.push("/login")
+          // 注册成功回登录页：hash 协议命中包内置 SPA 登录路由
+          window.location.href = '/#/login'
         }).catch(() => {})
       }).catch(() => {
         loading.value = false
@@ -128,7 +128,6 @@ getCode()
   justify-content: right;
   align-items: center;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
   padding-right: 15%;
 }

@@ -18,7 +18,7 @@
 
 <script setup>
 import { changePassword } from "@/api/user"
-import { encrypt } from "@/utils/jsencrypt"
+import { encrypt } from '@sh/ui-core/utils/jsencrypt'
 
 const { proxy } = getCurrentInstance()
 
