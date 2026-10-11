@@ -22,8 +22,14 @@ import { Layout } from '@sh/ui-core'
  }
  */
 
-// 公共路由（/login 为独立入口 login.html 不在此注册；/redirect 由 @sh/ui-core 内置）
+// 公共路由（/login 登录页为门户应用自持——登录页是应用功能而非包组件，0.0.9 起包不再内置；/redirect 由 @sh/ui-core 内置）
 export const constantRoutes = [
+  {
+    // 登录页：门户自持，免登录直达（需同步加入 main.js whiteList，缺失会与 guard 的 SPA 内导航形成循环）
+    path: '/login',
+    component: () => import('@/views/login.vue'),
+    hidden: true
+  },
   {
     // 首页落地：登录回跳 /#/ 命中后进入 /index（dashboard 首页，静态兜底不依赖菜单数据修正）
     path: '/',

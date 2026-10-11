@@ -7,7 +7,7 @@ createAdminApp({
   env: runtimeEnv,
   routes: constantRoutes,
   views,
-  // 门户白名单：注册页免登录直达（登录页为独立入口 login.html，不经主 SPA 路由）
-  whiteList: ['/register'],
+  // 门户白名单：登录页与注册页免登录直达（/login 为门户自持路由，须在 whiteList 声明）
+  whiteList: ['/login', '/register'],
   menuSource: 'remote'
 })

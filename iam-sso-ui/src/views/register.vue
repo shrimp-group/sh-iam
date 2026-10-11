@@ -99,8 +99,8 @@ function handleRegister() {
           dangerouslyUseHTMLString: true,
           type: "success",
         }).then(() => {
-          // 注册成功回登录页：path 形态命中 dev 中间件 / nginx 的 /login → login.html 映射
-          window.location.href = '/login'
+          // 注册成功回登录页：hash 协议命中包内置 SPA 登录路由
+          window.location.href = '/#/login'
         }).catch(() => {})
       }).catch(() => {
         loading.value = false
@@ -128,7 +128,6 @@ getCode()
   justify-content: right;
   align-items: center;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
   padding-right: 15%;
 }
