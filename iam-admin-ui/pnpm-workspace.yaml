@@ -1,0 +1,9 @@
+# pnpm 11 配置：pnpm 专属设置自 v11 起不再读取 .npmrc，统一收敛到本文件
+# @sh/ui-core 0.0.4 起为 dist 预构建发布，裸依赖由包内解析，无需 hoist
+# @sh 私有包自发布即装（供应链最小发布年龄检查会拒绝刚发布的自有包）
+minimumReleaseAge: 0
+
+# 构建脚本批准（pnpm install 自动写入，保留以避免重复询问）
+allowBuilds:
+  esbuild: true
+  vue-demi: true

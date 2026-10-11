@@ -61,7 +61,7 @@
 
 <script setup name="IamUserMenuSource">
 import { userMenuSourceList } from "@/api/user/user-role";
-import { parseTime } from "@/utils/ruoyi";
+import { parseTime } from "@sh/ui-core/utils/ruoyi";
 import AppOptions from "@/views/components/AppOptions";
 
 const props = defineProps({

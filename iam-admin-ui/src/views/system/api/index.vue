@@ -106,7 +106,7 @@ import { apiPage, apiRemove} from "@/api/system/api";
 import Edit from "./components/edit"
 import Detail from "./components/detail"
 import AppOptions from "@/views/components/AppOptions"
-import { copy } from "@/utils/shrimp"
+import { copy } from "@sh/ui-core/utils/shrimp"
 
 
 const { proxy } = getCurrentInstance();

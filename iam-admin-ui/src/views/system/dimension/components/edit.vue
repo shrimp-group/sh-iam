@@ -48,7 +48,7 @@
 
 <script setup name="IamDataDimensionEdit">
 import {datadimInfo, datadimCreate, datadimUpdate} from "@/api/system/dim";
-import MonacoEditor from "@/components/MonacoEditor";
+import MonacoEditor from "@sh/ui-core/components/MonacoEditor/index.vue.js";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);

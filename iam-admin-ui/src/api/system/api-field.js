@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '@sh/ui-core/utils/request'
 
 
 // API字段权限-创建

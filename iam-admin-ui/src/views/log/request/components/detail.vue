@@ -88,7 +88,7 @@
 
 <script setup name="IamRequestRecordDetail">
 import { requestRecordInfo } from "@/api/log/requestlog";
-import MonacoEditor from "@/components/MonacoEditor";
+import MonacoEditor from "@sh/ui-core/components/MonacoEditor/index.vue.js";
 
 defineExpose({init})
 const { proxy } = getCurrentInstance();

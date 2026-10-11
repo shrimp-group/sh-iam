@@ -34,7 +34,7 @@
 
 <script setup name="IamUserDetail">
 import { userInfo } from "@/api/user/user";
-import { parseTime } from "@/utils/ruoyi";
+import { parseTime } from "@sh/ui-core/utils/ruoyi";
 import UserRole from "./user-role";
 import UserMenuSource from "./user-menu-source";
 

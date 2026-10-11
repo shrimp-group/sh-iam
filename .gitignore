@@ -12,6 +12,7 @@ node_modules
 .pnpm-store
 *.lock
 pnpm-lock.yaml
+dist
 
 
 # idea

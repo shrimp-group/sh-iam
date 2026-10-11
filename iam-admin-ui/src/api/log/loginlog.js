@@ -1,4 +1,4 @@
-import request from '@/utils/request';
+import request from '@sh/ui-core/utils/request';
 
 export function loginRecordPage(params) {
   return request({url: '/iam-admin/login-record/page', method: 'get', params})

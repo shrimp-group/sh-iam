@@ -1,4 +1,4 @@
-import request from "@/utils/request";
+import request from "@sh/ui-core/utils/request";
 
 // 1. 访问密钥-分页
 export const accesskeyPage = (params) => {

@@ -55,7 +55,7 @@
 
 <script setup name="IamAccessKeyEdit">
 import {accesskeyInfo, accesskeyCreate, accesskeyUpdate} from "@/api/system/ak";
-import { copy } from "@/utils/shrimp";
+import { copy } from "@sh/ui-core/utils/shrimp";
 
 defineExpose({init});
 const emit = defineEmits(["change"]);

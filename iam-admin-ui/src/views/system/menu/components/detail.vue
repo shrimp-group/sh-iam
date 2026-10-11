@@ -168,7 +168,7 @@ import { menuApiBoundList, menuApiBind, menuApiUnbind } from "@/api/system/menu-
 import { menuBoundRoles, menuBoundUsers } from "@/api/user/user-role";
 import { apiOptions } from "@/api/system/api";
 import { menuFieldList, menuFieldBind, menuFieldUnbind, apiFieldListByApi } from "@/api/system/api-field";
-import { parseTime } from "@/utils/ruoyi";
+import { parseTime } from "@sh/ui-core/utils/ruoyi";
 
 defineExpose({ init });
 const { proxy } = getCurrentInstance();

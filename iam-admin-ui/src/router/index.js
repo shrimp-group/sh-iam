@@ -1,6 +1,4 @@
-import {createRouter, createWebHashHistory} from 'vue-router'
-/* Layout */
-import Layout from '@/layout'
+import { Layout } from '@sh/ui-core'
 
 /**
  * Note: 路由配置项
@@ -24,62 +22,36 @@ import Layout from '@/layout'
   }
  */
 
-// 公共路由
+// 公共路由（/login 登录委托 CAS 不在此注册；/register 管理端无注册页；/redirect 由 @sh/ui-core 内置；/user/profile 管理端无此页）
 export const constantRoutes = [
   {
-    path: '/redirect',
+    // 首页落地：登录回跳 /#/ 命中后进入 /index（dashboard 首页，静态兜底不依赖菜单数据修正）
+    // name 用 AdminHome，避免与远端菜单路由同名（vue-router addRoute 同名覆盖）
+    path: '/',
     component: Layout,
+    redirect: '/index',
     hidden: true,
     children: [
       {
-        path: '/redirect/:path(.*)',
-        component: () => import('@/views/redirect/index.vue')
+        path: 'index',
+        component: () => import('@/views/dashboard/index.vue'),
+        name: 'AdminHome',
+        meta: { title: '首页', icon: 'dashboard' }
       }
     ]
   },
   {
-    path: '/login',
-    component: () => import('@/views/login'),
-    hidden: true
-  },
-  {
-    path: "/:pathMatch(.*)*",
-    component: () => import('@/views/error/404'),
+    // 401/404 兜底页面组件统一由 @sh/ui-core 承载（components/error，深路径带 .vue.js 后缀）
+    path: '/:pathMatch(.*)*',
+    component: () => import('@sh/ui-core/components/error/404.vue.js'),
     hidden: true
   },
   {
     path: '/401',
-    component: () => import('@/views/error/401'),
+    component: () => import('@sh/ui-core/components/error/401.vue.js'),
     hidden: true
-  },
-  {
-    path: '/user',
-    component: Layout,
-    hidden: true,
-    redirect: 'noredirect',
-    children: [
-      {
-        path: 'profile/:activeTab?',
-        component: () => import('@/views/error/404'),
-        name: 'Profile',
-        meta: { title: '个人中心', icon: 'user' }
-      }
-    ]
   }
 ]
 
-// 动态路由，基于用户权限动态去加载
-export const dynamicRoutes = []
-
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes: [...constantRoutes, ...dynamicRoutes],
-  scrollBehavior(_to, _from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition
-    }
-    return { top: 0 }
-  },
-})
-
-export default router
+// 动态路由 loadView 的组件池（import.meta.glob 必须在消费方求值；相对本文件 src/router/ 需上溯一级到 src/views/）
+export const views = import.meta.glob('../views/**/*.vue')

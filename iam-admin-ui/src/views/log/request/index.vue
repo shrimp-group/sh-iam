@@ -83,7 +83,7 @@
 
 <script setup name="IamRequestRecord">
 import { requestRecordPage } from "@/api/log/requestlog";
-import {timeRangeShortcuts} from "@/utils/shrimp.js";
+import {timeRangeShortcuts} from "@sh/ui-core/utils/shrimp";
 import Detail from "./components/detail";
 
 const { proxy } = getCurrentInstance();

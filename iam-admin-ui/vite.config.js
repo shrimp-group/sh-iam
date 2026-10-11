@@ -1,16 +1,21 @@
-import { defineConfig, loadEnv } from 'vite'
+// 管理后台 vite 配置（对齐 iam-sso-ui：插件装配交由 @sh/ui-core preset，业务视图/产物命名保持 admin 现状）
 import path from 'path'
-import createVitePlugins from './vite/plugins'
+import { defineConfig } from 'vite'
+import { createUiCorePreset } from '@sh/ui-core/vite'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, command }) => {
-  const env = loadEnv(mode, process.cwd())
+export default defineConfig(({ command }) => {
   return {
     // 部署生产环境和开发环境下的URL。
     // 默认情况下，vite 会假设你的应用是被部署在一个域名的根路径上
-    // 例如 https://www.ruoyi.vip/。如果应用被部署在一个子路径上，你就需要用这个选项指定这个子路径。例如，如果你的应用被部署在 https://www.ruoyi.vip/admin/，则设置 baseUrl 为 /admin/。
     base: '/',
-    plugins: createVitePlugins(env, command === 'build'),
+    plugins: [...createUiCorePreset({ isBuild: command === 'build' })],
+    // ui-core dist 中 Logo.vue 的 import "/favicon.svg" 为 public 资产语义（由消费方 public 目录提供），
+    // 预构建 esbuild 无法按根路径解析，保持 external 后由 dev 静态服务命中
+    optimizeDeps: {
+      include: ['monaco-editor', '@vueup/vue-quill'],
+      esbuildOptions: { external: ['/favicon.svg'] }
+    },
     resolve: {
       // https://cn.vitejs.dev/config/#resolve-alias
       alias: {
@@ -37,11 +42,11 @@ export default defineConfig(({ mode, command }) => {
         }
       }
     },
-    // vite 相关配置
+    // vite 相关配置（sso-ui dev 占 80，admin 改用 1024 避免冲突）
     server: {
-      port: 80,
+      port: 1024,
       host: true,
-      open: true,
+      open: false,
       proxy: {
         // https://cn.vitejs.dev/config/#server-proxy
         '/api': {
