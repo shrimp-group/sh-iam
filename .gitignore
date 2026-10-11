@@ -9,6 +9,7 @@ target
 
 # nodejs
 node_modules
+.pnpm-store
 *.lock
 
 
