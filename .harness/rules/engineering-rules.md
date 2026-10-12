@@ -8,7 +8,7 @@
 |------|------|------|
 | iam-common | 公共实体、DTO、工具类 | 不包含业务逻辑 |
 | iam-sdk | SDK 能力封装 | 提供给第三方应用使用 |
-| iam-sso | SSO 核心业务 | 登录、认证、Token管理 |
+| iam-portal | 门户核心业务 | 登录、认证、Token管理 |
 | iam-admin | 管理后台业务 | 用户、角色、菜单等CRUD |
 
 ### 依赖关系规则
@@ -82,9 +82,9 @@ resources/
 
 | 层级 | 说明 | 示例 |
 |------|------|------|
-| 模块前缀 | 模块标识 | iam.sso |
-| 功能分类 | 功能标识 | iam.sso.password |
-| 配置项 | 具体配置 | iam.sso.password.expire-days |
+| 模块前缀 | 模块标识 | iam.portal |
+| 功能分类 | 功能标识 | iam.portal.password |
+| 配置项 | 具体配置 | iam.portal.password.expire-days |
 
 ### 自动配置规则
 

@@ -13,24 +13,24 @@ sh-iam/
 ├── iam-common          # 公共实体、DTO、工具类（所有后端模块依赖）
 ├── iam-sdk             # SDK 模块（第三方应用引入，提供 Filter/JWT/Session）
 ├── iam-session         # 会话管理层（Session 模型 + SessionStore Redis 持久化）
-├── iam-sso             # SSO 登录/个人中心核心业务
-├── iam-sso-starter     # SSO 启动器（可部署 Spring Boot 应用）
+├── iam-portal          # SSO 登录/个人中心核心业务
+├── iam-portal-starter  # SSO 启动器（可部署 Spring Boot 应用）
 ├── iam-admin           # 管理后台业务（用户/角色/菜单/应用等 CRUD）
 ├── iam-admin-starter   # Admin 启动器（可部署 Spring Boot 应用）
 ├── iam-admin-ui/       # Vue3 管理后台前端（@sh/ui-core dist 消费形态，登录委托 CAS，dev 端口 1024，不参与 Maven 构建）
-└── iam-sso-ui/         # Vue3 SSO 门户前端（@sh/ui-core 0.0.9 dist 预构建消费形态：单入口 index.html，/login 登录页为门户自持应用功能（src/views/login.vue，加入 whiteList），跳转协议 hash 式 {cas}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态，不参与 Maven 构建）
+└── iam-portal-ui/      # Vue3 SSO 门户前端（@sh/ui-core 0.0.9 dist 预构建消费形态：单入口 index.html，/login 登录页为门户自持应用功能（src/views/login.vue，加入 whiteList），跳转协议 hash 式 {cas}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态，不参与 Maven 构建）
 ```
 
 ### 模块依赖关系
 
 ```
-iam-admin-starter → iam-admin → iam-sso → iam-session → sh-core
-                                        └→ iam-sdk    └→ sh-redis
-                                        └→ iam-common └→ sh-web
+iam-admin-starter → iam-admin → iam-portal → iam-session → sh-core
+                                           └→ iam-sdk    └→ sh-redis
+                                           └→ iam-common └→ sh-web
 
-iam-sso-starter → iam-sso → iam-session → sh-core
-                          └→ iam-sdk    └→ sh-redis
-                          └→ iam-common └→ sh-web
+iam-portal-starter → iam-portal → iam-session → sh-core
+                                └→ iam-sdk    └→ sh-redis
+                                └→ iam-common └→ sh-web
 ```
 
 ### 框架依赖（来自 sh-parent BOM）
@@ -72,9 +72,9 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 | `filter`  | `WhiteListMatcher`              | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）                              |
 | `filter`  | `ApiControlCache`               | 请求控制 API 配置缓存（Guava Cache 5min + AntPathMatcher 最长匹配，数据来自 SPI）             |
 | `filter`  | `RequestControlFilter`          | 请求控制过滤器（用户级互斥 RedisLock + 滑动窗口限流，拒绝 429，@Order 最低优先级）                      |
-| `spi`     | `RequestRecordHandler`          | 请求日志持久化 SPI（iam-sso 提供实现）                                                  |
+| `spi`     | `RequestRecordHandler`          | 请求日志持久化 SPI（iam-portal 提供实现）                                                  |
 | `spi`     | `NoOpRequestRecordHandler`      | RequestRecordHandler 空实现（默认，静默跳过）                                          |
-| `spi`     | `ApiRequestControlProvider`     | API 请求控制配置提供 SPI（iam-sso 提供 @Primary 实现，返回 ApiControlConfig 轻量模型）          |
+| `spi`     | `ApiRequestControlProvider`     | API 请求控制配置提供 SPI（iam-portal 提供 @Primary 实现，返回 ApiControlConfig 轻量模型）          |
 | `spi`     | `NoOpApiRequestControlProvider` | ApiRequestControlProvider 兜底实现（始终注册，返回空列表，可被 @Primary 覆盖）                  |
 | `config`  | `IamSessionConfig`              | iam-session 全局配置（secret-key / ttl / maxConcurrent / 请求控制默认值）               |
 | 根包        | `IamSessionAutoConfig`          | 自动配置（@AutoConfiguration + @ComponentScan）                                  |
@@ -101,16 +101,16 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 | `enums`    | LoginStatus                                 | 登录状态枚举（17值，参照LDAP返回码设计）                                    |
 | 根包         | IamSdkAutoConfig                            | 自动配置 (`@AutoConfiguration` + `@ConditionalOnProperty`)     |
 
-### iam-sso (`com.wkclz.iam.sso`)
+### iam-portal (`com.wkclz.iam.portal`)
 
 | 包          | 类                                                                                                                                                                                               | 说明                                                               |
 |------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| `config`   | IamSsoConfig                                                                                                                                                                                    | SSO 配置 (密码过期天数、RSA 公私钥)                                          |
+| `config`   | IamPortalConfig                                                                                                                                                                                    | Portal 配置 (密码过期天数、RSA 公私钥)                                          |
 | `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                              | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
 | `contract` | LocalSsoFacadeContract                                                                                                                                                                          | SSO 门面本地实现                                                       |
 | `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestRecordHandlerImpl, ApiRequestControlProviderImpl(请求控制配置 SPI 实现, 查询 iam_api 表) | SSO 核心业务逻辑                                                       |
 | `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper, SsoApiControlMapper                                                                                            | SSO 数据访问                                                         |
-| 根包         | IamSsoAutoConfig, Route                                                                                                                                                                         | 自动配置 + 路由常量接口 (前缀 `/iam-sso`)                                    |
+| 根包         | IamPortalAutoConfig, Route                                                                                                                                                                         | 自动配置 + 路由常量接口 (前缀 `/iam-portal`)                                    |
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
@@ -149,7 +149,7 @@ iam-sso-starter → iam-sso → iam-session → sh-core
 `createAdminApp({ env: runtimeEnv, routes: constantRoutes, views, whiteList: [], menuSource: 'remote' })`
 单点装配；layout/store/共享组件/plugins/directive/utils 全部由包承担，仓库仅保留业务 views 与业务 api（request 从
 `@sh/ui-core/utils/request` 引入）。 **登录委托 CAS**：admin 不自持登录页，未登录由包 guard 整页跳转 `env.js` 的 `cas`
-地址（local 指向 sso-ui dev `http://localhost`，Cookie localhost 域端口无关共享），登录成功后整页回跳。dev 端口 1024（sso-ui 占
+地址（local 指向 portal-ui dev `http://localhost`，Cookie localhost 域端口无关共享），登录成功后整页回跳。dev 端口 1024（portal-ui 占
 80）。401/404 兜底组件与 `/redirect` 均为包内置。
 
 ---
@@ -234,8 +234,8 @@ iam_request_record ── 请求日志 (独立)
 
 ### 路由规范
 
-- SSO 公开接口: `/iam-sso/public/**` (无需鉴权)
-- SSO 用户接口: `/iam-sso/user/**` (需鉴权)
+- SSO 公开接口: `/iam-portal/public/**` (无需鉴权)
+- SSO 用户接口: `/iam-portal/user/**` (需鉴权)
 - Admin 接口: `/iam-admin/**` (需鉴权)
 - 关联关系操作统一定义为 `bind` / `unbind`
 
@@ -293,10 +293,10 @@ iam_request_record ── 请求日志 (独立)
 | 模块 | 配置类 | 条件 |
 |------|--------|------|
 | iam-sdk | IamSdkAutoConfig | `sh.iam.sdk.enabled=true` (默认启用) |
-| iam-sso | IamSsoAutoConfig | 无条件 (包含 @ComponentScan + @MapperScan) |
+| iam-portal | IamPortalAutoConfig | 无条件 (包含 @ComponentScan + @MapperScan) |
 | iam-admin | IamAdminAutoConfig | 无条件 (包含 @ComponentScan + @MapperScan) |
 
-**契约层可替换设计**: iam-sdk 通过 `contract` 包定义鉴权与门面契约接口；iam-sso 中的 `LocalSsoFacadeContract` 提供本地实现。
+**契约层可替换设计**: iam-sdk 通过 `contract` 包定义鉴权与门面契约接口；iam-portal 中的 `LocalSsoFacadeContract` 提供本地实现。
 
 ---
 
@@ -315,13 +315,13 @@ iam_request_record ── 请求日志 (独立)
 | `iam.sdk.static.enabled` | 静态资源过滤开关 | true |
 | `iam.sdk.static.subfix` | 静态资源后缀 | .css,.js,.png,... |
 
-### iam-sso 配置 (`iam.sso.*`)
+### iam-portal 配置 (`iam.portal.*`)
 
 | 配置 | 说明 | 默认值 |
 |------|------|--------|
-| `iam.sso.password-expire-days` | 密码过期天数 | 180 |
-| `iam.sso.private-key` | RSA 私钥 (密码解密) | - |
-| `iam.sso.public-key` | RSA 公钥 (密码加密) | - |
+| `iam.portal.password.expire-days` | 密码过期天数 | 180 |
+| `iam.login.private-key` | RSA 私钥 (密码解密) | - |
+| `iam.login.public-key` | RSA 公钥 (密码加密) | - |
 
 ### iam-session 请求控制配置 (`iam.request-control.*`，位于 IamSessionConfig)
 
@@ -347,7 +347,7 @@ iam_request_record ── 请求日志 (独立)
 |------------|------------|----------------------------------------|
 | Token 校验逻辑 | iam-sdk    | 实现 `JwtAuthContract` 接口覆盖默认 Bean       |
 | 请求日志存储     | iam-sdk    | 实现 `HttpSsoFacadeContract` 接口覆盖默认 Bean |
-| 验证码生成      | iam-sso    | CaptchaRest 可替换                        |
+| 验证码生成      | iam-portal | CaptchaRest 可替换                        |
 | API 自动扫描   | iam-admin  | RestfulScan 于启动时执行，基于 @Router 注解       |
 | 密码加密策略     | iam-common | PasswordHelper (当前 MD5+salt)           |
 
@@ -356,7 +356,7 @@ iam_request_record ── 请求日志 (独立)
 ## 开发须知
 
 - 当前环境无 Maven CLI，编译验证需在 IDE 或安装 Maven 后执行: `mvn compile -pl <module> -am`
-- 数据库 DDL 模板见 `iam-sso/src/main/resources/db-script/db-base.ddl.sql`
+- 数据库 DDL 模板见 `iam-portal/src/main/resources/db-script/db-base.ddl.sql`
 - 新增实体应遵循现有模式: 继承 BaseEntity + @Desc 注解 + copy/copyIfNotNull 静态方法
 - 新增 REST API 路由必须在 Route 接口中定义常量，确保 RestfulScan 能自动注册
 - 新增 Service 继承 `BaseService<Entity, Mapper>` 以获得标准 CRUD 能力
@@ -448,7 +448,7 @@ iam_request_record ── 请求日志 (独立)
 | STORY-013 | ⚠️ SDK 配置与自动装配（缺 ConfigValidator 启动校验）          | P0  | [STORY-013](docs/stories/SDK鉴权/013-SDK配置与自动装配.md)             |
 | STORY-014 | ✅ SsoFacade 门面与 SsoService 接口                   | P0  | [STORY-014](docs/stories/SDK鉴权/014-SsoFacade门面与SsoService.md) |
 
-### SSO 登录认证模块 (iam-sso)
+### SSO 登录认证模块 (iam-portal)
 
 | Story ID  | 故事名称             | 优先级 | 文档                                                                |
 |-----------|------------------|-----|-------------------------------------------------------------------|

@@ -21,11 +21,11 @@
 
 ### 模块依赖关系
 ```
-iam-admin-starter → iam-admin → iam-sso → iam-common
-                                       └→ iam-sdk
+iam-admin-starter → iam-admin → iam-portal → iam-common
+                                          └→ iam-sdk
 
-iam-sso-starter → iam-sso → iam-common
-                          └→ iam-sdk
+iam-portal-starter → iam-portal → iam-common
+                                └→ iam-sdk
 ```
 
 ### 核心实体

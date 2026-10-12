@@ -17,7 +17,7 @@ sh-iam 是基于 Spring Boot 3.x 的身份认证与访问管理 (IAM) 系统，�
 - ORM：MyBatis (sh-mybatis)
 - 缓存：Redis (sh-redis + Lettuce)
 - 定时任务：XXL-Job
-- 前端：Vue3 (iam-admin-ui, iam-sso-ui)
+- 前端：Vue3 (iam-admin-ui, iam-portal-ui)
 
 ## 核心业务领域
 

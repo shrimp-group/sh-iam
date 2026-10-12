@@ -31,7 +31,7 @@ iam-session 是 sh-iam 的会话管理层，提供认证方式无关的 Session 
 </dependency>
 ```
 
-> 服务端部署（SSO 服务端、Admin 服务端）请同时引入 `iam-sso` 或 `iam-admin`；客户端部署只需 `iam-session`。
+> 服务端部署（SSO 服务端、Admin 服务端）请同时引入 `iam-portal` 或 `iam-admin`；客户端部署只需 `iam-session`。
 
 iam-session 自身的依赖（无需重复声明，由 BOM 管理）：
 
@@ -278,7 +278,7 @@ iam-session 依赖 sh-core 提供的请求级身份上下文，这是接入项�
 
 ### 示例 1：登录流程（服务端实现）
 
-参考 iam-sso 的 `PasswordLoginService.login()`：
+参考 iam-portal 的 `PasswordLoginService.login()`：
 
 ```java
 @Service
@@ -531,7 +531,7 @@ HTTP 调用细节（由 iam-session 内部处理，业务方无感知）：
 
 ### 示例 8：自定义请求日志持久化（服务端）
 
-服务端部署时，iam-sso 提供 `RequestRecordHandlerImpl` 持久化到本地 `iam_request_record` 表。若需自定义持久化（如写入 ES）：
+服务端部署时，iam-portal 提供 `RequestRecordHandlerImpl` 持久化到本地 `iam_request_record` 表。若需自定义持久化（如写入 ES）：
 
 ```java
 @Component
@@ -600,11 +600,11 @@ public class CustomWhiteListMatcher extends WhiteListMatcher {
 | 维度       | 服务端模式                              | 客户端模式                                |
 |----------|------------------------------------|--------------------------------------|
 | 触发条件     | 未配置 `iam.session.remote.server-url` | 配置了 `iam.session.remote.server-url` |
-| 额外依赖     | `iam-sso` 或 `iam-admin`            | 仅 `iam-session`                      |
+| 额外依赖     | `iam-portal` 或 `iam-admin`            | 仅 `iam-session`                      |
 | 会话存储     | 本地 Redis                           | 本地 Redis（Token 校验） + 远程 SSO（日志、登出）   |
-| 请求日志持久化  | `RequestRecordHandlerImpl`（iam-sso）→ 本地数据库 | `RemoteRequestRecordHandler` → HTTP 调用 SSO 服务端 |
+| 请求日志持久化  | `RequestRecordHandlerImpl`（iam-portal）→ 本地数据库 | `RemoteRequestRecordHandler` → HTTP 调用 SSO 服务端 |
 | 登出       | `SessionManager.destroySession` 本地销毁 | `SsoFacade.logout()` 远程销毁 + 本地清理      |
-| 登录       | 业务方实现（参考 iam-sso `PasswordLoginService`） | 调用 SSO 服务端登录接口（不实现本地登录）              |
+| 登录       | 业务方实现（参考 iam-portal `PasswordLoginService`） | 调用 SSO 服务端登录接口（不实现本地登录）              |
 
 ## 数据模型
 
