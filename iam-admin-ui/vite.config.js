@@ -1,4 +1,4 @@
-// 管理后台 vite 配置（对齐 iam-sso-ui：插件装配交由 @sh/ui-core preset，业务视图/产物命名保持 admin 现状）
+// 管理后台 vite 配置（对齐 iam-portal-ui：插件装配交由 @sh/ui-core preset，业务视图/产物命名保持 admin 现状）
 import path from 'path'
 import {defineConfig} from 'vite'
 import {createUiCorePreset} from '@sh/ui-core/vite'
@@ -42,7 +42,7 @@ export default defineConfig(({command}) => {
         }
       }
     },
-    // vite 相关配置（sso-ui dev 占 80，admin 改用 1024 避免冲突）
+    // vite 相关配置（portal-ui dev 占 80，admin 改用 1024 避免冲突）
     server: {
       port: 1024,
       host: true,

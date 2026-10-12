@@ -1,6 +1,5 @@
 const name = "单点登录";
-// 应用编码与 iam_menu.app_code 数据对齐（localhost 回退值；部署域名首段须与此一致或数据侧同步调整）
-export const appCode = 'iam-sso';
+export const appCode = 'portal';
 
 const configs = {
 //  "local": {"cas": "",                           "title": name + "【LOCAL】", "baseApi": "/api"},

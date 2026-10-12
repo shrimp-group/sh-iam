@@ -2,7 +2,7 @@ import request from '@sh/ui-core/utils/request';
 
 
 export function changePassword(data) {
-  return request({url: '/iam-sso/user/change-password', method: 'post', data})
+  return request({url: '/iam-portal/user/change-password', method: 'post', data})
 }
 
 export function updateUserProfile(data) {

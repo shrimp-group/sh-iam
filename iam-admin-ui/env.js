@@ -1,8 +1,8 @@
 const name = "授权中心";
-export const appCode = 'iam-admin';
+export const appCode = 'auth';
 
 const configs = {
-  // local cas 指向 sso-ui dev server（80 端口）
+  // local cas 指向 portal-ui dev server（80 端口）
   "local": {"cas": "http://localhost", "title": name + "【LOCAL】", "baseApi": "/api"},
 //  "local": {"cas": "http://cas.uat.husters.cn", "title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
   "uat"  : {"cas": "http://cas.uat.husters.cn", "title": name + "【UAT】",   "baseApi": "https://api.uat.husters.cn"},
@@ -39,5 +39,5 @@ export const title = config['title'];
 export const cas = config['cas'];
 export const baseApi = config['baseApi'];
 
-// 运行时环境聚合（供 @sh/ui-core 运行时注入，对齐 iam-sso-ui/env.js）
+// 运行时环境聚合（供 @sh/ui-core 运行时注入，对齐 iam-portal-ui/env.js）
 export const runtimeEnv = {appCode, env, title, cas, baseApi};

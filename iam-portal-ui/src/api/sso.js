@@ -1,21 +1,21 @@
 import request from '@sh/ui-core/utils/request';
 
 export const ssoLogout = () => {
-    return request({url: '/iam-sso/public/sso/logout', method: 'get'})
+    return request({url: '/iam-portal/public/sso/logout', method: 'get'})
 }
 
 export const userInfo = () => {
-  return request({url: '/iam-sso/user/info', method: 'get'})
+  return request({url: '/iam-portal/user/info', method: 'get'})
 }
 
 export const userMenuTree = () => {
-  return request({url: '/iam-sso/user/menu/tree/ruoyi', method: 'get'})
+  return request({url: '/iam-portal/user/menu/tree/ruoyi', method: 'get'})
 }
 
 export const captchaChart = () => {
-  return request({url: '/iam-sso/public/captcha/chart', method: 'get'})
+  return request({url: '/iam-portal/public/captcha/chart', method: 'get'})
 }
 
 export const ssoRegister = (data) => {
-  return request({url: '/iam-sso/public/sso/register', method: 'post', data})
+  return request({url: '/iam-portal/public/sso/register', method: 'post', data})
 }
