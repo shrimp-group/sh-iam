@@ -10,7 +10,7 @@ sh-iam 采用经典的分层架构设计，分为表现层、业务层、数据�
 ┌─────────────────────────────────────────────────────────────┐
 │                    前端层 (Frontend)                        │
 │  ┌──────────────┐    ┌──────────────┐                      │
-│  │  iam-admin-ui│    │  iam-sso-ui  │                      │
+│  │  iam-admin-ui│    │ iam-portal-ui│                      │
 │  │   Vue3 +     │    │   Vue3 +     │                      │
 │  │  ElementPlus │    │  ElementPlus │                      │
 │  └──────┬───────┘    └──────┬───────┘                      │
@@ -21,7 +21,7 @@ sh-iam 采用经典的分层架构设计，分为表现层、业务层、数据�
 │                    API 网关层                               │
 │            Spring Boot Rest Controller                      │
 │  ┌────────────────────┐  ┌────────────────────┐            │
-│  │   /iam-admin/**    │  │   /iam-sso/**      │            │
+│  │   /iam-admin/**    │  │   /iam-portal/**   │            │
 │  │  (AdminRest)       │  │  (LoginRest, etc)  │            │
 │  └────────────────────┘  └────────────────────┘            │
 └────────────────────────────┬────────────────────────────────┘
@@ -29,7 +29,7 @@ sh-iam 采用经典的分层架构设计，分为表现层、业务层、数据�
 ┌────────────────────────────┼────────────────────────────────┐
 │                    业务逻辑层                               │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  iam-admin          │  iam-sso         │  iam-sdk    │   │
+│  │  iam-admin          │  iam-portal      │  iam-sdk    │   │
 │  │  ├─ UserService     │  ├─ LoginService │  ├─ Filter  │   │
 │  │  ├─ RoleService     │  ├─ SsoService   │  ├─ Helper  │   │
 │  │  ├─ MenuService     │  └─ ResourceSvc  │  └─ Util    │   │
@@ -68,7 +68,7 @@ sh-iam 采用经典的分层架构设计，分为表现层、业务层、数据�
 - Session 管理
 - AK 签名验证
 
-### iam-sso
+### iam-portal
 - 用户登录/登出
 - 验证码服务
 - 用户注册
@@ -92,7 +92,7 @@ sequenceDiagram
     participant DB as MySQL
     participant Redis as Redis
 
-    Client->>SSO: POST /iam-sso/public/login
+    Client->>SSO: POST /iam-portal/public/login
     Note right of SSO: RSA解密密码
     SSO->>Redis: 验证码校验
     SSO->>DB: 查询用户信息

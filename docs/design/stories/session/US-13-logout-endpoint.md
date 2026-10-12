@@ -1,20 +1,20 @@
 # US-13：登出端点与登出审计
 
-> **模块**：iam-sso（单点登录层）
+> **模块**：iam-portal（单点登录层）
 > **依赖**：US-01（IdentityContext）、US-07（destroySession）、US-08（SessionEventListener）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-13, SSO-14
 
 ## 用户故事
 
 **作为** 用户
-**我想要** 通过 `GET /iam-sso/logout` 安全退出登录，系统销毁当前会话并记录登出事件
+**我想要** 通过 `GET /iam-portal/logout` 安全退出登录，系统销毁当前会话并记录登出事件
 **以便** 我的会话被安全终止，且操作有审计记录
 
 ## 包含功能点
 
 | ID     | 功能     | 说明                                                                                     |
 |--------|--------|----------------------------------------------------------------------------------------|
-| SSO-13 | 登出端点   | `GET /iam-sso/logout`：从 IdentityContext 取当前 token → 调用 SessionManager.destroySession() |
+| SSO-13 | 登出端点   | `GET /iam-portal/logout`：从 IdentityContext 取当前 token → 调用 SessionManager.destroySession() |
 | SSO-14 | 登出审计事件 | `LogoutEvent`，含 username、token（脱敏）、timestamp                                           |
 
 ## 明确不包含
@@ -31,7 +31,7 @@
 
 ## 输出
 
-- `LoginRest.logout()` 方法 — `GET /iam-sso/logout`
+- `LoginRest.logout()` 方法 — `GET /iam-portal/logout`
 - `LogoutEvent` 事件类
 
 ## 核心流程
@@ -40,14 +40,14 @@
 sequenceDiagram
     autonumber
     participant Client as 前端
-    participant Rest as LoginRest<br/>/iam-sso/logout
+    participant Rest as LoginRest<br/>/iam-portal/logout
     participant Service as PasswordLoginService
     participant Ctx as IdentityContext<br/>(sh-core)
     participant Manager as SessionManager<br/>(iam-session)
     participant Store as SessionStore<br/>(Redis)
     participant Listener as SessionEventListener<br/>(审计)
     participant DB as Database
-    Client ->> Rest: GET /iam-sso/logout
+    Client ->> Rest: GET /iam-portal/logout
     Rest ->> Service: logout()
     Service ->> Ctx: getToken()
     alt token 为 null
@@ -66,7 +66,7 @@ sequenceDiagram
 ```
 
 ```text
-GET /iam-sso/logout:
+GET /iam-portal/logout:
   1. identityContext.getToken() → token
      → 若 token 为 null → 返回 "未登录" 或直接成功
   2. sessionManager.destroySession(token)
@@ -77,7 +77,7 @@ GET /iam-sso/logout:
 
 ## 验收标准
 
-- [ ] `GET /iam-sso/logout` 从 IdentityContext 获取当前 token
+- [ ] `GET /iam-portal/logout` 从 IdentityContext 获取当前 token
 - [ ] 调用 `SessionManager.destroySession(token)` 销毁会话
 - [ ] Token 在日志中脱敏（仅保留前 8 位 + `****`）
 - [ ] 发布 LogoutEvent（含 username、脱敏 token、timestamp）

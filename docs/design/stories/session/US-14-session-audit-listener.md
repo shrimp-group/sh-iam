@@ -1,13 +1,13 @@
 # US-14：会话审计事件监听实现
 
-> **模块**：iam-sso（单点登录层）
+> **模块**：iam-portal（单点登录层）
 > **依赖**：US-08（SessionEventListener 接口）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-12a
 
 ## 用户故事
 
 **作为** 系统
-**我想要** 在 iam-sso 中实现 `SessionEventListener` 接口，将 onCreated / onDestroyed / onExpired 事件写入
+**我想要** 在 iam-portal 中实现 `SessionEventListener` 接口，将 onCreated / onDestroyed / onExpired 事件写入
 `iam_login_record`
 表
 **以便** 所有会话生命周期事件都有持久化的审计记录

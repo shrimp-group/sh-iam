@@ -42,7 +42,7 @@ Session + Token），并在超出最大并发数时自动踢出最早会话
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Caller as 调用方<br/>(iam-sso)
+    participant Caller as 调用方<br/>(iam-portal)
     participant Manager as SessionManager
     participant TokenSvc as TokenService
     participant Store as SessionStore<br/>(Redis)

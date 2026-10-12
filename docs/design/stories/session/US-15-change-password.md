@@ -1,6 +1,6 @@
 # US-15：修改密码与全会话失效
 
-> **模块**：iam-sso（单点登录层）
+> **模块**：iam-portal（单点登录层）
 > **依赖**：US-01（IdentityContext）、US-07（destroyAllSessions）、US-10（PasswordEncoder）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-15, SSO-16
 
@@ -33,7 +33,7 @@
 
 - `PasswordLoginService.changePassword()` 方法
 - `PasswordChangedEvent` 事件类
-- 配置项：`iam.sso.password-history-size`（历史密码检查数量，默认 5）
+- 配置项：`iam.portal.password-history-size`（历史密码检查数量，默认 5）
 
 ## 核心流程
 
@@ -104,7 +104,7 @@ changePassword(oldPassword, newPassword):
 
 - [ ] 从 IdentityContext 获取当前用户身份
 - [ ] 校验旧密码正确性（委托 PasswordEncoder）
-- [ ] 检查新密码不在最近 N 条历史密码中（N 可通过 `iam.sso.password-history-size` 配置）
+- [ ] 检查新密码不在最近 N 条历史密码中（N 可通过 `iam.portal.password-history-size` 配置）
 - [ ] 使用 PBKDF2 编码新密码 → 更新 iam_user_auth_password 表
 - [ ] 记录密码变更历史到 iam_user_password_his
 - [ ] 调用 `SessionManager.destroyAllSessions(subjectId)` 销毁全设备会话

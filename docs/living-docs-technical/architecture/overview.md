@@ -6,17 +6,17 @@
 graph TB
     subgraph 前端
         AdminUI[iam-admin-ui<br/>Vue3 管理后台]
-        SsoUI[iam-sso-ui<br/>Vue3 SSO 登录]
+        SsoUI[iam-portal-ui<br/>Vue3 SSO 登录]
     end
 
     subgraph 应用层
         AdminStarter[iam-admin-starter<br/>Admin 启动器]
-        SsoStarter[iam-sso-starter<br/>SSO 启动器]
+        SsoStarter[iam-portal-starter<br/>SSO 启动器]
     end
 
     subgraph 业务层
         Admin[iam-admin<br/>管理后台业务]
-        Sso[iam-sso<br/>SSO 核心业务]
+        Sso[iam-portal<br/>SSO 核心业务]
     end
 
     subgraph 基础层

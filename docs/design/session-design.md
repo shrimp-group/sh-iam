@@ -27,7 +27,7 @@
 │                                                          │
 │   ┌──────────────────────┐                               │
 │   │  SSO 单点登录层        │  ← 用户名密码登录专属           │
-│   │  (iam-sso)           │    凭证校验、验证码、登录编排    │
+│   │  (iam-portal)        │    凭证校验、验证码、登录编排    │
 │   └──────────┬───────────┘                               │
 │              │ 依赖                                       │
 │   ┌──────────▼───────────┐                               │
@@ -210,7 +210,7 @@ enum DestroyReason {
 
 ---
 
-## 五、模块 3：单点登录层（iam-sso）
+## 五、模块 3：单点登录层（iam-portal）
 
 > 定位：**用户名密码登录**的完整实现。只做密码认证相关的事情，不越界到会话管理。
 > 未来若有小程序登录，新建独立模块，不放在此层。
@@ -219,7 +219,7 @@ enum DestroyReason {
 
 | ID          | 功能            | 说明                                                                                                                               | 来源                                                 |
 |-------------|---------------|----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| **SSO-01**  | 密码登录端点        | `POST /iam-sso/login`：接收 username + password + captchaId + captchaCode，返回 LoginResp(token, userCode, username, nickname, avatar) | 现状 #27, #30                                        |
+| **SSO-01**  | 密码登录端点        | `POST /iam-portal/login`：接收 username + password + captchaId + captchaCode，返回 LoginResp(token, userCode, username, nickname, avatar) | 现状 #27, #30                                        |
 | **SSO-02**  | RSA 密码解密      | 前端 RSA 公钥加密，后端 RSA 私钥解密；仅密文 length > 32 时执行解密（明文兼容）                                                                              | 现状 #27                                             |
 | **SSO-03**  | 密码凭证校验 SPI    | `CredentialChecker` 接口：根据 username 查出 userCode + storedPassword + salt + 状态信息                                                    | 现状 #35                                             |
 | **SSO-04**  | 密码匹配          | PBKDF2WithHmacSHA256 编码 + 校验；兼容历史 {MD5} 和无前缀格式；修改密码时自动升级                                                                         | 现状 #15                                             |
@@ -232,7 +232,7 @@ enum DestroyReason {
 | **SSO-11**  | 登录失败处理        | 记录失败次数 → 发布 LoginFailedEvent → 返回错误信息                                                                                            | 现状 #34                                             |
 | **SSO-12**  | 登录审计事件        | `LoginSuccessEvent` / `LoginFailedEvent`，含 username、ip、userAgent、timestamp、failureReason。审计日志服务独立消费                              | **新增**（解耦，替代现状 #34 的 recordLoginLog 硬编码）           |
 | **SSO-12a** | 会话事件监听实现      | 实现 `SessionEventListener` 接口，将 onCreated/onDestroyed/onExpired 写入登录日志表（iam_login_record）                                         | **新增**（会话层定义接口，SSO 层提供审计实现）                        |
-| **SSO-13**  | 登出端点          | `GET /iam-sso/logout`：从 IdentityContext 取当前 token → 调用 SessionManager.destroySession() → 发布 LogoutEvent                          | 现状 #28                                             |
+| **SSO-13**  | 登出端点          | `GET /iam-portal/logout`：从 IdentityContext 取当前 token → 调用 SessionManager.destroySession() → 发布 LogoutEvent                          | 现状 #28                                             |
 | **SSO-14**  | 登出审计事件        | `LogoutEvent`，含 username、token（脱敏）、timestamp                                                                                     | **新增**                                             |
 | **SSO-15**  | 修改密码          | 旧密码校验 → 历史密码检查（最近 N 条不重复）→ 编码新密码 → 更新 DB → 调用 SessionManager.destroyAllSessions() → 发布 PasswordChangedEvent                      | 现状 #29                                             |
 | **SSO-16**  | 密码修改事件        | `PasswordChangedEvent`，触发全会话失效已在 SSO-15 中处理，事件用于审计通知                                                                             | **新增**                                             |
@@ -302,24 +302,24 @@ interface PasswordEncoder {
 | 17 | 活跃会话查询                           | iam-session | 补齐           |
 | 18 | 会话事件 (Created/Destroyed/Expired) | iam-session | **新增**       |
 | 19 | Token 刷新                         | iam-session | 补齐           |
-| 20 | 密码登录端点                           | iam-sso     | 保留           |
-| 21 | RSA 密码解密                         | iam-sso     | 保留           |
-| 22 | 密码凭证校验 SPI                       | iam-sso     | 重构           |
-| 23 | 密码匹配 (PBKDF2+MD5兼容)              | iam-sso     | 保留           |
-| 24 | 账号状态校验                           | iam-sso     | 保留           |
-| 25 | 密码过期检查                           | iam-sso     | 保留           |
-| 26 | 验证码触发判断                          | iam-sso     | 保留           |
-| 27 | 验证码生成                            | iam-sso     | 保留           |
-| 28 | 验证码校验                            | iam-sso     | 保留           |
-| 29 | 登录成功编排                           | iam-sso     | 重构           |
-| 30 | 登录失败处理                           | iam-sso     | 保留           |
-| 31 | 登录审计事件                           | iam-sso     | **新增**       |
-| 32 | 登出端点                             | iam-sso     | 保留           |
-| 33 | 登出审计事件                           | iam-sso     | **新增**       |
-| 34 | 修改密码 + 全会话失效                     | iam-sso     | 保留           |
-| 35 | 密码修改事件                           | iam-sso     | **新增**       |
-| 36 | 管理员重置密码 → 全会话失效                  | iam-sso     | **新增**（事件监听） |
-| 37 | 用户状态变更 → 全会话失效                   | iam-sso     | **新增**（事件监听） |
+| 20 | 密码登录端点                           | iam-portal  | 保留           |
+| 21 | RSA 密码解密                         | iam-portal  | 保留           |
+| 22 | 密码凭证校验 SPI                       | iam-portal  | 重构           |
+| 23 | 密码匹配 (PBKDF2+MD5兼容)              | iam-portal  | 保留           |
+| 24 | 账号状态校验                           | iam-portal  | 保留           |
+| 25 | 密码过期检查                           | iam-portal  | 保留           |
+| 26 | 验证码触发判断                          | iam-portal  | 保留           |
+| 27 | 验证码生成                            | iam-portal  | 保留           |
+| 28 | 验证码校验                            | iam-portal  | 保留           |
+| 29 | 登录成功编排                           | iam-portal  | 重构           |
+| 30 | 登录失败处理                           | iam-portal  | 保留           |
+| 31 | 登录审计事件                           | iam-portal  | **新增**       |
+| 32 | 登出端点                             | iam-portal  | 保留           |
+| 33 | 登出审计事件                           | iam-portal  | **新增**       |
+| 34 | 修改密码 + 全会话失效                     | iam-portal  | 保留           |
+| 35 | 密码修改事件                           | iam-portal  | **新增**       |
+| 36 | 管理员重置密码 → 全会话失效                  | iam-portal  | **新增**（事件监听） |
+| 37 | 用户状态变更 → 全会话失效                   | iam-portal  | **新增**（事件监听） |
 
 **未纳入新三模块的功能（部分已实现，其余暂时保留现状）：**
 
@@ -330,11 +330,11 @@ interface PasswordEncoder {
 | 安全头注入 Filter (SecurityHeaderFilter)         | sh-auth Filter       | 暂时保留      |
 | 鉴权 Filter (AuthorizationFilter)             | sh-auth Filter       | 暂时保留      |
 | 三层缓存 (AuthCacheManager)                     | sh-auth Cache        | 暂时保留      |
-| 请求日志持久化                                     | iam-sso（通过 SPI）      | ✅ **已实现** |
+| 请求日志持久化                                     | iam-portal（通过 SPI）   | ✅ **已实现** |
 | AK 签名工具                                     | sh-auth              | 暂时保留      |
-| 用户注册                                        | iam-sso（空占位）         | 暂时保留      |
-| 用户信息/菜单资源查询                                 | iam-sso              | 暂时保留      |
-| SsoFacade 跨应用远程调用                           | iam-sso contract     | 暂时保留      |
+| 用户注册                                        | iam-portal（空占位）      | 暂时保留      |
+| 用户信息/菜单资源查询                                 | iam-portal           | 暂时保留      |
+| SsoFacade 跨应用远程调用                           | iam-portal contract  | 暂时保留      |
 
 > 标记 ✅ 的功能已在当前会话中实现。其余功能将在下一步设计中决定归属：是纳入新三模块、保留为独立基础设施、还是废弃重写。
 
@@ -348,16 +348,16 @@ interface PasswordEncoder {
 sequenceDiagram
     autonumber
     participant Client as 前端
-    participant SSO as iam-sso<br/>PasswordLoginService
-    participant Checker as iam-sso<br/>CredentialChecker
-    participant Encoder as iam-sso<br/>PasswordEncoder
-    participant Captcha as iam-sso<br/>CaptchaService
+    participant SSO as iam-portal<br/>PasswordLoginService
+    participant Checker as iam-portal<br/>CredentialChecker
+    participant Encoder as iam-portal<br/>PasswordEncoder
+    participant Captcha as iam-portal<br/>CaptchaService
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
-    participant Listener as iam-sso<br/>SessionEventListenerImpl
+    participant Listener as iam-portal<br/>SessionEventListenerImpl
     participant LogDB as DB<br/>iam_login_record
     Note over Client, LogDB: === 阶段1：验证码判断 ===
-    Client ->> SSO: POST /iam-sso/login {username, password, captchaId, captchaCode}
+    Client ->> SSO: POST /iam-portal/login {username, password, captchaId, captchaCode}
     SSO ->> SSO: RSA 私钥解密密码
     SSO ->> SSO: 查询 1h 内失败记录 → 判断是否需要验证码
 
@@ -450,13 +450,13 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     participant Client as 前端
-    participant SSO as iam-sso<br/>PasswordLoginService
+    participant SSO as iam-portal<br/>PasswordLoginService
     participant Identity as sh-core<br/>IdentityContext
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
-    participant Listener as iam-sso<br/>SessionEventListenerImpl
+    participant Listener as iam-portal<br/>SessionEventListenerImpl
     participant LogDB as DB<br/>iam_login_record
-    Client ->> SSO: GET /iam-sso/logout
+    Client ->> SSO: GET /iam-portal/logout
     SSO ->> Identity: getToken()
     Identity -->> SSO: token
     SSO ->> Session: destroySession(token)
@@ -476,10 +476,10 @@ sequenceDiagram
     autonumber
     participant Admin as iam-admin<br/>(管理后台)
     participant Event as Spring<br/>EventBus
-    participant Listener as iam-sso<br/>SessionInvalidationListener
+    participant Listener as iam-portal<br/>SessionInvalidationListener
     participant Session as iam-session<br/>SessionManager
     participant Store as iam-session<br/>SessionStore (Redis)
-    participant Audit as iam-sso<br/>SessionEventListenerImpl
+    participant Audit as iam-portal<br/>SessionEventListenerImpl
     participant LogDB as DB<br/>iam_login_record
     Note over Admin, LogDB: === 场景1：管理员重置密码 ===
     Admin ->> Admin: resetPassword(userCode, newPassword)
@@ -519,7 +519,7 @@ sequenceDiagram
         participant ReqLog as RequestLogFilter
     end
 
-    box iam-sso 单点登录层
+    box iam-portal 单点登录层
         participant SSO as PasswordLoginService
         participant Checker as CredentialChecker
         participant Captcha as CaptchaService
@@ -541,8 +541,8 @@ sequenceDiagram
         participant DB as Database
     end
 
-    Note over Client, DB: ═══ 登录（iam-sso → iam-session） ═══
-    Client ->> SSO: POST /iam-sso/login
+    Note over Client, DB: ═══ 登录（iam-portal → iam-session） ═══
+    Client ->> SSO: POST /iam-portal/login
     SSO ->> Captcha: verify()
     SSO ->> Checker: check(username, password)
     Checker ->> DB: 查询用户 + 密码 + 状态
@@ -565,8 +565,8 @@ sequenceDiagram
     Note over Filter, ReqLog: 业务 Controller 通过 Ctx.get() 获取用户 ...
     Filter ->> Ctx: clear()
     ReqLog ->> DB: INSERT 请求日志 (异步)
-    Note over Client, DB: ═══ 登出（iam-sso → iam-session → sh-core） ═══
-    Client ->> SSO: GET /iam-sso/logout
+    Note over Client, DB: ═══ 登出（iam-portal → iam-session → sh-core） ═══
+    Client ->> SSO: GET /iam-portal/logout
     SSO ->> Ctx: getToken()
     SSO ->> Manager: destroySession(token)
     Manager ->> Store: delete(sessionId)
@@ -585,7 +585,7 @@ sequenceDiagram
 ┌────────────────────────────────────────────┐
 │                                            │
 │   ┌──────────┐     ┌──────────┐            │
-│   │ iam-sso  │     │  未来     │            │
+│   │iam-portal│     │  未来     │            │
 │   │ 密码登录  │     │ 小程序登录 │            │
 │   └────┬─────┘     └────┬─────┘            │
 │        │                │                  │
@@ -609,7 +609,7 @@ sequenceDiagram
 │   ★ 三者无循环依赖                            │
 │   ★ sh-core 仅 JDK 依赖（框架层）              │
 │   ★ iam-session 依赖 sh-core + Servlet      │
-│   ★ iam-sso 依赖 iam-session + DB + Redis    │
+│   ★ iam-portal 依赖 iam-session + DB + Redis │
 │                                            │
 └────────────────────────────────────────────┘
 ```
@@ -620,8 +620,8 @@ sequenceDiagram
 
 | 维度                | 现状                                                                   | 新设计                                                                            |
 |-------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| 模块划分              | sh-auth（框架）→ iam-sso（实现），边界模糊                                        | 三层独立：identity → session → sso，职责明确                                             |
-| LoginService 模板方法 | 抽象类包含 7 步，子类继承实现 4 个钩子                                               | 撤销模板方法，登录流程在 iam-sso 中自行编排，会话创建委托 SessionManager                               |
+| 模块划分              | sh-auth（框架）→ iam-portal（实现），边界模糊                                        | 三层独立：identity → session → sso，职责明确                                             |
+| LoginService 模板方法 | 抽象类包含 7 步，子类继承实现 4 个钩子                                               | 撤销模板方法，登录流程在 iam-portal 中自行编排，会话创建委托 SessionManager                               |
 | 会话管理              | 分散在 StandardLoginPipeline + RedisSessionStore + DefaultLogoutService | 集中在 SessionManager + SessionStore，对外一个入口                                       |
 | 安全上下文             | SecurityContext 混在 sh-auth 中                                         | `sh-core` 中 `UserIdentity`（实体类） + `IdentityContext`（静态工具类），零外部依赖               |
 | 审计日志              | LoginService 中硬编码 recordLoginLog                                     | 会话层定义 `SessionEventListener` 接口，SSO 层实现并写入登录日志表                                |

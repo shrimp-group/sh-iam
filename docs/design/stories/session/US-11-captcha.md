@@ -1,6 +1,6 @@
 # US-11：图形验证码生成与校验
 
-> **模块**：iam-sso（单点登录层）
+> **模块**：iam-portal（单点登录层）
 > **依赖**：无（独立功能，仅依赖 Redis）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-08, SSO-09
 
@@ -30,7 +30,7 @@
 ## 输出
 
 - `CaptchaService` — 生成/校验
-- `CaptchaRest` — `GET /iam-sso/public/captcha`（生成端点和校验端点）
+- `CaptchaRest` — `GET /iam-portal/public/captcha`（生成端点和校验端点）
 - Redis Key：`iam:captcha:{captchaId}`
 
 ## 核心流程
@@ -39,11 +39,11 @@
 sequenceDiagram
     autonumber
     participant Client as 前端
-    participant Rest as CaptchaRest<br/>/iam-sso/public/captcha
+    participant Rest as CaptchaRest<br/>/iam-portal/public/captcha
     participant Service as CaptchaService
     participant Redis as Redis
     Note over Client, Redis: === 生成验证码 ===
-    Client ->> Rest: GET /iam-sso/public/captcha
+    Client ->> Rest: GET /iam-portal/public/captcha
     Rest ->> Service: generate()
     Service ->> Service: 生成 captchaId (UUID)
     Service ->> Service: 生成随机码 + 绘制图形
@@ -51,7 +51,7 @@ sequenceDiagram
     Service -->> Rest: CaptchaResult(captchaId, base64Image)
     Rest -->> Client: { captchaId, base64Image }
     Note over Client, Redis: === 校验验证码（在登录时触发） ===
-    Client ->> Rest: POST /iam-sso/login<br/>(含 captchaId + captchaCode)
+    Client ->> Rest: POST /iam-portal/login<br/>(含 captchaId + captchaCode)
     Rest ->> Service: verify(captchaId, captchaCode)
     Service ->> Redis: Lua: GET iam:captcha:{captchaId} → DEL<br/>（原子 get-and-delete）
     alt captchaId 不存在或已消费
@@ -85,7 +85,7 @@ class CaptchaResult {
 
 ## 验收标准
 
-- [ ] `GET /iam-sso/public/captcha` 返回 `{ captchaId, base64Image }`
+- [ ] `GET /iam-portal/public/captcha` 返回 `{ captchaId, base64Image }`
 - [ ] 验证码存入 Redis，Key 为 `iam:captcha:{captchaId}`，TTL 5min
 - [ ] 校验使用 `GET` + `DEL`（Lua 脚本保证原子性 get-and-delete）
 - [ ] 校验成功后 Key 被删除，不可重复使用

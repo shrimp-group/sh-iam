@@ -1,13 +1,13 @@
 # US-12：密码登录端点与登录编排
 
-> **模块**：iam-sso（单点登录层）
+> **模块**：iam-portal（单点登录层）
 > **依赖**：US-05（createSession）、US-10（CredentialChecker）、US-11（Captcha）、US-08（SessionEventListener）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-01, SSO-02, SSO-07, SSO-10, SSO-11, SSO-12
 
 ## 用户故事
 
 **作为** 用户
-**我想要** 通过 `POST /iam-sso/login` 提交用户名和密码（前端 RSA 加密）登录系统，系统自动判断是否需要验证码，凭证校验通过后为我创建会话并返回
+**我想要** 通过 `POST /iam-portal/login` 提交用户名和密码（前端 RSA 加密）登录系统，系统自动判断是否需要验证码，凭证校验通过后为我创建会话并返回
 Token 和用户信息
 **以便** 我能安全地登录并获取访问凭证
 
@@ -15,7 +15,7 @@ Token 和用户信息
 
 | ID     | 功能       | 说明                                                                                                                               |
 |--------|----------|----------------------------------------------------------------------------------------------------------------------------------|
-| SSO-01 | 密码登录端点   | `POST /iam-sso/login`：接收 username + password + captchaId + captchaCode，返回 LoginResp(token, userCode, username, nickname, avatar) |
+| SSO-01 | 密码登录端点   | `POST /iam-portal/login`：接收 username + password + captchaId + captchaCode，返回 LoginResp(token, userCode, username, nickname, avatar) |
 | SSO-02 | RSA 密码解密 | 前端 RSA 公钥加密，后端 RSA 私钥解密；仅密文 length > 32 时执行解密（明文兼容）                                                                              |
 | SSO-07 | 验证码触发判断  | 同一用户名 1h 内失败登录次数 ≥ 阈值 → 要求输入验证码                                                                                                  |
 | SSO-10 | 登录成功处理   | 凭证校验通过 → 构建 UserIdentity → 调用 SessionManager.createSession() → 发布 LoginSuccessEvent → 返回 LoginResp                               |
@@ -38,11 +38,11 @@ Token 和用户信息
 
 ## 输出
 
-- `LoginRest` — `POST /iam-sso/login`
+- `LoginRest` — `POST /iam-portal/login`
 - `PasswordLoginService.login()` 方法
 - `LoginResp` 响应类（token, userCode, username, nickname, avatar）
 - `LoginReq` 请求类（username, password, captchaId, captchaCode）
-- 配置项：`iam.sso.private-key`（RSA 私钥）、`iam.sso.public-key`（RSA 公钥）
+- 配置项：`iam.login.private-key`（RSA 私钥）、`iam.login.public-key`（RSA 公钥）
 
 ## 核心流程
 
@@ -50,7 +50,7 @@ Token 和用户信息
 sequenceDiagram
     autonumber
     participant Client as 前端
-    participant Rest as LoginRest<br/>/iam-sso/login
+    participant Rest as LoginRest<br/>/iam-portal/login
     participant Service as PasswordLoginService
     participant Captcha as CaptchaService
     participant Checker as CredentialChecker
@@ -60,7 +60,7 @@ sequenceDiagram
     participant Listener as SessionEventListener<br/>(审计)
     participant DB as Database
     Note over Client, DB: === 阶段1：密码解密 ===
-    Client ->> Rest: POST /iam-sso/login<br/>{username, password, captchaId, captchaCode}
+    Client ->> Rest: POST /iam-portal/login<br/>{username, password, captchaId, captchaCode}
     Rest ->> Service: login(req, request)
     Service ->> Service: 若 password.length > 32<br/>→ RSA 私钥解密 → rawPassword
     Note over Client, DB: === 阶段2：验证码判断 ===
@@ -96,7 +96,7 @@ sequenceDiagram
 ```
 
 ```text
-POST /iam-sso/login {username, password, captchaId, captchaCode}:
+POST /iam-portal/login {username, password, captchaId, captchaCode}:
 
   阶段1：密码解密
   1. 若 password.length > 32 → RSA 私钥解密 → rawPassword
@@ -121,7 +121,7 @@ POST /iam-sso/login {username, password, captchaId, captchaCode}:
 
 ## 验收标准
 
-- [ ] `POST /iam-sso/login` 接收 username + password + captchaId + captchaCode
+- [ ] `POST /iam-portal/login` 接收 username + password + captchaId + captchaCode
 - [ ] RSA 私钥解密密码（仅密文 length > 32 时执行，兼容明文）
 - [ ] 同一用户名 1h 内失败次数达到可配置阈值时要求验证码
 - [ ] 凭证校验失败 → 失败计数 +1 → 返回对应错误码和错误信息

@@ -73,8 +73,8 @@ if (StringUtils.isEmpty(userCode)) {
 
 | 模块 | 前缀 | 说明 |
 |------|------|------|
-| SSO公开接口 | /iam-sso/public/** | 无需鉴权 |
-| SSO用户接口 | /iam-sso/user/** | 需鉴权 |
+| SSO公开接口 | /iam-portal/public/** | 无需鉴权 |
+| SSO用户接口 | /iam-portal/user/** | 需鉴权 |
 | Admin接口 | /iam-admin/** | 需鉴权 |
 
 ### 路由命名
@@ -210,7 +210,7 @@ private String userCode;
 ### 示例
 
 ```
-feat(iam-sso): 新增短信验证码登录功能
+feat(iam-portal): 新增短信验证码登录功能
 
 - 添加短信验证码发送接口
 - 添加短信验证码登录逻辑

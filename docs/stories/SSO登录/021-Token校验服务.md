@@ -4,7 +4,7 @@
 |----------|------------|
 | Story ID | STORY-021  |
 | 所属 Epic  | SSO 登录认证模块 |
-| 所属模块     | iam-sso    |
+| 所属模块     | iam-portal |
 | 优先级      | P0         |
 | 状态       | 待开发        |
 
@@ -37,4 +37,4 @@
 
 | 文件                | 路径                                                                     |
 |-------------------|------------------------------------------------------------------------|
-| IamSsoServiceImpl | iam-sso/src/main/java/com/wkclz/iam/sso/service/IamSsoServiceImpl.java |
+| IamSsoServiceImpl | iam-portal/src/main/java/com/wkclz/iam/portal/service/IamSsoServiceImpl.java |

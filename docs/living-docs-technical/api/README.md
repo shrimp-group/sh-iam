@@ -2,21 +2,21 @@
 
 ## API 列表
 
-### SSO 公开接口 (`/iam-sso/public/**`)
+### SSO 公开接口 (`/iam-portal/public/**`)
 
 | 方法   | 路径                       | 说明      | 模块      |
 |------|--------------------------|---------|---------|
-| POST | /iam-sso/public/login    | 用户名密码登录 | iam-sso |
-| POST | /iam-sso/public/captcha  | 获取图形验证码 | iam-sso |
-| POST | /iam-sso/public/register | 用户注册    | iam-sso |
+| POST | /iam-portal/public/login    | 用户名密码登录 | iam-portal |
+| POST | /iam-portal/public/captcha  | 获取图形验证码 | iam-portal |
+| POST | /iam-portal/public/register | 用户注册    | iam-portal |
 
-### SSO 用户接口 (`/iam-sso/user/**`)
+### SSO 用户接口 (`/iam-portal/user/**`)
 
 | 方法   | 路径                   | 说明       | 模块      |
 |------|----------------------|----------|---------|
-| GET  | /iam-sso/user/info   | 获取当前用户信息 | iam-sso |
-| GET  | /iam-sso/user/menus  | 获取当前用户菜单 | iam-sso |
-| POST | /iam-sso/user/logout | 用户登出     | iam-sso |
+| GET  | /iam-portal/user/info   | 获取当前用户信息 | iam-portal |
+| GET  | /iam-portal/user/menus  | 获取当前用户菜单 | iam-portal |
+| POST | /iam-portal/user/logout | 用户登出     | iam-portal |
 
 ### Admin 接口 (`/iam-admin/**`)
 

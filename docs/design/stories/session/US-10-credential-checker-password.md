@@ -1,6 +1,6 @@
 # US-10：密码凭证校验 SPI 与密码编码
 
-> **模块**：iam-sso（单点登录层）
+> **模块**：iam-portal（单点登录层）
 > **依赖**：US-01（UserIdentity）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-03, SSO-04, SSO-05, SSO-06
 
@@ -37,7 +37,7 @@
 - `CredentialCheckResult` 结果类
 - `PasswordEncoder` 接口
 - `Pbkdf2PasswordEncoder` 默认实现
-- 配置项：`iam.sso.password-expire-days`（默认 180）
+- 配置项：`iam.portal.password.expire-days`（默认 180）
 
 ## 核心接口（概念）
 
@@ -121,5 +121,5 @@ check(username, rawPassword):
 - [ ] 状态检查失败时不执行密码匹配（避免无效计算）
 - [ ] PBKDF2WithHmacSHA256 使用随机 salt + 足够迭代次数（推荐 10000+）
 - [ ] 兼容 {MD5} 前缀和无前缀 MD5 格式，匹配成功后自动升级密码
-- [ ] 密码过期天数可通过 `iam.sso.password-expire-days` 配置
+- [ ] 密码过期天数可通过 `iam.portal.password.expire-days` 配置
 - [ ] 密码过期时仍返回 userIdentity（允许登录后强制修改密码）

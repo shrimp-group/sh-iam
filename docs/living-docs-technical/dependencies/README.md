@@ -18,12 +18,12 @@
 ```mermaid
 graph TD
     AdminStarter[iam-admin-starter] --> Admin[iam-admin]
-    Admin --> Sso[iam-sso]
+    Admin --> Sso[iam-portal]
     Admin --> Common[iam-common]
     Sso --> Sdk[iam-sdk]
     Sso --> Common
     Sdk --> Common
-    SsoStarter[iam-sso-starter] --> Sso
+    SsoStarter[iam-portal-starter] --> Sso
 ```
 
 ## 框架依赖 (sh-parent BOM)

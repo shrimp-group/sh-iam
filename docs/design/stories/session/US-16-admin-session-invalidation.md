@@ -1,6 +1,6 @@
 # US-16：管理员安全操作驱动的全会话失效（事件驱动）
 
-> **模块**：iam-sso（单点登录层）+ iam-admin（事件发布集成）
+> **模块**：iam-portal（单点登录层）+ iam-admin（事件发布集成）
 > **依赖**：US-07（destroyAllSessions）、US-08（SessionEventListener）
 > **来源设计**：[session-design.md](../../session-design.md) — SSO-17, SSO-18
 
@@ -30,7 +30,7 @@
 |------------|-------------------------------------------------------------|
 | iam-common | 事件类定义（`PasswordResetByAdminEvent`、`UserStatusChangedEvent`） |
 | iam-admin  | 在重置密码/状态变更接口中发布事件                                           |
-| iam-sso    | 事件监听器 `SessionInvalidationListener` 监听事件并调用 SessionManager  |
+| iam-portal | 事件监听器 `SessionInvalidationListener` 监听事件并调用 SessionManager  |
 
 ## 输入
 
@@ -53,7 +53,7 @@ sequenceDiagram
     autonumber
     participant Admin as iam-admin<br/>IamUserService
     participant Event as Spring EventBus
-    participant Listener as SessionInvalidationListener<br/>(iam-sso)
+    participant Listener as SessionInvalidationListener<br/>(iam-portal)
     participant Manager as SessionManager<br/>(iam-session)
     participant Store as SessionStore<br/>(Redis)
     participant Audit as SessionEventListenerImpl<br/>(审计)
@@ -78,7 +78,7 @@ sequenceDiagram
     autonumber
     participant Admin as iam-admin<br/>IamUserService
     participant Event as Spring EventBus
-    participant Listener as SessionInvalidationListener<br/>(iam-sso)
+    participant Listener as SessionInvalidationListener<br/>(iam-portal)
     participant Manager as SessionManager<br/>(iam-session)
     participant Store as SessionStore<br/>(Redis)
     participant Audit as SessionEventListenerImpl<br/>(审计)
@@ -103,7 +103,7 @@ sequenceDiagram
     autonumber
     participant Admin as iam-admin<br/>RoleService
     participant Event as Spring EventBus
-    participant Listener as SessionInvalidationListener<br/>(iam-sso)
+    participant Listener as SessionInvalidationListener<br/>(iam-portal)
     participant Cache as AuthCache<br/>(权限缓存)
     Admin ->> Admin: unbindRole(userCode, roleCode)
     Admin ->> Event: publish(UserRoleChangedEvent(userCode))
@@ -120,7 +120,7 @@ iam-admin IamUserService.resetPassword(userCode, newPassword):
   1. 重置密码逻辑（已有）
   2. 发布 PasswordResetByAdminEvent(userCode)
      ↓ Spring EventBus
-iam-sso SessionInvalidationListener.onPasswordReset(event):
+iam-portal SessionInvalidationListener.onPasswordReset(event):
   3. sessionManager.destroyAllSessions(event.userCode)
   4. → SessionStore 批量删除 → 发布 SessionDestroyedEvent ×N
   5. → SessionEventListenerImpl.onDestroyed() → INSERT 审计日志
@@ -132,7 +132,7 @@ iam-admin IamUserService.updateUserStatus(userCode, newStatus):
   2. 若 newStatus == DISABLED 或 LOCKED:
      发布 UserStatusChangedEvent(userCode, newStatus)
      ↓ Spring EventBus
-iam-sso SessionInvalidationListener.onUserStatusChanged(event):
+iam-portal SessionInvalidationListener.onUserStatusChanged(event):
   3. sessionManager.destroyAllSessions(event.userCode)
   4. → 同上审计流程
 
@@ -142,7 +142,7 @@ iam-admin RoleService.unbindRole(userCode, roleCode):
   1. 解绑逻辑（已有）
   2. 发布 UserRoleChangedEvent(userCode)
      ↓ Spring EventBus
-iam-sso SessionInvalidationListener.onUserRoleChanged(event):
+iam-portal SessionInvalidationListener.onUserRoleChanged(event):
   3. 不销毁会话，仅发布 AuthCacheRefreshEvent 刷新权限缓存
 ```
 

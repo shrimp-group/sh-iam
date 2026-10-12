@@ -11,7 +11,7 @@ graph LR
 
     subgraph 服务端
         Nginx[Nginx 反向代理]
-        SSOService[SSO 服务<br/>iam-sso-starter]
+        SSOService[SSO 服务<br/>iam-portal-starter]
         AdminService[Admin 服务<br/>iam-admin-starter]
     end
 
@@ -47,7 +47,7 @@ sh-iam 支持两种部署模式：SSO 服务和 Admin 服务可独立部署，�
 ## 部署流程
 
 1. Maven 构建：`mvn package -DskipTests`
-2. 部署 SSO 服务：`iam-sso-starter.jar`
+2. 部署 SSO 服务：`iam-portal-starter.jar`
 3. 部署 Admin 服务：`iam-admin-starter.jar`
 4. 配置 Nginx 反向代理
 
