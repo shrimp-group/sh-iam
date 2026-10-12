@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  *
  * <p>统一支持服务端部署和客户端部署：
  * <ul>
- *   <li>服务端：通过 {@link RequestRecordHandler} SPI 持久化到本地数据库（iam-sso 提供 RequestRecordHandlerImpl）</li>
+ *   <li>服务端：通过 {@link RequestRecordHandler} SPI 持久化到本地数据库（iam-portal 提供 RequestRecordHandlerImpl）</li>
  *   <li>客户端：通过 {@code RemoteRequestRecordHandler} 持久化到远程 SSO 服务端（iam-session remote 子包提供）</li>
  * </ul>
  *

@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>注册优先级：本类通过 {@code @ConditionalOnProperty} 注册后，
  * {@code NoOpRequestRecordHandler} 的 {@code @ConditionalOnMissingBean} 条件不满足，不会注册。
- * 服务端部署时本类不注册，iam-sso 的 {@code RequestRecordHandlerImpl} 注册。</p>
+ * 服务端部署时本类不注册，iam-portal 的 {@code RequestRecordHandlerImpl} 注册。</p>
  */
 @Component
 @ConditionalOnProperty(name = "iam.session.remote.server-url")
