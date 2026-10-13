@@ -38,15 +38,14 @@
 
 <script setup>
 import { User, Lock, Key } from '@element-plus/icons-vue'
-import { getToken } from '@sh/ui-core/utils/auth'
+import { getToken, setToken } from '@sh/ui-core/utils/auth'
+import { encrypt } from '@sh/ui-core/utils/jsencrypt'
 import { safeTarget } from '@sh/ui-core/utils/safe-target'
-import useUserStore from '@sh/ui-core/store/modules/user'
 import { runtimeEnv } from '../../env.js'
-import { captchaChart } from '@/api/sso'
+import { captchaChart, ssoLogin } from '@/api/sso'
 
 const title = runtimeEnv.title
 const footerContent = 'Copyright © 2018-2025 wangkc. All Rights Reserved.'
-const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
 const { proxy } = getCurrentInstance()
@@ -88,8 +87,16 @@ function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
     if (valid) {
       loading.value = true
-      // 调用包内 action 登录（Cookie 写入由包内 auth.js 承担）
-      userStore.login(loginForm.value).then((res) => {
+      // 门户自持登录：RSA 加密密码调门户登录接口，token 写父域 Cookie（由包内 auth.js 承担）
+      ssoLogin({
+        username: loginForm.value.username.trim(),
+        password: encrypt(loginForm.value.password),
+        captchaCode: loginForm.value.captchaCode,
+        captchaId: loginForm.value.captchaId
+      }).then((res) => {
+        if (res.data?.token) {
+          setToken(res.data.token)
+        }
         loginMessage.value = res.data?.loginMessage
         if (res.data?.loginStatus !== 0) {
           // 登录失败（后端正常响应）：拉取验证码并展示

@@ -1,5 +1,9 @@
 import request from '@sh/ui-core/utils/request';
 
+export const ssoLogin = (data) => {
+    return request({url: '/iam-portal/public/sso/login', method: 'post', data})
+}
+
 export const ssoLogout = () => {
     return request({url: '/iam-portal/public/sso/logout', method: 'get'})
 }

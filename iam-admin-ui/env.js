@@ -52,5 +52,8 @@ function getConfig(env) {
 
 const config = getConfig(env);
 
+// API 网关基址（api-mock 等直连场景使用；与 runtimeEnv.baseApi 同源）
+export const baseApi = config.baseApi;
+
 // 运行时环境聚合（供 @sh/ui-core 运行时注入，对齐 iam-portal-ui/env.js）
 export const runtimeEnv = {appCode, env, ...config};
