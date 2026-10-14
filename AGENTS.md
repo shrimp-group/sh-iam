@@ -17,8 +17,8 @@ sh-iam/
 ├── iam-portal-starter  # SSO 启动器（可部署 Spring Boot 应用）
 ├── iam-admin           # 管理后台业务（用户/角色/菜单/应用等 CRUD）
 ├── iam-admin-starter   # Admin 启动器（可部署 Spring Boot 应用）
-├── iam-admin-ui/       # Vue3 管理后台前端（@sh/ui-core dist 消费形态，登录委托 CAS，dev 端口 1024，不参与 Maven 构建）
-└── iam-portal-ui/      # Vue3 SSO 门户前端（@sh/ui-core 0.0.13 dist 预构建消费形态：单入口 index.html，/login 登录页与登录调用均为门户自持应用功能（src/views/login.vue 直调应用 api/sso.js + 包 encrypt/setToken，加入 whiteList），跳转协议 hash 式 {cas}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态，不参与 Maven 构建）
+├── iam-admin-ui/       # Vue3 管理后台前端（@sh/ui-core dist 消费形态，登录委托门户，dev 端口 1024，不参与 Maven 构建）
+└── iam-portal-ui/      # Vue3 SSO 门户前端（@sh/ui-core 0.0.14 dist 预构建消费形态：单入口 index.html，/login 登录页与登录调用均为门户自持应用功能（src/views/login.vue 直调应用 api/sso.js + 包 encrypt/setToken，加入 whiteList），跳转协议 hash 式 {portal}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态，不参与 Maven 构建）
 ```
 
 ### 模块依赖关系
@@ -148,7 +148,7 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 **工程形态（@sh/ui-core dist 消费）**：`src/main.js` 经
 `createAdminApp({ env: runtimeEnv, routes: constantRoutes, views, whiteList: [], menuSource: 'remote' })`
 单点装配；layout/store/共享组件/plugins/directive/utils 全部由包承担，仓库仅保留业务 views 与业务 api（request 从
-`@sh/ui-core/utils/request` 引入）。 **登录委托 CAS**：admin 不自持登录页，未登录由包 guard 整页跳转 `env.js` 的 `cas`
+`@sh/ui-core/utils/request` 引入）。 **登录委托门户**：admin 不自持登录页，未登录由包 guard 整页跳转 `env.js` 的 `portal`
 地址（local 指向 portal-ui dev `http://localhost`，Cookie localhost 域端口无关共享），登录成功后整页回跳。dev 端口 1024（portal-ui 占
 80）。401/404 兜底组件与 `/redirect` 均为包内置。
 

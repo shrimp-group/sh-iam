@@ -1,4 +1,4 @@
-// 门户站点 vite 配置（对齐 cas-demo：@sh/ui-core preset + 单入口，登录路由 /login 由包 constantRoutes 内置）
+// 门户站点 vite 配置（对齐 portal-demo：@sh/ui-core preset + 单入口，登录路由 /login 由门户应用自持）
 import {fileURLToPath, URL} from 'node:url'
 import path from 'path'
 import {defineConfig} from 'vite'

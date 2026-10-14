@@ -46,5 +46,9 @@ function getConfig(env) {
 
 const config = getConfig(env);
 
+// 门户自身即登录上游：portal 恒为空串（guard 无 token 走 SPA 内导航 /login；redirectToLogin 兜底拼相对 /#/login）。
+// 缺失时 getRuntimeEnv().portal 为 undefined，redirectToLogin 会拼出 "undefined/#/login?..." 的坏地址
+export const portal = '';
+
 // 运行时环境聚合（供 @sh/ui-core 运行时注入）
-export const runtimeEnv = {appCode, env, ...config};
+export const runtimeEnv = {appCode, env, portal, ...config};
