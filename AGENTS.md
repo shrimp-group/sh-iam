@@ -17,8 +17,8 @@ sh-iam/
 ├── iam-portal-starter  # SSO 启动器（可部署 Spring Boot 应用）
 ├── iam-admin           # 管理后台业务（用户/角色/菜单/应用等 CRUD）
 ├── iam-admin-starter   # Admin 启动器（可部署 Spring Boot 应用）
-├── iam-admin-ui/       # Vue3 管理后台前端（@sh/ui-core dist 消费形态，登录委托门户，dev 端口 1024，不参与 Maven 构建）
-└── iam-portal-ui/      # Vue3 SSO 门户前端（@sh/ui-core 0.0.14 dist 预构建消费形态：单入口 index.html，/login 登录页与登录调用均为门户自持应用功能（src/views/login.vue 直调应用 api/sso.js + 包 encrypt/setToken，加入 whiteList），跳转协议 hash 式 {portal}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态，不参与 Maven 构建）
+├── iam-admin-ui/       # Vue3 管理后台前端（@sh/ui-core dist 消费形态，登录委托门户（本地镜像形态 portal='/portal'），dev 端口 1024，build 相对路径可任意子目录部署，不参与 Maven 构建）
+└── iam-portal-ui/      # Vue3 SSO 门户前端（@sh/ui-core dist 预构建消费形态：单入口 index.html，/login 登录页与登录调用均为门户自持应用功能（src/views/login.vue 直调应用 api/sso.js + 包 encrypt/setToken，加入 whiteList），跳转协议 hash 式 {portal}/#/login?redirect=，运行时 env 注入 createAdminApp({ env })，父域 Cookie 登录态；build 相对路径（base './'）可任意子目录部署，子系统前缀转发镜像的前提，不参与 Maven 构建）
 ```
 
 ### 模块依赖关系
@@ -148,9 +148,15 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 **工程形态（@sh/ui-core dist 消费）**：`src/main.js` 经
 `createAdminApp({ env: runtimeEnv, routes: constantRoutes, views, whiteList: [], menuSource: 'remote' })`
 单点装配；layout/store/共享组件/plugins/directive/utils 全部由包承担，仓库仅保留业务 views 与业务 api（request 从
-`@sh/ui-core/utils/request` 引入）。 **登录委托门户**：admin 不自持登录页，未登录由包 guard 整页跳转 `env.js` 的 `portal`
-地址（local 指向 portal-ui dev `http://localhost`，Cookie localhost 域端口无关共享），登录成功后整页回跳。dev 端口 1024（portal-ui 占
-80）。401/404 兜底组件与 `/redirect` 均为包内置。
+`@sh/ui-core/utils/request` 引入）。 **登录委托门户（本地镜像形态）**：admin 不自持登录页，未登录由包 guard 整页跳转 `env.js`
+local 段 `portal: '/portal'`（本站镜像路径，vite proxy `'/portal'` 前缀转发门户 dist，rewrite 去前缀；登录页在本站 origin 运行，
+token Cookie 落 localhost 同源；双站形态留档：portal 配门户完整地址），登录成功后整页回跳。dev 端口 1024。401/404 兜底组件与
+`/redirect` 均为包内置。
+
+**前端相对路径化（build base './'，dev 维持 '/'）**：hash 路由下文档路径恒定，两 UI 构建产物可部署任意子目录
+（nginx `location /portal/ { alias ...; try_files $uri $uri/ /portal/index.html; }`），也是子系统「前缀转发」镜像形态的前提
+（对齐 sh-ui-core portal-demo 与 guide §9.6）；dev base 不支持相对路径，dev 下资产仍为站根绝对路径。env.js 的 `portal`
+值 `/portal` 与镜像代理键配套，guard/logout 拼接 `{portal}/#/login?redirect=` 协议不变。
 
 ---
 

@@ -7,8 +7,8 @@ import {createUiCorePreset} from '@sh/ui-core/vite'
 export default defineConfig(({command}) => {
   return {
     // 部署生产环境和开发环境下的URL。
-    // 默认情况下，vite 会假设你的应用是被部署在一个域名的根路径上
-    base: '/',
+    // dev 固定 '/'（dev 不支持相对 base）；build 相对化：hash 路由下文档路径恒定，产物可部署任意子目录（对齐 portal-demo）
+    base: command === 'build' ? './' : '/',
     plugins: [...createUiCorePreset({isBuild: command === 'build'})],
     // ui-core dist 中 Logo.vue 的 import "/favicon.svg" 为 public 资产语义（由消费方 public 目录提供），
     // 预构建 esbuild 无法按根路径解析，保持 external 后由 dev 静态服务命中
@@ -53,6 +53,11 @@ export default defineConfig(({command}) => {
           target: 'http://localhost:8080',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api/, '')
+        },
+        '/portal': {
+          target: 'http://localhost:4174',
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/portal/, '')
         },
       }
     },

@@ -3,8 +3,8 @@ const name = "授权中心";
 export const appCode = 'auth';
 
 const configs = {
-  "dev":   {"portal":"http://localhost", "title": name + "【LOCAL】", "baseApi": "/api"},
-//  "dev":   {"portal": "",                 "title": name + "【DEV】",   "baseApi": ""},
+  "local": {"portal": "/portal",          "title": name + "【LOCAL】", "baseApi": "/api"},
+  "dev":   {"portal": "",                 "title": name + "【DEV】",   "baseApi": ""},
   "sit":   {"portal": "",                 "title": name + "【SIT】",   "baseApi": ""},
   "uat":   {"portal": "",                 "title": name + "【UAT】",   "baseApi": ""},
   "prod":  {"portal": "",                 "title": name,               "baseApi": ""}
