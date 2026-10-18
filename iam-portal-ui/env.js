@@ -3,7 +3,7 @@ const name = "单点登录";
 export const appCode = 'portal';
 
 const configs = {
-  "local": {"title": name + "【LOCAL】", "baseApi": "https://api.uat.husters.cn"},
+  "local": {"title": name + "【LOCAL】", "baseApi": "/api"},
   "dev":   {"title": name + "【DEV】",   "baseApi": ""},
   "sit":   {"title": name + "【SIT】",   "baseApi": ""},
   "uat":   {"title": name + "【UAT】",   "baseApi": ""},
