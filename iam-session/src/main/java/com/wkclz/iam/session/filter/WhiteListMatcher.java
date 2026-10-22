@@ -1,5 +1,8 @@
 package com.wkclz.iam.session.filter;
 
+import com.wkclz.iam.session.config.IamSessionConfig;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
@@ -15,22 +18,13 @@ import java.util.List;
 @Component
 public class WhiteListMatcher {
 
-    public static final String DEFAULT_WHITE_LIST = "/**/public/**";
+    public static List<String> DEFAULT_WHITE_LIST = List.of("/**/public/**");
 
     private final AntPathMatcher matcher = new AntPathMatcher();
-    private final List<String> patterns;
+    private List<String> patterns;
 
-    public WhiteListMatcher() {
-        this.patterns = List.of(DEFAULT_WHITE_LIST);
-    }
-
-    public WhiteListMatcher(String whiteListConfig) {
-        if (whiteListConfig == null || whiteListConfig.isBlank()) {
-            this.patterns = List.of(DEFAULT_WHITE_LIST);
-        } else {
-            this.patterns = Arrays.asList(whiteListConfig.split(","));
-        }
-    }
+    @Autowired
+    private IamSessionConfig iamSessionConfig;
 
     /**
      * 判断请求 URI 是否为白名单路径。
@@ -39,6 +33,7 @@ public class WhiteListMatcher {
      * @return true 表示白名单，应放行
      */
     public boolean isWhiteListed(String requestUri) {
+        init();
         for (String pattern : patterns) {
             if (matcher.match(pattern.trim(), requestUri)) {
                 return true;
@@ -46,4 +41,18 @@ public class WhiteListMatcher {
         }
         return false;
     }
+
+    private void init() {
+        if (patterns != null) {
+            return;
+        }
+        String whiteList = iamSessionConfig.getWhiteList();
+        if (StringUtils.isBlank(whiteList)) {
+            patterns = DEFAULT_WHITE_LIST;
+            return;
+        }
+        DEFAULT_WHITE_LIST.addAll(Arrays.asList(whiteList.split(",")));
+        patterns = DEFAULT_WHITE_LIST;
+    }
+
 }

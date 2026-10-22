@@ -20,6 +20,12 @@ public class IamSessionConfig {
     private String secretKey;
 
     /**
+     * 白名单路径（Ant 风格，逗号分隔），默认 /**&#47;public/**
+     */
+    @Value("${iam.session.white-list:}")
+    private String whiteList;
+
+    /**
      * Token TTL（秒），默认 48h
      */
     @Value(("${iam.session.token.ttl:172800}"))
