@@ -8,12 +8,12 @@
         </el-input>
       </el-form-item>
       <el-form-item prop="password">
-        <el-input v-model="registerForm.password" type="password" size="large" auto-complete="off" placeholder="密码" @keyup.enter="handleRegister">
+        <el-input v-model="registerForm.password" type="password" size="large" auto-complete="off" placeholder="密码" show-password @keyup.enter="handleRegister">
           <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
         </el-input>
       </el-form-item>
       <el-form-item prop="confirmPassword">
-        <el-input v-model="registerForm.confirmPassword" type="password" size="large" auto-complete="off" placeholder="确认密码" @keyup.enter="handleRegister">
+        <el-input v-model="registerForm.confirmPassword" type="password" size="large" auto-complete="off" placeholder="确认密码" show-password @keyup.enter="handleRegister">
           <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
         </el-input>
       </el-form-item>

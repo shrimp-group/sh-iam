@@ -9,7 +9,7 @@
         <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" :prefix-icon="User" @keyup.enter="handleLogin" />
       </el-form-item>
       <el-form-item prop="password">
-        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="密码" :prefix-icon="Lock" @keyup.enter="handleLogin" />
+        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
       </el-form-item>
       <el-form-item prop="captchaCode" v-if="loginForm.captchaId">
         <el-input v-model="loginForm.captchaCode" size="large" auto-complete="off" placeholder="验证码" style="width: 63%" :prefix-icon="Key" @keyup.enter="handleLogin" />
