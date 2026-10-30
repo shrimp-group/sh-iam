@@ -91,6 +91,20 @@
             <el-button type="primary" plain @click="copySelectedApis" :disabled="selectedRows.length=== 0">
               复制为代码
             </el-button>
+            <el-dropdown @command="handleExport" style="margin-left: 12px; vertical-align: middle;">
+              <el-button type="warning" plain :loading="exportLoading">
+                导出<el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="all">导出全部（按当前筛选）</el-dropdown-item>
+                  <el-dropdown-item command="selected" :disabled="selectedRows.length === 0" divided>
+                    导出选中（{{ selectedRows.length }} 条）
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-button type="success" plain icon="Upload" @click="handleImport">导入</el-button>
           </div>
         </div>
       </template>
@@ -98,15 +112,18 @@
 
     <edit ref="editRef" @change="getList"/>
     <detail ref="detailRef" />
+    <import-api ref="importRef" @change="getList"/>
   </div>
 </template>
 
 <script setup name="IamApi">
-import { apiPage, apiRemove} from "@/api/system/api";
+import { apiPage, apiRemove, apiExport} from "@/api/system/api";
 import Edit from "./components/edit"
 import Detail from "./components/detail"
+import ImportApi from "./components/import"
 import AppOptions from "@/views/components/AppOptions"
 import { copy } from "@sh/ui-core/utils/shrimp"
+import { ArrowDown } from "@element-plus/icons-vue"
 
 
 const { proxy } = getCurrentInstance();
@@ -194,6 +211,31 @@ function handleDelete(row) {
 /** 处理表格选择变化 */
 function handleSelectionChange(selection) {
   selectedRows.value = selection;
+}
+
+const exportLoading = ref(false);
+
+/** 导出API：all=按当前筛选全量，selected=仅勾选项；结果 JSON 复制到剪贴板 */
+function handleExport(command) {
+  const params = command === "selected"
+    ? {ids: selectedRows.value.map(row => row.id).join(",")}
+    : {...queryParams.value, current: undefined, size: undefined};
+  exportLoading.value = true;
+  apiExport(params).then(res => {
+    const list = res.data || [];
+    if (list.length === 0) {
+      proxy.$modal.msgWarning("没有可导出的数据");
+      return;
+    }
+    copy(JSON.stringify(list, null, 2), "成功导出 " + list.length + " 条 API（含字段权限）到剪贴板!");
+  }).finally(() => {
+    exportLoading.value = false;
+  });
+}
+
+/** 导入按钮操作 */
+function handleImport() {
+  proxy.$refs["importRef"].init();
 }
 
 /** 复制选中的 API 接口代码 */

@@ -55,3 +55,13 @@ export function apiDoc(query) {
   return request({url: '/iam-admin/api/doc', method: 'get', params: query})
 }
 
+// 12. API管理-导出（ids 有值导出选中项，否则按筛选条件全量导出）
+export const apiExport = (params) => {
+  return request({url: '/iam-admin/api/export', method: 'get', params})
+}
+
+// 13. API管理-导入（按接口编码存在性更新/新增）
+export const apiImport = (data) => {
+  return request({url: '/iam-admin/api/import', method: 'post', data})
+}
+

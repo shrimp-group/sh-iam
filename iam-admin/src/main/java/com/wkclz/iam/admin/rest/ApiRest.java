@@ -6,12 +6,16 @@ import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.bean.req.ApiCreateReq;
 import com.wkclz.iam.admin.bean.req.ApiDocReq;
+import com.wkclz.iam.admin.bean.req.ApiExportReq;
+import com.wkclz.iam.admin.bean.req.ApiImportReq;
 import com.wkclz.iam.admin.bean.req.ApiListReq;
 import com.wkclz.iam.admin.bean.req.ApiPageReq;
 import com.wkclz.iam.admin.bean.req.ApiPasteReq;
 import com.wkclz.iam.admin.bean.req.ApiUpdateReq;
 import com.wkclz.iam.admin.bean.resp.ApiDetailResp;
 import com.wkclz.iam.admin.bean.resp.ApiDocResp;
+import com.wkclz.iam.admin.bean.resp.ApiExportResp;
+import com.wkclz.iam.admin.bean.resp.ApiImportResp;
 import com.wkclz.iam.admin.bean.resp.ApiResp;
 import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
@@ -139,6 +143,18 @@ public class ApiRest {
     public R<ApiDocResp> apiDoc(@Valid ApiDocReq req) {
         ApiDocResp docResp = iamApiService.getApiDoc(req.getMethod(), req.getUri());
         return R.ok(docResp);
+    }
+
+    @GetMapping(Route.API_EXPORT)
+    @Operation(summary = "API导出", description = "ids 有值时导出选中项，否则按筛选条件全量导出")
+    public R<List<ApiExportResp>> apiExport(@Valid ApiExportReq req) {
+        return R.ok(iamApiService.getApis4Export(req));
+    }
+
+    @PostMapping(Route.API_IMPORT)
+    @Operation(summary = "API导入", description = "按 apiCode 判断存在性，存在更新、不存在新增，全程无删除")
+    public R<ApiImportResp> apiImport(@Valid @RequestBody ApiImportReq req) {
+        return R.ok(iamApiService.apiImport(req));
     }
 
     /**

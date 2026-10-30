@@ -426,7 +426,7 @@ iam_request_record ── 请求日志 (独立)
 
 | 状态      | 数量 | 说明                   |
 |---------|----|----------------------|
-| ✅ 已完成   | 31 | 核心功能已实现              |
+| ✅ 已完成   | 32 | 核心功能已实现              |
 | ⚠️ 部分完成 | 12 | 存在差距，详见各故事说明         |
 | ❌ 未实现   | 1  | STORY-010 HTTP 安全过滤器 |
 
@@ -494,6 +494,7 @@ iam_request_record ── 请求日志 (独立)
 | STORY-041    | ✅ 当前用户菜单查询             | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)                                                                                               |
 | STORY-042    | ✅ Admin 自动配置与路由常量      | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                             |
 | STORY-043    | ✅ API 请求控制（互斥+滑动窗口限流）  | P1  | [STORY-043](docs/stories/管理后台/043-API请求控制.md)                                                                                                        |
+| STORY-044    | ✅ API 导出与导入（剪贴板 JSON）   | P1  | [STORY-044](docs/stories/管理后台/044-API导入导出.md)                                                                                                        |
 
 ### 故事依赖关系概览
 

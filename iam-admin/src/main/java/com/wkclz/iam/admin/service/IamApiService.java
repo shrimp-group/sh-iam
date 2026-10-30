@@ -1,17 +1,22 @@
 package com.wkclz.iam.admin.service;
 
 import com.alibaba.fastjson2.JSON;
+import com.google.common.collect.Lists;
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
+import com.wkclz.iam.admin.bean.req.ApiExportReq;
+import com.wkclz.iam.admin.bean.req.ApiImportReq;
 import com.wkclz.iam.admin.bean.resp.*;
 import com.wkclz.iam.admin.helper.EntityFieldAnalyzer;
+import com.wkclz.iam.admin.mapper.IamApiFieldMapper;
 import com.wkclz.iam.admin.mapper.IamApiMapper;
 import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
 import com.wkclz.iam.session.bean.ApiRequestControl;
 import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
+import com.wkclz.iam.common.entity.IamApiField;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
@@ -43,10 +48,22 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
     private static final Logger log = LoggerFactory.getLogger(IamApiService.class);
 
+    /**
+     * 导入批量分块大小，避免单 SQL 过大
+     */
+    private static final int IMPORT_BATCH_SIZE = 200;
+
+    /**
+     * 字段权限合法动作类型
+     */
+    private static final Set<String> FIELD_ACTIONS = Set.of("HIDDEN", "MASK", "READ_ONLY");
+
     @Autowired
     private RedisIdGenerator redisIdGenerator;
     @Autowired
     private IamMenuApiMapper iamMenuApiMapper;
+    @Autowired
+    private IamApiFieldMapper iamApiFieldMapper;
     @Autowired
     private EntityFieldAnalyzer entityFieldAnalyzer;
 
@@ -104,6 +121,250 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         // 查询所有接口，一次性批量查询
         IamApiDto param = new IamApiDto();
         return mapper.getApiList(param);
+    }
+
+    /**
+     * 导出 API 及其字段权限：ids 有值按主键批量导出（选中项），否则按筛选条件全量导出（与页面查询同语义，无分页）
+     *
+     * @param req 导出请求
+     * @return 导出数据（业务字段 + requestControl + fields）
+     */
+    public List<ApiExportResp> getApis4Export(ApiExportReq req) {
+        log.info("导出API, ids={}, appCode={}", req.getIds(), req.getAppCode());
+
+        // 主数据一次批量查询：选中项按主键，全量按筛选条件
+        List<? extends IamApi> apis;
+        if (!CollectionUtils.isEmpty(req.getIds())) {
+            apis = mapper.selectByIds(req.getIds());
+        } else {
+            IamApiDto param = new IamApiDto();
+            param.setModule(req.getModule());
+            param.setAppCode(req.getAppCode());
+            param.setApiCode(req.getApiCode());
+            param.setApiMethod(req.getApiMethod());
+            param.setApiUri(req.getApiUri());
+            param.setApiName(req.getApiName());
+            param.setWriteFlag(req.getWriteFlag());
+            param.setMenuBindStatus(req.getMenuBindStatus());
+            apis = mapper.getApiList(param);
+        }
+        if (apis.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 字段权限一次 IN 批量查询，内存按 apiCode 分组
+        List<String> apiCodes = apis.stream().map(IamApi::getApiCode).toList();
+        Map<String, List<IamApiField>> fieldMap = iamApiFieldMapper.getFieldsByApiCodes(apiCodes).stream().collect(Collectors.groupingBy(IamApiField::getApiCode));
+
+        List<ApiExportResp> respList = new ArrayList<>(apis.size());
+        for (IamApi api : apis) {
+            ApiExportResp resp = buildExportResp(api);
+            resp.setFields(buildExportFields(fieldMap.get(api.getApiCode())));
+            respList.add(resp);
+        }
+        log.info("导出API完成, api数={}, 字段权限数={}", respList.size(), fieldMap.values().stream().mapToInt(List::size).sum());
+        return respList;
+    }
+
+    /**
+     * 导入 API 及其字段权限：按 apiCode 判断存在性，存在更新、不存在新增，全程无删除
+     *
+     * @param req 导入请求
+     * @return 新增/更新条数明细
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public ApiImportResp apiImport(ApiImportReq req) {
+        log.info("导入API, 条数={}", req.getApis().size());
+
+        // 内存校验全部通过后才落库
+        validateImport(req.getApis());
+
+        // 一次 IN 批量查询已存在数据，内存划分新增/更新
+        List<String> apiCodes = req.getApis().stream().map(ApiImportReq.ApiImportItemReq::getApiCode).toList();
+        Map<String, IamApi> existingMap = mapper.getApis4Paste(apiCodes).stream().collect(Collectors.toMap(IamApi::getApiCode, t -> t, (a, b) -> a));
+
+        List<IamApi> inserts = new ArrayList<>();
+        List<IamApi> updates = new ArrayList<>();
+        for (ApiImportReq.ApiImportItemReq item : req.getApis()) {
+            IamApi existing = existingMap.get(item.getApiCode());
+            IamApi entity = buildImportEntity(item);
+            if (existing == null) {
+                inserts.add(entity);
+            } else {
+                entity.setId(existing.getId());
+                updates.add(entity);
+            }
+        }
+
+        // 字段权限：按 (apiCode + fieldCode) 匹配，存在更新、不存在以导入的 fieldCode 新增，全程无删除
+        List<IamApiField> fieldInserts = new ArrayList<>();
+        List<IamApiField> fieldUpdates = new ArrayList<>();
+        List<IamApiField> importFields = req.getApis().stream()
+            .filter(item -> !CollectionUtils.isEmpty(item.getFields()))
+            .flatMap(item -> item.getFields().stream().map(f -> buildImportField(f, item)))
+            .toList();
+        if (!importFields.isEmpty()) {
+            List<String> fieldApiCodes = importFields.stream().map(IamApiField::getApiCode).distinct().toList();
+            Map<String, IamApiField> existingFieldMap = iamApiFieldMapper.getFieldsByApiCodes(fieldApiCodes).stream()
+                .collect(Collectors.toMap(f -> f.getApiCode() + "|" + f.getFieldCode(), f -> f, (a, b) -> a));
+            for (IamApiField field : importFields) {
+                IamApiField existing = existingFieldMap.get(field.getApiCode() + "|" + field.getFieldCode());
+                if (existing == null) {
+                    fieldInserts.add(field);
+                } else {
+                    field.setId(existing.getId());
+                    fieldUpdates.add(field);
+                }
+            }
+        }
+
+        // 分块批量落库，避免单 SQL 过大
+        for (List<IamApi> chunk : Lists.partition(inserts, IMPORT_BATCH_SIZE)) {
+            mapper.insertBatch(chunk);
+        }
+        for (List<IamApi> chunk : Lists.partition(updates, IMPORT_BATCH_SIZE)) {
+            mapper.updateBatch4Import(chunk);
+        }
+        for (List<IamApiField> chunk : Lists.partition(fieldInserts, IMPORT_BATCH_SIZE)) {
+            iamApiFieldMapper.insertBatch(chunk);
+        }
+        for (List<IamApiField> chunk : Lists.partition(fieldUpdates, IMPORT_BATCH_SIZE)) {
+            iamApiFieldMapper.updateBatch4Import(chunk);
+        }
+
+        ApiImportResp resp = new ApiImportResp();
+        resp.setInsertApiCount((long) inserts.size());
+        resp.setUpdateApiCount((long) updates.size());
+        resp.setInsertFieldCount((long) fieldInserts.size());
+        resp.setUpdateFieldCount((long) fieldUpdates.size());
+        log.info("导入API完成, 新增API={}, 更新API={}, 新增字段={}, 更新字段={}", resp.getInsertApiCount(), resp.getUpdateApiCount(), resp.getInsertFieldCount(), resp.getUpdateFieldCount());
+        return resp;
+    }
+
+    /**
+     * 导入数据校验：逐条定位缺失项，任一不合法则整体不通过
+     */
+    private void validateImport(List<ApiImportReq.ApiImportItemReq> items) {
+        List<String> errors = new ArrayList<>();
+        Set<String> apiCodeSet = new HashSet<>();
+        Set<String> fieldKeySet = new HashSet<>();
+        for (int i = 0; i < items.size(); i++) {
+            ApiImportReq.ApiImportItemReq item = items.get(i);
+            String tag = "第" + (i + 1) + "条";
+            if (StringUtils.isBlank(item.getAppCode())) {
+                errors.add(tag + "：缺少应用编码");
+            }
+            if (StringUtils.isBlank(item.getApiCode())) {
+                errors.add(tag + "：缺少接口编码");
+            }
+            if (StringUtils.isBlank(item.getApiMethod())) {
+                errors.add(tag + "：缺少请求方法");
+            }
+            if (StringUtils.isBlank(item.getApiUri())) {
+                errors.add(tag + "：缺少请求URI");
+            }
+            if (StringUtils.isNotBlank(item.getApiCode()) && !apiCodeSet.add(item.getApiCode())) {
+                errors.add(tag + "：接口编码 " + item.getApiCode() + " 重复出现");
+            }
+            if (CollectionUtils.isEmpty(item.getFields())) {
+                continue;
+            }
+            for (int j = 0; j < item.getFields().size(); j++) {
+                ApiImportReq.ApiImportFieldReq field = item.getFields().get(j);
+                String fieldTag = tag + "字段权限第" + (j + 1) + "项";
+                if (StringUtils.isBlank(field.getFieldCode())) {
+                    errors.add(fieldTag + "：缺少字段编码");
+                }
+                if (StringUtils.isBlank(field.getFieldName())) {
+                    errors.add(fieldTag + "：缺少字段名称");
+                }
+                if (StringUtils.isBlank(field.getJsonPath())) {
+                    errors.add(fieldTag + "：缺少JSON路径");
+                }
+                if (StringUtils.isBlank(field.getAction())) {
+                    errors.add(fieldTag + "：缺少权限动作");
+                } else if (!FIELD_ACTIONS.contains(field.getAction())) {
+                    errors.add(fieldTag + "：权限动作 " + field.getAction() + " 不合法，应为 HIDDEN/MASK/READ_ONLY");
+                }
+                if ("MASK".equals(field.getAction()) && StringUtils.isBlank(field.getMaskRule())) {
+                    errors.add(fieldTag + "：动作类型为脱敏时，脱敏规则不能为空");
+                }
+                if (StringUtils.isNotBlank(item.getApiCode()) && StringUtils.isNotBlank(field.getFieldCode())
+                    && !fieldKeySet.add(item.getApiCode() + "|" + field.getFieldCode())) {
+                    errors.add(fieldTag + "：字段编码 " + field.getFieldCode() + " 重复出现");
+                }
+            }
+        }
+        if (!errors.isEmpty()) {
+            log.warn("导入API校验失败, 错误数={}", errors.size());
+            throw ValidationException.of(String.join("；", errors));
+        }
+    }
+
+    private ApiExportResp buildExportResp(IamApi api) {
+        ApiExportResp resp = new ApiExportResp();
+        resp.setModule(api.getModule());
+        resp.setAppCode(api.getAppCode());
+        resp.setApiCode(api.getApiCode());
+        resp.setApiMethod(api.getApiMethod());
+        resp.setApiUri(api.getApiUri());
+        resp.setApiName(api.getApiName());
+        resp.setWriteFlag(api.getWriteFlag());
+        resp.setRequestControl(ApiRequestControl.parse(api.getRequestControl()));
+        resp.setRemark(api.getRemark());
+        resp.setSort(api.getSort());
+        return resp;
+    }
+
+    private List<ApiExportResp.ApiFieldExportResp> buildExportFields(List<IamApiField> fields) {
+        if (CollectionUtils.isEmpty(fields)) {
+            return Collections.emptyList();
+        }
+        List<ApiExportResp.ApiFieldExportResp> respList = new ArrayList<>(fields.size());
+        for (IamApiField field : fields) {
+            ApiExportResp.ApiFieldExportResp resp = new ApiExportResp.ApiFieldExportResp();
+            resp.setFieldCode(field.getFieldCode());
+            resp.setFieldName(field.getFieldName());
+            resp.setJsonPath(field.getJsonPath());
+            resp.setAction(field.getAction());
+            resp.setMaskRule(field.getMaskRule());
+            resp.setDescription(field.getDescription());
+            resp.setSort(field.getSort());
+            respList.add(resp);
+        }
+        return respList;
+    }
+
+    private IamApi buildImportEntity(ApiImportReq.ApiImportItemReq item) {
+        IamApi entity = new IamApi();
+        entity.setModule(item.getModule());
+        entity.setAppCode(item.getAppCode());
+        entity.setApiCode(item.getApiCode());
+        entity.setApiMethod(item.getApiMethod());
+        entity.setApiUri(item.getApiUri());
+        entity.setApiName(item.getApiName());
+        entity.setWriteFlag(item.getWriteFlag());
+        entity.setRequestControl(item.getRequestControl() == null ? null : JSON.toJSONString(item.getRequestControl()));
+        entity.setRemark(item.getRemark());
+        entity.setSort(item.getSort());
+        return entity;
+    }
+
+    /**
+     * 字段权限导入项转实体，appCode/apiCode 继承所属 API
+     */
+    private IamApiField buildImportField(ApiImportReq.ApiImportFieldReq fieldReq, ApiImportReq.ApiImportItemReq item) {
+        IamApiField entity = new IamApiField();
+        entity.setAppCode(item.getAppCode());
+        entity.setApiCode(item.getApiCode());
+        entity.setFieldCode(fieldReq.getFieldCode());
+        entity.setFieldName(fieldReq.getFieldName());
+        entity.setJsonPath(fieldReq.getJsonPath());
+        entity.setAction(fieldReq.getAction());
+        entity.setMaskRule(fieldReq.getMaskRule());
+        entity.setDescription(fieldReq.getDescription());
+        entity.setSort(fieldReq.getSort());
+        return entity;
     }
 
     private boolean needUpdate(IamApi newEntity, IamApi oldEntity) {

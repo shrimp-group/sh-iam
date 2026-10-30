@@ -2,4 +2,44 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.admin.mapper.IamApiFieldMapper">
 
+    <select id="getFieldsByApiCodes" parameterType="java.util.List" resultType="com.wkclz.iam.common.entity.IamApiField">
+        SELECT
+            id,
+            app_code,
+            api_code,
+            field_code,
+            field_name,
+            json_path,
+            action,
+            mask_rule,
+            description,
+            sort,
+            version
+        FROM
+            iam_api_field
+        WHERE
+            deleted = 0
+        AND api_code IN ( <foreach collection="apiCodes" item="item" separator=",">#{item}</foreach> )
+        ORDER BY
+            sort ASC,
+            id ASC
+    </select>
+
+    <!-- 导入场景批量更新：逐行不同值，CASE WHEN 单 SQL；update_time 由数据库自动填充 -->
+    <update id="updateBatch4Import" parameterType="java.util.List">
+        UPDATE iam_api_field
+        SET
+            app_code = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.appCode}</foreach> END,
+            field_name = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.fieldName}</foreach> END,
+            json_path = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.jsonPath}</foreach> END,
+            action = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.action}</foreach> END,
+            mask_rule = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.maskRule}</foreach> END,
+            description = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.description}</foreach> END,
+            sort = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.sort}</foreach> END,
+            update_by = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.updateBy}</foreach> END,
+            version = version + 1
+        WHERE deleted = 0
+        AND id IN ( <foreach collection="entities" item="item" separator=",">#{item.id}</foreach> )
+    </update>
+
 </mapper>

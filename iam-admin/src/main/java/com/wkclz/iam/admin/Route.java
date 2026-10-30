@@ -96,6 +96,8 @@ public interface Route {
     String API_PASTE = "/api/paste";
     String API_DETAIL = "/api/detail";
     String API_DOC = "/api/doc";
+    String API_EXPORT = "/api/export";
+    String API_IMPORT = "/api/import";
 
     // 登录日志
     String LOGIN_RECORD_PAGE = "/login-record/page";

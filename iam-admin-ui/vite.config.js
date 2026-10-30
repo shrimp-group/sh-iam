@@ -44,18 +44,18 @@ export default defineConfig(({command}) => {
     },
     // vite 相关配置（portal-ui dev 占 80，admin 改用 1024 避免冲突）
     server: {
-      port: 1024,
+      port: 80,
       host: true,
       open: false,
       proxy: {
         // https://cn.vitejs.dev/config/#server-proxy
         '/api': {
-          target: 'http://localhost:8080',
+          target: 'https://api.uat.husters.cn',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api/, '')
         },
         '/portal': {
-          target: 'http://localhost:4174',
+          target: 'https://portal.uat.husters.cn',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/portal/, '')
         },
