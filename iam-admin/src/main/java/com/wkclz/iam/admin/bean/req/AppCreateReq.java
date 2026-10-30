@@ -40,4 +40,7 @@ public class AppCreateReq implements Serializable {
     @Schema(description = "备注")
     private String remark;
 
+    @Schema(description = "排序")
+    private Integer sort;
+
 }

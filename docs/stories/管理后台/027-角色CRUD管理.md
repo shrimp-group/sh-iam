@@ -22,6 +22,7 @@
 6. `GET /iam-admin/role/tree` — 按应用查询角色树（appCode 必填，返回树形结构）
 7. 删除前检查是否有子角色（parentCode = 当前 roleCode），有则拒绝删除
 8. 参数校验：appCode、roleName 必填；更新时 version 必填
+9. 创建与更新请求均支持 `sort` 排序字段（编辑角色排序后保存生效）
 
 ## 技术实现要点
 

@@ -21,6 +21,7 @@
 5. `POST /iam-admin/app/remove` — 删除应用
 6. `GET /iam-admin/app/options` — 获取应用选项列表（下拉选择用）
 7. 参数校验：appCode、appName、domain、authType 必填；更新时 version 必填
+8. 创建与更新请求均支持 `sort` 排序字段（编辑应用排序后保存生效）
 
 ## 技术实现要点
 

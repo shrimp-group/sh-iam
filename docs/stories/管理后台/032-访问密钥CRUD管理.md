@@ -20,7 +20,8 @@
 4. `POST /iam-admin/access-key/update` — 更新 AK
 5. `POST /iam-admin/access-key/remove` — 删除 AK
 6. 参数校验：appCode 必填；更新时 version 必填
-7. AK 包含 enableStatus + enableStart/enableStop 时间窗口控制
+7. 创建与更新请求均支持 `sort` 排序字段（编辑 AK 排序后保存生效）
+8. AK 包含 enableStatus + enableStart/enableStop 时间窗口控制
 
 ## 技术实现要点
 

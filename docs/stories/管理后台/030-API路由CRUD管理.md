@@ -23,6 +23,7 @@
 7. `GET /iam-admin/api/copy` — 获取可复制的 API 列表（返回 JSON）
 8. `POST /iam-admin/api/paste` — 批量粘贴 API（从 JSON 导入）
 9. 参数校验：apiUri、apiMethod、appCode 必填；更新时 version 必填
+10. 创建与更新请求均支持 `sort` 排序字段（编辑 API 排序后保存生效）
 
 ## 技术实现要点
 

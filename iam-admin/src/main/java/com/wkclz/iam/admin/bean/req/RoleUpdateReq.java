@@ -31,4 +31,7 @@ public class RoleUpdateReq extends UpdateReq {
     @Schema(description = "是否可申请")
     private Integer applicable;
 
+    @Schema(description = "排序")
+    private Integer sort;
+
 }
