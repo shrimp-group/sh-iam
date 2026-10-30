@@ -3,16 +3,25 @@
      验证码默认不展示，仅登录失败（后端正常响应 loginStatus≠0）时拉取 -->
 <template>
   <div class="login">
+    <!-- 左侧装饰：动画小人（纯装饰，随鼠标/输入状态/密码可见性互动，小屏隐藏） -->
+    <EyeBuddies :is-typing="isTyping" :show-password="passwordVisible" :password-length="(loginForm.password || '').length" />
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{ title }}</h3>
       <el-form-item prop="username">
-        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" :prefix-icon="User" @keyup.enter="handleLogin" />
+        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" :prefix-icon="User" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleLogin" />
       </el-form-item>
       <el-form-item prop="password">
-        <el-input v-model="loginForm.password" type="password" size="large" auto-complete="off" placeholder="密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
+        <el-input v-model="loginForm.password" :type="passwordVisible ? 'text' : 'password'" size="large" auto-complete="off" placeholder="密码" :prefix-icon="Lock" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleLogin">
+          <template #suffix>
+            <el-icon class="pwd-toggle" @click="passwordVisible = !passwordVisible">
+              <View v-if="passwordVisible" />
+              <Hide v-else />
+            </el-icon>
+          </template>
+        </el-input>
       </el-form-item>
       <el-form-item prop="captchaCode" v-if="loginForm.captchaId">
-        <el-input v-model="loginForm.captchaCode" size="large" auto-complete="off" placeholder="验证码" style="width: 63%" :prefix-icon="Key" @keyup.enter="handleLogin" />
+        <el-input v-model="loginForm.captchaCode" size="large" auto-complete="off" placeholder="验证码" style="width: 63%" :prefix-icon="Key" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleLogin" />
         <div class="login-code"><img :src="codeUrl" @click="getCode" class="login-code-img"/></div>
       </el-form-item>
       <el-form-item style="width:100%;">
@@ -37,12 +46,13 @@
 </template>
 
 <script setup>
-import { User, Lock, Key } from '@element-plus/icons-vue'
+import { User, Lock, Key, View, Hide } from '@element-plus/icons-vue'
 import { getToken, setToken } from '@sh/ui-core/utils/auth'
 import { encrypt } from '@sh/ui-core/utils/jsencrypt'
 import { safeTarget } from '@sh/ui-core/utils/safe-target'
 import { runtimeEnv } from '../../env.js'
 import { captchaChart, ssoLogin } from '@/api/sso'
+import EyeBuddies from '@/components/eye-buddies.vue'
 
 const title = runtimeEnv.title
 const footerContent = 'Copyright © 2018-2025 wangkc. All Rights Reserved.'
@@ -58,6 +68,10 @@ const loginForm = ref({
 })
 
 const loginMessage = ref(null)
+
+// 动画小人联动状态：账号框聚焦中 / 密码明文可见
+const isTyping = ref(false)
+const passwordVisible = ref(false)
 
 const loginRules = {
   username: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
@@ -127,12 +141,16 @@ function getCode() {
 
 <style lang='scss' scoped>
 .login {
+  position: relative;
   display: flex;
   justify-content: right;
   align-items: center;
   height: 100%;
-  background-image: url("../assets/images/login-background.jpg");
-  background-size: cover;
+  // 纯 CSS 渐变背景（替代原背景图，加快加载）：紫→白→橘呼应左侧小人配色，叠加两个柔光斑
+  background:
+    radial-gradient(circle at 22% 24%, rgba(124, 92, 252, 0.16), transparent 42%),
+    radial-gradient(circle at 78% 78%, rgba(255, 155, 107, 0.14), transparent 46%),
+    linear-gradient(135deg, #eef2ff 0%, #faf5ff 48%, #fff7ed 100%);
   padding-right: 15%;
 }
 .title {
@@ -185,7 +203,8 @@ function getCode() {
   bottom: 0;
   width: 100%;
   text-align: center;
-  color: #fff;
+  // 浅色渐变背景下改用深灰，保证可读
+  color: #94a3b8;
   font-family: Arial;
   font-size: 12px;
   letter-spacing: 1px;
@@ -193,5 +212,8 @@ function getCode() {
 .login-code-img {
   height: 40px;
   padding-left: 12px;
+}
+.pwd-toggle {
+  cursor: pointer;
 }
 </style>
