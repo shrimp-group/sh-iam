@@ -16,7 +16,7 @@ public enum LoginStatus {
     USER_NOT_FOUND(32, "用户不存在"),
 
     /**
-     * 密码错误 【统一使用 32, 不能使用 31】
+     * 密码错误（内部状态：登录审计记录如实；对外与用户不存在统一返回 52 INVALID_CREDENTIALS）
      */
     INVALID_PASSWORD(31, "密码错误"),
 
@@ -41,19 +41,19 @@ public enum LoginStatus {
     EXPIRED_ACCOUNT(49, "账号过期"),
 
     /**
-     * 无效凭证（通用错误）
+     * 登录尝试次数过多
      */
-    INVALID_CREDENTIALS(52, "无效凭证"),
+    TOO_MANY_ATTEMPTS(51, "登录尝试次数过多"),
+
+    /**
+     * 无效凭证（对外统一提示：用户不存在与密码错误统一返回此状态，防用户名枚举）
+     */
+    INVALID_CREDENTIALS(52, "用户名或密码错误"),
 
     /**
      * 认证失败（通用错误）
      */
     AUTHENTICATION_FAILED(50, "认证失败"),
-
-    /**
-     * 登录尝试次数过多
-     */
-    TOO_MANY_ATTEMPTS(51, "登录尝试次数过多"),
 
     /**
      * 验证码错误

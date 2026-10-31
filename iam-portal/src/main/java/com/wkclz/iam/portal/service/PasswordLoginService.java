@@ -88,14 +88,14 @@ public class PasswordLoginService {
         if (lastLoginIn1Hour != null && lastLoginIn1Hour.getLoginStatus() != 0
             && (StringUtils.isBlank(captchaCode) || StringUtils.isBlank(captchaId))) {
             log.info("用户 {} 1h 内有失败记录，需要验证码", username);
-            return failResp(LoginStatus.NEED_CAPTCHA, username, clientIp, userAgent);
+            return failResp(LoginStatus.NEED_CAPTCHA, LoginStatus.NEED_CAPTCHA, username, clientIp, userAgent);
         }
 
         // 验证码校验
         if (StringUtils.isNotBlank(captchaId)) {
             if (!captchaService.verify(captchaId, captchaCode)) {
                 log.info("Captcha verify failed for user: {}", username);
-                return failResp(LoginStatus.INVALID_CAPTCHA, username, clientIp, userAgent);
+                return failResp(LoginStatus.INVALID_CAPTCHA, LoginStatus.INVALID_CAPTCHA, username, clientIp, userAgent);
             }
         }
 
@@ -103,7 +103,8 @@ public class PasswordLoginService {
         CredentialCheckResult result = credentialChecker.check(username, password);
 
         if (!result.isSuccess()) {
-            LoginStatus status = switch (result.getFailReason()) {
+            // 内部真实失败原因：LoginEvent/登录审计记录如实，便于排查
+            LoginStatus auditStatus = switch (result.getFailReason()) {
                 case USER_NOT_FOUND -> LoginStatus.USER_NOT_FOUND;
                 case AUTH_DISABLED -> LoginStatus.EXPIRED_ACCOUNT;
                 case LOCKED -> LoginStatus.ACCOUNT_LOCKED;
@@ -111,7 +112,9 @@ public class PasswordLoginService {
                 case PASSWORD_ERROR -> LoginStatus.INVALID_CREDENTIALS;
                 case PASSWORD_EXPIRED -> LoginStatus.EXPIRED_PASSWORD;
             };
-            return failResp(status, username, clientIp, userAgent);
+            // 防用户名枚举：用户不存在与密码错误对外统一提示，审计记录仍如实
+            LoginStatus respStatus = auditStatus == LoginStatus.USER_NOT_FOUND ? LoginStatus.INVALID_CREDENTIALS : auditStatus;
+            return failResp(auditStatus, respStatus, username, clientIp, userAgent);
         }
 
         // 阶段4：登录成功 — 委托 SessionManager 创建会话
@@ -239,14 +242,14 @@ public class PasswordLoginService {
     // ========== 内部方法 ==========
 
     /**
-     * 构建认证失败的响应，并发布 LoginFailedEvent。
+     * 构建认证失败的响应，并发布 LoginFailedEvent（审计用真实状态 auditStatus，响应用对外状态 respStatus）。
      */
-    private LoginResp failResp(LoginStatus loginStatus, String username, String clientIp, String userAgent) {
-        eventPublisher.publishEvent(LoginEvent.failed(username, clientIp, userAgent, loginStatus));
+    private LoginResp failResp(LoginStatus auditStatus, LoginStatus respStatus, String username, String clientIp, String userAgent) {
+        eventPublisher.publishEvent(LoginEvent.failed(username, clientIp, userAgent, auditStatus));
 
         LoginResp resp = new LoginResp();
-        resp.setLoginStatus(loginStatus.getCode());
-        resp.setLoginMessage(loginStatus.getMessage());
+        resp.setLoginStatus(respStatus.getCode());
+        resp.setLoginMessage(respStatus.getMessage());
         return resp;
     }
 }
