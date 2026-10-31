@@ -3,6 +3,7 @@ package com.wkclz.iam.admin.mapper;
 import com.wkclz.mybatis.mapper.BaseMapper;
 import com.wkclz.iam.common.entity.IamDataDimension;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -16,6 +17,12 @@ import java.util.List;
 public interface IamDataDimensionMapper extends BaseMapper<IamDataDimension> {
 
     List<IamDataDimension> getDataDimensionList(IamDataDimension entity);
+
+    List<IamDataDimension> getDims4Export(IamDataDimension entity);
+
+    List<IamDataDimension> getDimsByCodes(@Param("dimensionCodes") List<String> dimensionCodes);
+
+    int updateBatch4Import(@Param("entities") List<IamDataDimension> entities);
 
 }
 

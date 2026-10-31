@@ -37,6 +37,8 @@ public interface Route {
     String DATA_DIM_UPDATE = "/data-dim/update";
     String DATA_DIM_REMOVE = "/data-dim/remove";
     String DATA_DIM_OPTIONS = "/data-dim/options";
+    String DATA_DIM_EXPORT = "/data-dim/export";
+    String DATA_DIM_IMPORT = "/data-dim/import";
 
     // 角色
     String ROLE_LIST = "/role/list";

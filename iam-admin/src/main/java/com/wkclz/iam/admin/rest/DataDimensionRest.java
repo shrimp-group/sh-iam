@@ -4,8 +4,12 @@ import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.bean.req.DataDimCreateReq;
+import com.wkclz.iam.admin.bean.req.DataDimExportReq;
+import com.wkclz.iam.admin.bean.req.DataDimImportReq;
 import com.wkclz.iam.admin.bean.req.DataDimPageReq;
 import com.wkclz.iam.admin.bean.req.DataDimUpdateReq;
+import com.wkclz.iam.admin.bean.resp.DataDimExportResp;
+import com.wkclz.iam.admin.bean.resp.DataDimImportResp;
 import com.wkclz.iam.admin.bean.resp.DataDimResp;
 import com.wkclz.iam.admin.service.IamDataDimensionService;
 import com.wkclz.iam.common.entity.IamDataDimension;
@@ -83,6 +87,18 @@ public class DataDimensionRest {
     public R<List<DataDimResp>> dataDimOption() {
         List<IamDataDimension> list = iamDataDimensionService.selectAll();
         return R.ok(BeanUtil.cp(list, DataDimResp.class));
+    }
+
+    @GetMapping(Route.DATA_DIM_EXPORT)
+    @Operation(summary = "数据维度导出", description = "ids 有值时导出勾选项，否则按筛选条件全量导出")
+    public R<List<DataDimExportResp>> dataDimExport(@Valid DataDimExportReq req) {
+        return R.ok(iamDataDimensionService.getDataDims4Export(req));
+    }
+
+    @PostMapping(Route.DATA_DIM_IMPORT)
+    @Operation(summary = "数据维度导入", description = "按 dimensionCode 判断存在性，存在更新、不存在新增，全程无删除")
+    public R<DataDimImportResp> dataDimImport(@Valid @RequestBody DataDimImportReq req) {
+        return R.ok(iamDataDimensionService.dataDimImport(req));
     }
 
 }

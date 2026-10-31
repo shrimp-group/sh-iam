@@ -27,5 +27,57 @@
             id ASC
     </select>
 
+    <select id="getDims4Export" parameterType="com.wkclz.iam.common.entity.IamDataDimension" resultType="com.wkclz.iam.common.entity.IamDataDimension">
+        SELECT
+            id,
+            app_code,
+            dimension_code,
+            dimension_name,
+            dimension_data_json,
+            dimension_script,
+            sort,
+            remark,
+            version
+        FROM
+            iam_data_dimension
+        WHERE
+            deleted = 0
+            <if test="appCode != null">AND app_code = #{appCode}</if>
+            <if test="dimensionCode != null">AND dimension_code LIKE CONCAT('%', #{dimensionCode}, '%')</if>
+            <if test="dimensionName != null">AND dimension_name LIKE CONCAT('%', #{dimensionName}, '%')</if>
+        ORDER BY
+            sort ASC,
+            id ASC
+    </select>
+
+    <select id="getDimsByCodes" parameterType="java.util.List" resultType="com.wkclz.iam.common.entity.IamDataDimension">
+        SELECT
+            id,
+            app_code,
+            dimension_code,
+            version
+        FROM
+            iam_data_dimension
+        WHERE
+            deleted = 0
+            AND dimension_code IN ( <foreach collection="dimensionCodes" item="item" separator=",">#{item}</foreach> )
+    </select>
+
+    <!-- 导入场景批量更新：逐行不同值，CASE WHEN 单 SQL；不更新 dimension_code；update_time 由数据库自动填充 -->
+    <update id="updateBatch4Import" parameterType="java.util.List">
+        UPDATE iam_data_dimension
+        SET
+            app_code = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.appCode}</foreach> END,
+            dimension_name = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.dimensionName}</foreach> END,
+            dimension_data_json = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.dimensionDataJson}</foreach> END,
+            dimension_script = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.dimensionScript}</foreach> END,
+            remark = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.remark}</foreach> END,
+            sort = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.sort}</foreach> END,
+            update_by = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.updateBy}</foreach> END,
+            version = version + 1
+        WHERE deleted = 0
+        AND id IN ( <foreach collection="entities" item="item" separator=",">#{item.id}</foreach> )
+    </update>
+
 </mapper>
 
