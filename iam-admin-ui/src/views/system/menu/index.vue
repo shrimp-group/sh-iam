@@ -24,6 +24,7 @@
               row-key="menuCode"
               :tree-props="{ children: 'children' }"
               :default-expand-all="treeExpandAll"
+              class="el-table-tree"
             >
               <el-table-column label="菜单名称" prop="menuName" min-width="200">
                 <template #default="{row}">
@@ -100,7 +101,7 @@
               </el-breadcrumb>
             </div>
 
-            <el-table v-loading="loading" :data="showList">
+            <el-table v-loading="loading" :data="showList" class="el-table-level">
               <el-table-column label="菜单名称" prop="menuName" min-width="120">
                 <template #default="{row}">
                   <!-- 非叶子 -->
@@ -477,6 +478,12 @@ function handleEditChange() {
 </script>
 
 <style scoped lang="scss">
+.el-table-tree {
+  height: calc(100vh - 190px);
+}
+.el-table-level {
+  height: calc(100vh - 214px);
+}
 .menu-breadcrumb {
   font-size: 14px;
   margin: 8px 0;;
