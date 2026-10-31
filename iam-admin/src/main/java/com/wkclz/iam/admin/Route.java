@@ -68,6 +68,8 @@ public interface Route {
     String MENU_DETAIL = "/menu/detail";
     String MENU_BOUND_ROLES = "/menu/bound-roles";
     String MENU_BOUND_USERS = "/menu/bound-users";
+    String MENU_EXPORT = "/menu/export";
+    String MENU_IMPORT = "/menu/import";
 
     // 角色菜单关联
     String ROLE_MENU_LIST = "/role-menu/list";

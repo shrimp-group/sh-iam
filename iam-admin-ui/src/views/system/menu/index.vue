@@ -24,8 +24,10 @@
               row-key="menuCode"
               :tree-props="{ children: 'children' }"
               :default-expand-all="treeExpandAll"
+              @selection-change="handleTreeSelectionChange"
               class="el-table-tree"
             >
+              <el-table-column type="selection" width="55" />
               <el-table-column label="菜单名称" prop="menuName" min-width="200">
                 <template #default="{row}">
                   <svg-icon v-if="row.icon" :icon-class="row.icon" style="margin-right: 8px;" />
@@ -66,6 +68,23 @@
                 </template>
               </el-table-column>
             </el-table>
+
+            <div style="margin-top: 8px;">
+              <el-dropdown @command="handleExport" style="vertical-align: middle;">
+                <el-button type="warning" plain :loading="exportLoading">
+                  导出<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="all">导出全部（当前应用）</el-dropdown-item>
+                    <el-dropdown-item command="selected" :disabled="selectedTreeRows.length === 0" divided>
+                      导出选中（{{ selectedTreeRows.length }} 条）
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-button type="success" plain icon="Upload" style="margin-left: 12px;" @click="handleImport">导入</el-button>
+            </div>
           </el-tab-pane>
 
           <!-- 列表视图 -->
@@ -163,14 +182,18 @@
     </layout-split>
     <edit ref="editRef" @change="handleEditChange"/>
     <detail ref="detailRef" />
+    <import-menu ref="importRef" @change="handleImportChange"/>
   </div>
 </template>
 
 <script setup name="IamMenu">
-import {menuList, menuTree, menuRemove} from "@/api/system/menu";
+import {menuList, menuTree, menuRemove, menuExport} from "@/api/system/menu";
 import Edit from "./components/edit"
 import Detail from "./components/detail"
+import ImportMenu from "./components/import"
 import AppOptions from "@/views/components/AppOptions"
+import { copy } from "@sh/ui-core/utils/shrimp"
+import { ArrowDown } from "@element-plus/icons-vue"
 
 const { proxy } = getCurrentInstance();
 const { BOOLEAN, MENU_TYPE } = proxy.useDict("BOOLEAN", "MENU_TYPE");
@@ -205,6 +228,8 @@ const menuTreeDataLoaded = ref(false)
 const treeLoading = ref(false)
 const treeExpandAll = ref(false)
 const treeTableKey = ref(0)
+const selectedTreeRows = ref([])
+const exportLoading = ref(false)
 
 // 搜索防抖 300ms
 let treeKeywordTimer = null
@@ -324,6 +349,11 @@ function handleTreeDelete(row) {
     proxy.$modal.msgSuccess("删除成功")
     loadMenuTreeData()
   })
+}
+
+// 树形视图-勾选变化（勾选父节点自动带全部子孙，后端再按 parentCode 递归兜底）
+function handleTreeSelectionChange(selection) {
+  selectedTreeRows.value = selection
 }
 
 
@@ -475,11 +505,43 @@ function handleEditChange() {
   }
 }
 
+/** 导出菜单：selected=仅勾选子树（递归含全部子孙），all=当前应用全量；结果 JSON 复制到剪贴板 */
+function handleExport(command) {
+  const params = command === "selected"
+    ? {ids: selectedTreeRows.value.map(row => row.id).join(",")}
+    : {appCode: queryParams.value.appCode};
+  exportLoading.value = true;
+  menuExport(params).then(res => {
+    const list = res.data || [];
+    if (list.length === 0) {
+      proxy.$modal.msgWarning("没有可导出的数据");
+      return;
+    }
+    copy(JSON.stringify(list, null, 2), "成功导出 " + list.length + " 条菜单到剪贴板!");
+  }).finally(() => {
+    exportLoading.value = false;
+  });
+}
+
+/** 导入按钮操作 */
+function handleImport() {
+  proxy.$refs["importRef"].init();
+}
+
+/** 导入成功后，根据当前 tab 刷新对应数据 */
+function handleImportChange() {
+  if (activeTab.value === 'tree') {
+    loadMenuTreeData();
+  } else {
+    getList();
+  }
+}
+
 </script>
 
 <style scoped lang="scss">
 .el-table-tree {
-  height: calc(100vh - 190px);
+  height: calc(100vh - 230px);
 }
 .el-table-level {
   height: calc(100vh - 214px);

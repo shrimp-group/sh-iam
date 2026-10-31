@@ -34,3 +34,13 @@ export const menuRemove = (data) => {
 export const menuDetail = (params) => {
   return request({url: '/iam-admin/menu/detail', method: 'get', params})
 }
+
+// 8. 菜单管理-导出（ids 有值导出选中子树，否则按 appCode 全量导出）
+export const menuExport = (params) => {
+  return request({url: '/iam-admin/menu/export', method: 'get', params})
+}
+
+// 9. 菜单管理-导入（按菜单编码存在性更新/新增）
+export const menuImport = (data) => {
+  return request({url: '/iam-admin/menu/import', method: 'post', data})
+}

@@ -51,4 +51,28 @@
         ORDER BY menu_full_path
     </select>
 
+    <!-- 按 menuCode 集合批量查询绑定关系：导出挂接 apiCodes 与导入绑定快照重建共用 -->
+    <select id="getBindingsByMenuCodes" parameterType="java.util.List" resultType="com.wkclz.iam.common.entity.IamMenuApi">
+        SELECT
+            id,
+            app_code,
+            menu_code,
+            api_code
+        FROM
+            iam_menu_api
+        WHERE
+            deleted = 0
+            AND menu_code IN ( <foreach collection="menuCodes" item="item" separator=",">#{item}</foreach> )
+    </select>
+
+    <!-- 按 menuCode 集合逻辑删除绑定关系（导入绑定快照重建先清后插），沿用 IamMenuFieldMapper.deleteByMenuCode 先例；update_by 由 MyBatisBoundSqlInterceptor 注入 -->
+    <update id="deleteByMenuCodes" parameterType="java.util.List">
+        UPDATE iam_menu_api
+        SET deleted = DATE_FORMAT(NOW(6), '%Y%m%d%H%i%s%m'),
+        update_by = #{updateBy, javaType=String},
+        version = version + 1
+        WHERE deleted = 0
+        AND menu_code IN ( <foreach collection="menuCodes" item="item" separator=",">#{item}</foreach> )
+    </update>
+
 </mapper>

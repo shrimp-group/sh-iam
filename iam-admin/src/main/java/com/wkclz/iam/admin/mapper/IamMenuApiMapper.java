@@ -34,5 +34,22 @@ public interface IamMenuApiMapper extends BaseMapper<IamMenuApi> {
      */
     List<String> getBoundMenuPathsByApiCode(@Param("apiCode") String apiCode);
 
+    /**
+     * 按 menuCode 集合批量查询绑定关系：导出挂接 apiCodes 与导入绑定快照重建共用
+     *
+     * @param menuCodes menuCode 集合
+     * @return 绑定关系列表（appCode/menuCode/apiCode）
+     */
+    List<IamMenuApi> getBindingsByMenuCodes(@Param("menuCodes") List<String> menuCodes);
+
+    /**
+     * 按 menuCode 集合逻辑删除绑定关系（导入绑定快照重建先清后插）；
+     * update_by 占位符由 MyBatisBoundSqlInterceptor 注入当前用户（与 BaseMapper.deleteById 同机制）
+     *
+     * @param menuCodes menuCode 集合
+     * @return 删除行数
+     */
+    int deleteByMenuCodes(@Param("menuCodes") List<String> menuCodes);
+
 }
 

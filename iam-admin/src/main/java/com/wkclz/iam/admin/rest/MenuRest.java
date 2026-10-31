@@ -3,9 +3,13 @@ package com.wkclz.iam.admin.rest;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
 import com.wkclz.iam.admin.bean.req.MenuCreateReq;
+import com.wkclz.iam.admin.bean.req.MenuExportReq;
+import com.wkclz.iam.admin.bean.req.MenuImportReq;
 import com.wkclz.iam.admin.bean.req.MenuListReq;
 import com.wkclz.iam.admin.bean.req.MenuUpdateReq;
 import com.wkclz.iam.admin.bean.resp.MenuDetailResp;
+import com.wkclz.iam.admin.bean.resp.MenuExportResp;
+import com.wkclz.iam.admin.bean.resp.MenuImportResp;
 import com.wkclz.iam.admin.bean.resp.MenuResp;
 import com.wkclz.iam.admin.bean.resp.MenuRoleResp;
 import com.wkclz.iam.admin.bean.resp.MenuUserResp;
@@ -133,6 +137,18 @@ public class MenuRest {
     public R<List<MenuUserResp>> menuBoundUsers(@NotBlank(message = "menuCode不能为空") @RequestParam String menuCode) {
         List<MenuUserResp> list = iamUserMenuService.getMenuBoundUsers(menuCode);
         return R.ok(list);
+    }
+
+    @GetMapping(Route.MENU_EXPORT)
+    @Operation(summary = "菜单导出", description = "ids 有值时导出选中子树（递归含子孙），否则按 appCode 全量导出")
+    public R<List<MenuExportResp>> menuExport(@Valid MenuExportReq req) {
+        return R.ok(iamMenuService.getMenus4Export(req));
+    }
+
+    @PostMapping(Route.MENU_IMPORT)
+    @Operation(summary = "菜单导入", description = "按 menuCode 判断存在性，存在更新、不存在新增，业务数据全程无删除；绑定关系全量快照重建")
+    public R<MenuImportResp> menuImport(@Valid @RequestBody MenuImportReq req) {
+        return R.ok(iamMenuService.menuImport(req));
     }
 
 }

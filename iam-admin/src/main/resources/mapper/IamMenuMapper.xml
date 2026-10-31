@@ -68,6 +68,76 @@
     </select>
 
 
+    <!-- 按 appCode 集合批量查询：导出选中模式圈定子孙所用，列与 getAppMenu4Tree 一致 -->
+    <select id="getMenusByAppCodes" parameterType="java.util.List" resultType="com.wkclz.iam.common.dto.IamMenuDto">
+        SELECT
+            `id`,
+            `app_code`,
+            `parent_code`,
+            `menu_code`,
+            `menu_name`,
+            `icon`,
+            `menu_type`,
+            `route_path`,
+            `component`,
+            `button_code`,
+            `hidden`,
+            `sort`,
+            `create_time`,
+            `create_by`,
+            `update_time`,
+            `update_by`,
+            `remark`,
+            `version`
+        FROM
+            iam_menu
+        WHERE
+            deleted = 0
+            AND app_code IN ( <foreach collection="appCodes" item="item" separator=",">#{item}</foreach> )
+        ORDER BY
+            sort,
+            id
+    </select>
+
+
+    <!-- 按 menuCode 集合批量查询：导入存在性判断与 parentCode 存在性判断共用 -->
+    <select id="getMenusByCodes" parameterType="java.util.List" resultType="com.wkclz.iam.common.entity.IamMenu">
+        SELECT
+            id,
+            app_code,
+            parent_code,
+            menu_code,
+            menu_name,
+            menu_type,
+            version
+        FROM
+            iam_menu
+        WHERE
+            deleted = 0
+            AND menu_code IN ( <foreach collection="menuCodes" item="item" separator=",">#{item}</foreach> )
+    </select>
+
+    <!-- 导入场景批量更新：逐行不同值，CASE WHEN 单 SQL；不更新 menu_code；update_time 由数据库自动填充 -->
+    <update id="updateBatch4Import" parameterType="java.util.List">
+        UPDATE iam_menu
+        SET
+            app_code = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.appCode}</foreach> END,
+            parent_code = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.parentCode}</foreach> END,
+            menu_name = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.menuName}</foreach> END,
+            icon = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.icon}</foreach> END,
+            menu_type = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.menuType}</foreach> END,
+            route_path = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.routePath}</foreach> END,
+            component = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.component}</foreach> END,
+            button_code = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.buttonCode}</foreach> END,
+            hidden = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.hidden}</foreach> END,
+            remark = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.remark}</foreach> END,
+            sort = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.sort}</foreach> END,
+            update_by = CASE id <foreach collection="entities" item="item">WHEN #{item.id} THEN #{item.updateBy}</foreach> END,
+            version = version + 1
+        WHERE deleted = 0
+        AND id IN ( <foreach collection="entities" item="item" separator=",">#{item.id}</foreach> )
+    </update>
+
     <!-- 根据用户编码查询菜单列表 -->
     <select id="selectMenusByUserCode" parameterType="com.wkclz.iam.common.entity.IamMenu" resultType="com.wkclz.iam.common.entity.IamMenu">
         SELECT DISTINCT
