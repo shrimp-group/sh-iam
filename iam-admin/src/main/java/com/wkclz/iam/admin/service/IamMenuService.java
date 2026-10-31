@@ -45,6 +45,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
 
 
     public List<IamMenuDto> menuTree(IamMenu entity) {
+        log.info("查询菜单树, entity={}", entity);
         // 查询所有菜单
         List<IamMenuDto> menus = mapper.getAppMenu4Tree(entity.getAppCode());
         // 构建菜单树
@@ -178,7 +179,17 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
                 }
             }
         }
+        assignLevel(tree, 1);
         return tree;
+    }
+
+    private void assignLevel(List<IamMenuDto> nodes, int level) {
+        for (IamMenuDto node : nodes) {
+            node.setLevel(level);
+            if (node.getChildren() != null) {
+                assignLevel(node.getChildren(), level + 1);
+            }
+        }
     }
 
 }

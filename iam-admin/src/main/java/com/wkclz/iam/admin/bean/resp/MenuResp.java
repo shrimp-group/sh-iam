@@ -51,6 +51,9 @@ public class MenuResp extends EntityResp {
     @Schema(description = "已绑定接口数量")
     private Integer apiBindCount;
 
+    @Schema(description = "菜单层级, 根节点为1")
+    private Integer level;
+
     @Schema(description = "子菜单列表")
     private List<MenuResp> children;
 

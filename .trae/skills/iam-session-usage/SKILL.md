@@ -659,7 +659,7 @@ public class CustomWhiteListMatcher extends WhiteListMatcher {
 | `EXPIRED_ACCOUNT`      | 49   | 账号过期     |
 | `AUTHENTICATION_FAILED` | 50   | 认证失败     |
 | `TOO_MANY_ATTEMPTS`    | 51   | 登录尝试次数过多 |
-| `INVALID_CREDENTIALS`  | 52   | 无效凭证     |
+| `INVALID_CREDENTIALS`  | 52   | 用户名或密码错误 |
 | `ACCOUNT_DISABLED`     | 53   | 账号禁用     |
 | `INVALID_CAPTCHA`      | 54   | 验证码错误    |
 | `NEED_CAPTCHA`         | 60   | 需要验证码    |

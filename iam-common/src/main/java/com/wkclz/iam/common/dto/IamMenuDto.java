@@ -26,6 +26,11 @@ public class IamMenuDto extends IamMenu {
      */
     private Integer apiBindCount;
 
+    /**
+     * 菜单层级
+     */
+    private Integer level;
+
 
 
 

@@ -7,6 +7,66 @@
       </template>
       <template #right>
         <el-tabs v-model="activeTab">
+          <!-- 树形视图 -->
+          <el-tab-pane label="树形视图" name="tree">
+            <div class="tree-toolbar">
+              <el-input v-model="queryParams.appCode" disabled style="width: 160px" />
+              <el-input v-model="treeKeyword" placeholder="菜单名称搜索" clearable style="width: 200px" />
+              <el-button type="primary" icon="Refresh" @click="handleQuery">刷新</el-button>
+              <el-button size="small" @click="expandAll">一键展开</el-button>
+              <el-button size="small" @click="collapseAll">一键折叠</el-button>
+            </div>
+
+            <el-table
+              v-loading="treeLoading"
+              :key="treeTableKey"
+              :data="filteredMenuTree"
+              row-key="menuCode"
+              :tree-props="{ children: 'children' }"
+              :default-expand-all="treeExpandAll"
+            >
+              <el-table-column label="菜单名称" prop="menuName" min-width="200">
+                <template #default="{row}">
+                  <svg-icon v-if="row.icon" :icon-class="row.icon" style="margin-right: 8px;" />
+                  <span>{{ row.menuName }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="菜单类型" prop="menuType" width="80">
+                <template #default="{row}"><dict-tag :options="MENU_TYPE" :value="row.menuType" /></template>
+              </el-table-column>
+              <el-table-column label="路由地址" prop="routePath" min-width="140">
+                <template #default="{row}">
+                  <span :style="{ paddingLeft: Math.max((row.level || 1) - 1, 0) * 2 + 'ch' }">{{ row.routePath }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="组件" prop="component" min-width="120"/>
+              <el-table-column label="按钮编码" prop="buttonCode" min-width="120"/>
+              <el-table-column label="隐藏" prop="hidden" width="60">
+                <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.hidden" /></template>
+              </el-table-column>
+              <el-table-column label="排序" prop="sort" width="60" v-if="columns.sort.visible"/>
+              <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>
+              <el-table-column label="创建时间" prop="createTime" width="160" v-if="columns.createTime.visible">
+                <template #default="{row}">{{ parseTime(row.createTime) }}</template>
+              </el-table-column>
+              <el-table-column label="创建人" prop="createBy" width="120" v-if="columns.createBy.visible"/>
+              <el-table-column fixed="right" width="280">
+                <template #header><table-setting v-model:columns="columns"/></template>
+                <template #default="{row}">
+                  <el-button link type="success" icon="View" @click="handleDetail(row)">详情</el-button>
+                  <el-button link type="primary" icon="Plus" @click="handleTreeAdd(row)">新增</el-button>
+                  <el-button link type="primary" icon="Edit" @click="handleTreeUpdate(row)">编辑</el-button>
+                  <el-popconfirm v-if="!row.children || row.children.length === 0" :title="'确认删除:' + row.menuName + '?'" placement="top-end" @confirm="handleTreeDelete(row)">
+                    <template #reference><el-button link type="danger" icon="Delete">删除</el-button></template>
+                  </el-popconfirm>
+                  <el-tooltip v-if="row.children && row.children.length > 0" effect="dark" content="请先删除子菜单!" placement="top-start">
+                    <el-button link type="danger" icon="Delete" disabled>删除</el-button>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+
           <!-- 列表视图 -->
           <el-tab-pane label="列表视图" name="list">
             <el-form :model="queryParams" ref="queryRef" :inline="true" @submit.native.prevent label-width="1px;">
@@ -97,62 +157,6 @@
               </el-table-column>
             </el-table>
           </el-tab-pane>
-
-          <!-- 树形视图 -->
-          <el-tab-pane label="树形视图" name="tree">
-            <div class="tree-toolbar">
-              <el-input v-model="queryParams.appCode" disabled style="width: 160px" />
-              <el-input v-model="treeKeyword" placeholder="菜单名称搜索" clearable style="width: 200px" />
-              <el-button type="primary" icon="Refresh" @click="handleQuery">刷新</el-button>
-              <el-button size="small" @click="expandAll">一键展开</el-button>
-              <el-button size="small" @click="collapseAll">一键折叠</el-button>
-            </div>
-
-            <el-table
-              ref="menuTreeTableRef"
-              v-loading="treeLoading"
-              :data="filteredMenuTree"
-              row-key="menuCode"
-              :tree-props="{ children: 'children' }"
-              :default-expand-all="false"
-            >
-              <el-table-column label="菜单名称" prop="menuName" min-width="200">
-                <template #default="{row}">
-                  <svg-icon v-if="row.icon" :icon-class="row.icon" style="margin-right: 8px;" />
-                  <span>{{ row.menuName }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="菜单类型" prop="menuType" width="80">
-                <template #default="{row}"><dict-tag :options="MENU_TYPE" :value="row.menuType" /></template>
-              </el-table-column>
-              <el-table-column label="路由地址" prop="routePath" min-width="120"/>
-              <el-table-column label="组件" prop="component" min-width="120"/>
-              <el-table-column label="按钮编码" prop="buttonCode" min-width="120"/>
-              <el-table-column label="隐藏" prop="hidden" width="60">
-                <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.hidden" /></template>
-              </el-table-column>
-              <el-table-column label="排序" prop="sort" width="60" v-if="columns.sort.visible"/>
-              <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>
-              <el-table-column label="创建时间" prop="createTime" width="160" v-if="columns.createTime.visible">
-                <template #default="{row}">{{ parseTime(row.createTime) }}</template>
-              </el-table-column>
-              <el-table-column label="创建人" prop="createBy" width="120" v-if="columns.createBy.visible"/>
-              <el-table-column fixed="right" width="280">
-                <template #header><table-setting v-model:columns="columns"/></template>
-                <template #default="{row}">
-                  <el-button link type="success" icon="View" @click="handleDetail(row)">详情</el-button>
-                  <el-button link type="primary" icon="Plus" @click="handleTreeAdd(row)">新增</el-button>
-                  <el-button link type="primary" icon="Edit" @click="handleTreeUpdate(row)">编辑</el-button>
-                  <el-popconfirm v-if="!row.children || row.children.length === 0" :title="'确认删除:' + row.menuName + '?'" placement="top-end" @confirm="handleTreeDelete(row)">
-                    <template #reference><el-button link type="danger" icon="Delete">删除</el-button></template>
-                  </el-popconfirm>
-                  <el-tooltip v-if="row.children && row.children.length > 0" effect="dark" content="请先删除子菜单!" placement="top-start">
-                    <el-button link type="danger" icon="Delete" disabled>删除</el-button>
-                  </el-tooltip>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-tab-pane>
         </el-tabs>
       </template>
     </layout-split>
@@ -192,17 +196,28 @@ const queryParams = ref({
 });
 
 // ========== 树形视图相关变量 ==========
-const activeTab = ref('list')
+const activeTab = ref('tree')
 const treeKeyword = ref('')
-const menuTreeData = ref([])
-const menuTreeTableRef = ref(null)
+const debouncedTreeKeyword = ref('')
+const menuTreeData = shallowRef([])
 const menuTreeDataLoaded = ref(false)
 const treeLoading = ref(false)
+const treeExpandAll = ref(false)
+const treeTableKey = ref(0)
+
+// 搜索防抖 300ms
+let treeKeywordTimer = null
+watch(treeKeyword, (val) => {
+  clearTimeout(treeKeywordTimer)
+  treeKeywordTimer = setTimeout(() => {
+    debouncedTreeKeyword.value = val
+  }, 300)
+})
 
 // 过滤后的树数据
 const filteredMenuTree = computed(() => {
-  if (!treeKeyword.value) return menuTreeData.value
-  return filterTree(menuTreeData.value, treeKeyword.value.toLowerCase())
+  if (!debouncedTreeKeyword.value) return menuTreeData.value
+  return filterTree(menuTreeData.value, debouncedTreeKeyword.value.toLowerCase())
 })
 
 // 递归过滤树节点：匹配节点及其祖先节点保留
@@ -210,10 +225,13 @@ function filterTree(nodes, keyword) {
   if (!nodes) return []
   const result = []
   for (const node of nodes) {
+    if (node.menuName && node.menuName.toLowerCase().includes(keyword)) {
+      result.push(node)
+      continue
+    }
     const children = filterTree(node.children, keyword)
-    const nameMatch = node.menuName && node.menuName.toLowerCase().includes(keyword)
-    if (nameMatch || children.length > 0) {
-      result.push({ ...node, children: children.length > 0 ? children : node.children })
+    if (children.length > 0) {
+      result.push({ ...node, children })
     }
   }
   return result
@@ -226,6 +244,8 @@ function loadMenuTreeData() {
   menuTree({ appCode: queryParams.value.appCode }).then(res => {
     menuTreeData.value = res.data || []
     menuTreeDataLoaded.value = true
+    treeExpandAll.value = false
+    treeTableKey.value++
   }).finally(() => {
     treeLoading.value = false
   })
@@ -233,28 +253,23 @@ function loadMenuTreeData() {
 
 // 一键展开所有节点
 function expandAll() {
-  toggleExpansion(filteredMenuTree.value, true)
+  treeExpandAll.value = true
+  treeTableKey.value++
 }
 
 // 一键折叠所有节点
 function collapseAll() {
-  toggleExpansion(filteredMenuTree.value, false)
+  treeExpandAll.value = false
+  treeTableKey.value++
 }
 
-// 递归展开/折叠
-function toggleExpansion(data, expanded) {
-  data.forEach(item => {
-    menuTreeTableRef.value.toggleRowExpansion(item, expanded)
-    if (item.children && item.children.length > 0) {
-      toggleExpansion(item.children, expanded)
-    }
-  })
-}
-
-// 切换 Tab 时懒加载树数据
+// 切换 Tab 时懒加载对应视图数据
 watch(activeTab, (val) => {
   if (val === 'tree' && !menuTreeDataLoaded.value) {
     loadMenuTreeData()
+  }
+  if (val === 'list' && dataList.value.length === 0 && queryParams.value.appCode) {
+    getList()
   }
 })
 
@@ -320,6 +335,7 @@ function selectApp(row) {
   menuTreeDataLoaded.value = false
   menuTreeData.value = []
   treeKeyword.value = ''
+  debouncedTreeKeyword.value = ''
   handleQuery();
 }
 
