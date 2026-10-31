@@ -121,7 +121,10 @@ function resetQuery() {
 }
 
 function handleAdd() {
-  proxy.$refs["editRef"].init();
+  if (!queryParams.value.appCode) {
+    return;
+  }
+  proxy.$refs["editRef"].init({appCode: queryParams.value.appCode});
 }
 function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);
