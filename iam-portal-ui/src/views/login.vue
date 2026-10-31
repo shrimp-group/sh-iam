@@ -1,8 +1,8 @@
 <!-- CAS 登录页（应用功能：自 @sh/ui-core LoginView 0.0.8 迁回归属门户）：
      登录态经包内 user store 写父域 Cookie；成功后按 redirect 回跳（子系统整页跳，站内路由跳）；
-     验证码默认不展示，仅登录失败（后端正常响应 loginStatus≠0）时拉取 -->
+     验证码默认不展示，仅登录失败（后端正常响应 loginStatus≠0）时拉取； -->
 <template>
-  <div class="login">
+  <div class="login" :style="loginBgp ? { backgroundImage: 'url(' + loginBgp + ')' } : undefined">
     <!-- 左侧装饰：动画小人（纯装饰，随鼠标/输入状态/密码可见性互动，小屏隐藏） -->
     <EyeBuddies :is-typing="isTyping" :show-password="passwordVisible" :password-length="(loginForm.password || '').length" />
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
@@ -50,11 +50,12 @@ import { User, Lock, Key, View, Hide } from '@element-plus/icons-vue'
 import { getToken, setToken } from '@sh/ui-core/utils/auth'
 import { encrypt } from '@sh/ui-core/utils/jsencrypt'
 import { safeTarget } from '@sh/ui-core/utils/safe-target'
-import { runtimeEnv } from '../../env.js'
-import { captchaChart, ssoLogin } from '@/api/sso'
+import { runtimeEnv, envSuffix } from '../../env.js'
+import { captchaChart, ssoLogin, ssoAppInfo } from '@/api/sso'
 import EyeBuddies from '@/components/eye-buddies.vue'
 
-const title = runtimeEnv.title
+const title = ref(runtimeEnv.title)
+const loginBgp = ref('')
 const footerContent = 'Copyright © 2018-2025 wangkc. All Rights Reserved.'
 const route = useRoute()
 const router = useRouter()
@@ -96,6 +97,33 @@ function leaveTo(target) {
 if (getToken()) {
   leaveTo(safeTarget(redirect))
 }
+
+// 从 redirect 解析应用编码：绝对 URL 且 hostname 含 . 且非 IPv4 → 取域名首段；否则回退门户默认编码
+function resolveAppCode() {
+  const target = route.query.redirect
+  if (typeof target === 'string' && /^https?:\/\//i.test(target)) {
+    try {
+      const hostname = new URL(target).hostname
+      if (hostname.indexOf('.') > -1 && !/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+        return hostname.split('.')[0]
+      }
+    } catch (e) {
+      // 非法 URL 回退默认编码
+    }
+  }
+  return runtimeEnv.appCode
+}
+
+// 按目标应用拉取标题与背景：失败或未配置时静默回退默认标题，不阻塞登录
+onMounted(() => {
+  ssoAppInfo(resolveAppCode()).then(res => {
+    const appName = res.data?.appName
+    if (!appName) { return }
+    title.value = appName + '-单点登录' + envSuffix
+    document.title = title.value
+    loginBgp.value = res.data?.loginBgp || ''
+  }).catch(() => {})
+})
 
 function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
@@ -151,6 +179,8 @@ function getCode() {
     radial-gradient(circle at 22% 24%, rgba(124, 92, 252, 0.16), transparent 42%),
     radial-gradient(circle at 78% 78%, rgba(255, 155, 107, 0.14), transparent 46%),
     linear-gradient(135deg, #eef2ff 0%, #faf5ff 48%, #fff7ed 100%);
+  background-size: cover;
+  background-position: center;
   padding-right: 15%;
 }
 .title {

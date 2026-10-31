@@ -12,6 +12,7 @@ public interface Route {
     String PUBLIC_SSO_LOGIN = "/public/sso/login";
     String PUBLIC_SSO_LOGOUT = "/public/sso/logout";
     String PUBLIC_SSO_REFRESH_TOKEN = "/public/sso/refresh-token";
+    String PUBLIC_SSO_APP_INFO = "/public/sso/app-info";
     String PUBLIC_SSO_FORGOT_PASSWORD = "/public/sso/forgot-password";
     String PUBLIC_SSO_RESET_PASSWORD = "/public/sso/reset-password";
 

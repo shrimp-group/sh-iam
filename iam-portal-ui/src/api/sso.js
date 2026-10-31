@@ -15,3 +15,7 @@ export const captchaChart = () => {
 export const ssoRegister = (data) => {
   return request({url: '/iam-portal/public/sso/register', method: 'post', data})
 }
+
+export const ssoAppInfo = (appCode) => {
+  return request({url: '/iam-portal/public/sso/app-info', method: 'get', params: {appCode}})
+}

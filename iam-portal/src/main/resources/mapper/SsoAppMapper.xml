@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.portal.mapper.SsoAppMapper">
+    <select id="selectAppInfo" resultType="com.wkclz.iam.portal.bean.resp.SsoAppInfoResp">
+        SELECT
+            app_name,
+            login_bgp
+        FROM
+            iam_app
+        WHERE
+            app_code = #{appCode}
+            AND deleted = 0
+        LIMIT 1
+    </select>
+</mapper>

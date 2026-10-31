@@ -108,8 +108,8 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | `config`   | IamPortalConfig                                                                                                                                                                                    | Portal 配置 (密码过期天数、RSA 公私钥)                                          |
 | `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest                                                                                                                                              | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
 | `contract` | LocalSsoFacadeContract                                                                                                                                                                          | SSO 门面本地实现                                                       |
-| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, RequestRecordHandlerImpl, ApiRequestControlProviderImpl(请求控制配置 SPI 实现, 查询 iam_api 表) | SSO 核心业务逻辑                                                       |
-| `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper, SsoApiControlMapper                                                                                            | SSO 数据访问                                                         |
+| `service`  | IamLoginService, IamSessionService, SsoResourceService(含若依菜单树转换), UsernameCacheService, IamRequestService, SsoAppService(登录页应用信息查询, 仅 appName/loginBgp), RequestRecordHandlerImpl, ApiRequestControlProviderImpl(请求控制配置 SPI 实现, 查询 iam_api 表) | SSO 核心业务逻辑                                                       |
+| `mapper`   | SsoLoginMapper, SsoLoginRecordMapper, SsoRequestRecordMapper, SsoResourceMapper, SsoApiControlMapper, SsoAppMapper(按 appCode 查登录页应用信息)   | SSO 数据访问                                                         |
 | 根包         | IamPortalAutoConfig, Route                                                                                                                                                                         | 自动配置 + 路由常量接口 (前缀 `/iam-portal`)                                    |
 
 ### iam-admin (`com.wkclz.iam.admin`)
@@ -139,7 +139,7 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | `user/role/index.vue`                       | IamRole              | 角色管理主页面（列表视图+树形视图 Tab 切换，树形视图使用 el-table 树形模式）     |
 | `user/role/components/edit.vue`             | IamRoleEdit          | 角色新增/编辑弹窗                                          |
 | `user/role/components/menu-bind.vue`        | RoleMenuBind         | 角色菜单绑定弹窗                                           |
-| `system/menu/`                              | -                    | 菜单管理 (列表视图+el-table树形视图双Tab)                       |
+| `system/menu/`                              | -                    | 菜单管理 (树形视图默认Tab, 路由地址按level缩进, 性能优化: shallowRef/防抖/重挂载展开, 列表视图懒加载) |
 | `system/api/`                               | -                    | API 管理                                             |
 | `system/app/`                               | -                    | 应用管理                                               |
 | `system/ak/`                                | -                    | 访问密钥管理                                             |
@@ -259,7 +259,7 @@ iam_request_record ── 请求日志 (独立)
          2. 检查是否需要验证码 (1h 内失败次数)
          3. 验证码校验 (Redis)
          4. SsoLoginMapper 跨三表 JOIN 查用户
-         5. 用户不存在 / 禁用 / 锁定 → 返回对应状态
+         5. 用户不存在 / 禁用 / 锁定 → 返回对应状态（用户不存在对外与密码错误统一提示「用户名或密码错误」，登录审计记录仍如实）
          6. 密码校验: MD5(password + salt)
          7. 密码过期检查 (默认 180 天)
          8. 生成 JWT (HS256) + Redis Session
@@ -495,6 +495,7 @@ iam_request_record ── 请求日志 (独立)
 | STORY-042    | ✅ Admin 自动配置与路由常量      | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                             |
 | STORY-043    | ✅ API 请求控制（互斥+滑动窗口限流）  | P1  | [STORY-043](docs/stories/管理后台/043-API请求控制.md)                                                                                                        |
 | STORY-044    | ✅ API 导出与导入（剪贴板 JSON）   | P1  | [STORY-044](docs/stories/管理后台/044-API导入导出.md)                                                                                                        |
+| STORY-045    | ✅ 登录页应用标题动态化            | P1  | [STORY-045](docs/stories/SSO登录/045-登录页应用标题动态化.md)                                                                                                   |
 
 ### 故事依赖关系概览
 

@@ -48,7 +48,7 @@ export default defineConfig(({command}) => {
       proxy: {
         // https://cn.vitejs.dev/config/#server-proxy
         '/api': {
-          target: 'http://localhost:8080',
+          target: 'https://api.uat.husters.cn',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/api/, '')
         },

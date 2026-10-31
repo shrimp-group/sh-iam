@@ -3,11 +3,11 @@ const name = "单点登录";
 export const appCode = 'portal';
 
 const configs = {
-  "local": {"title": name + "【LOCAL】", "baseApi": "/api"},
-  "dev":   {"title": name + "【DEV】",   "baseApi": ""},
-  "sit":   {"title": name + "【SIT】",   "baseApi": ""},
-  "uat":   {"title": name + "【UAT】",   "baseApi": ""},
-  "prod":  {"title": name,               "baseApi": ""}
+  "local": {"baseApi": "/api"},
+  "dev":   {"baseApi": ""},
+  "sit":   {"baseApi": ""},
+  "uat":   {"baseApi": ""},
+  "prod":  {"baseApi": ""}
 };
 
 function getEnv() {
@@ -23,6 +23,9 @@ function getEnv() {
 
 // 获取环境
 export const env = getEnv();
+
+// 环境标题后缀：prod 无后缀，其余环境带【ENV】标识
+export const envSuffix = env === 'prod' ? '' : ('【' + env.toUpperCase() + '】');
 
 // 将当前域名首段替换为 target，非域名访问返回 ''（不推导，不携带端口）
 function deriveDomainUrl(target) {
@@ -50,5 +53,5 @@ const config = getConfig(env);
 // 缺失时 getRuntimeEnv().portal 为 undefined，redirectToLogin 会拼出 "undefined/#/login?..." 的坏地址
 export const portal = '';
 
-// 运行时环境聚合（供 @sh/ui-core 运行时注入）
-export const runtimeEnv = {appCode, env, portal, ...config};
+// 运行时环境聚合（供 @sh/ui-core 运行时注入）；title 在导出处统一以 name + envSuffix 拼接
+export const runtimeEnv = {appCode, env, portal, envSuffix, title: name + envSuffix, ...config};
