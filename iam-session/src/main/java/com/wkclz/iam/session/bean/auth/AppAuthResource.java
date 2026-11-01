@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,22 +43,29 @@ public class AppAuthResource {
     private Set<String> roleCodes;
 
     /**
-     * 应用内全部菜单（MENU 与 BUTTON）
+     * 应用内全部菜单：menuCode → 节点（LinkedHashMap 保 sort 序，MENU 与 BUTTON 两类）。
+     * <p>快照不可变约束：缓存内对象为多请求共享实例，消费方不得修改其字段（组树须浅拷贝节点）。</p>
      */
-    @Schema(description = "应用内全部菜单")
-    private List<AuthMenu> menus;
+    @Schema(description = "应用内全部菜单：menuCode → AuthMenu")
+    private Map<String, AuthMenu> menuMap;
 
     /**
-     * 角色菜单关系：roleCode → menuCodes
+     * 角色菜单关系：roleCode → menuCodes（一对多）
      */
     @Schema(description = "角色菜单关系：roleCode → menuCodes")
     private Map<String, Set<String>> roleMenuMap;
 
     /**
-     * 菜单 API 关系：menuCode → apis（权限计算与纳管判定依据）
+     * 应用内 API 定义：apiCode → 定义（method/uri，权限匹配依据）
      */
-    @Schema(description = "菜单 API 关系：menuCode → apis")
-    private Map<String, List<AuthApi>> menuApiMap;
+    @Schema(description = "应用内 API 定义：apiCode → AuthApi")
+    private Map<String, AuthApi> apiMap;
+
+    /**
+     * 菜单 API 关系：menuCode → apiCodes（一对多，与 roleMenuMap 同构）
+     */
+    @Schema(description = "菜单 API 关系：menuCode → apiCodes")
+    private Map<String, Set<String>> menuApiMap;
 
     /**
      * 接口限流配置条目（对应 iam_api.request_control）
@@ -94,8 +102,9 @@ public class AppAuthResource {
         resource.setAppCode(appCode);
         resource.setLoadTime(System.currentTimeMillis());
         resource.setRoleCodes(new LinkedHashSet<>());
-        resource.setMenus(new ArrayList<>());
+        resource.setMenuMap(new LinkedHashMap<>());
         resource.setRoleMenuMap(new HashMap<>());
+        resource.setApiMap(new HashMap<>());
         resource.setMenuApiMap(new HashMap<>());
         resource.setRequestControls(new ArrayList<>());
         resource.setApiFields(new ArrayList<>());

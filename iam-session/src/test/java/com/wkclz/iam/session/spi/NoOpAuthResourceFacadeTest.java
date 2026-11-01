@@ -24,10 +24,12 @@ class NoOpAuthResourceFacadeTest {
         assertEquals("iam-admin", resource.getAppCode());
         assertNotNull(resource.getRoleCodes());
         assertTrue(resource.getRoleCodes().isEmpty());
-        assertNotNull(resource.getMenus());
-        assertTrue(resource.getMenus().isEmpty());
+        assertNotNull(resource.getMenuMap());
+        assertTrue(resource.getMenuMap().isEmpty());
         assertNotNull(resource.getRoleMenuMap());
         assertTrue(resource.getRoleMenuMap().isEmpty());
+        assertNotNull(resource.getApiMap());
+        assertTrue(resource.getApiMap().isEmpty());
         assertNotNull(resource.getMenuApiMap());
         assertTrue(resource.getMenuApiMap().isEmpty());
         assertNotNull(resource.getRequestControls());
