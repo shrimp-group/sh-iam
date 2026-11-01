@@ -5,12 +5,15 @@ import com.wkclz.iam.session.cache.AuthCacheManager;
 import com.wkclz.iam.session.enums.DestroyReason;
 import com.wkclz.iam.session.service.SessionStore;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,11 +22,15 @@ import static org.mockito.Mockito.when;
 /**
  * AuthCacheSessionCleaner 单元测试 — 会话终结时按剩余会话数决定是否清理用户权限缓存。
  */
+@ExtendWith(MockitoExtension.class)
 class AuthCacheSessionCleanerTest {
 
-    private final AuthCacheManager authCacheManager = Mockito.mock(AuthCacheManager.class);
-    private final SessionStore sessionStore = Mockito.mock(SessionStore.class);
-    private final AuthCacheSessionCleaner cleaner = new AuthCacheSessionCleaner(authCacheManager, sessionStore);
+    @Mock
+    private AuthCacheManager authCacheManager;
+    @Mock
+    private SessionStore sessionStore;
+    @InjectMocks
+    private AuthCacheSessionCleaner cleaner;
 
     @Test
     void evictsCacheWhenNoRemainingSessions() {
