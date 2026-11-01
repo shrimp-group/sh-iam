@@ -83,7 +83,7 @@ public class AppAuthResource {
      * 接口限流配置条目。
      *
      * @param apiCode        API 编码
-     * @param apiMethod      HTTP 方法
+     * @param apiMethod      HTTP 方法（{@code REQUEST} 为通配值，匹配任意请求方法）
      * @param apiUri         API URI（支持 Ant 通配）
      * @param requestControl 请求控制配置（已解析）
      */

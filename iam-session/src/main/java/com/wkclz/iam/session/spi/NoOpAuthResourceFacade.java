@@ -1,8 +1,7 @@
 package com.wkclz.iam.session.spi;
 
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,10 +13,9 @@ import java.util.List;
  * 条件评估不可靠；上层模块（如 iam-portal 的 LocalAuthResourceFacade）通过实现类标注 {@code @Primary}
  * 覆盖默认行为。</p>
  */
+@Slf4j
 @Component
 public class NoOpAuthResourceFacade implements AuthResourceFacade {
-
-    private static final Logger log = LoggerFactory.getLogger(NoOpAuthResourceFacade.class);
 
     @Override
     public AppAuthResource loadAppResource(String appCode) {
