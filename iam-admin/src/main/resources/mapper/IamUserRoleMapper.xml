@@ -192,4 +192,29 @@
         AND (end_time &lt; NOW() OR start_time &gt; NOW())
     </update>
 
+    <!-- 查询即将到期生效的绑定涉及的用户编码（条件与 enableExpiredBindings 一致） -->
+    <select id="listEnableCandidates" resultType="java.lang.String">
+        SELECT DISTINCT
+        user_code
+        FROM
+        iam_user_role
+        WHERE
+        deleted = 0
+        AND enable_status = 0
+        AND start_time &lt;= NOW()
+        AND end_time &gt;= NOW()
+    </select>
+
+    <!-- 查询即将到期失效的绑定涉及的用户编码（条件与 disableExpiredBindings 一致） -->
+    <select id="listDisableCandidates" resultType="java.lang.String">
+        SELECT DISTINCT
+        user_code
+        FROM
+        iam_user_role
+        WHERE
+        deleted = 0
+        AND enable_status = 1
+        AND (end_time &lt; NOW() OR start_time &gt; NOW())
+    </select>
+
 </mapper>

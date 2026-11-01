@@ -16,6 +16,7 @@ import com.wkclz.iam.common.dto.IamUserRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamUserRole;
 import com.wkclz.iam.common.event.AdminSecurityEvent;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
@@ -72,6 +73,7 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
 
         mapper.insert(entity);
         log.info("用户角色绑定成功, id={}", entity.getId());
+        publishUserChanged(req.getUserCode());
         return entity;
     }
 
@@ -90,7 +92,21 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
         // 发布角色变更事件 → 刷新权限缓存
         eventPublisher.publishEvent(AdminSecurityEvent.roleChanged(oldEntity.getUserCode()));
         log.info("已发布 AdminSecurityEvent.ROLE_CHANGED: userCode={}", oldEntity.getUserCode());
+        // 发布用户级权限变更事件（Task 13 后为唯一事件）
+        publishUserChanged(oldEntity.getUserCode());
         return oldEntity;
+    }
+
+    /**
+     * 发布用户级权限变更事件（userCode 为空跳过）
+     */
+    private void publishUserChanged(String userCode) {
+        if (userCode == null || userCode.isEmpty()) {
+            log.warn("userCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.userChanged(userCode));
+        log.info("已发布权限变更事件: type=USER, key={}", userCode);
     }
 
     /**
@@ -121,6 +137,7 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
 
         mapper.insertBatch(list);
         log.info("批量绑定用户到角色完成, roleCode={}, 绑定{}条", req.getRoleCode(), list.size());
+        list.forEach(entity -> publishUserChanged(entity.getUserCode()));
     }
 
     /**
@@ -131,8 +148,10 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
         if (ids == null || ids.isEmpty()) {
             return;
         }
+        List<IamUserRole> oldEntities = selectByIds(ids);
         deleteByIds(ids);
         log.info("批量解绑用户角色完成, 解绑{}条", ids.size());
+        oldEntities.forEach(entity -> publishUserChanged(entity.getUserCode()));
     }
 
     /**
@@ -199,9 +218,20 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
      */
     public void refreshEnableStatus() {
         log.info("开始刷新用户角色绑定状态...");
+        // 先查出生效状态将发生变化的用户，更新后逐个发布权限变更
+        List<String> enableCandidates = mapper.listEnableCandidates();
+        List<String> disableCandidates = mapper.listDisableCandidates();
         int enabled = mapper.enableExpiredBindings();
         int disabled = mapper.disableExpiredBindings();
         log.info("用户角色绑定状态刷新完成, 生效{}条, 失效{}条", enabled, disabled);
+        enableCandidates.forEach(userCode -> {
+            log.info("绑定到期生效, 发布权限变更: userCode={}", userCode);
+            publishUserChanged(userCode);
+        });
+        disableCandidates.forEach(userCode -> {
+            log.info("绑定到期失效, 发布权限变更: userCode={}", userCode);
+            publishUserChanged(userCode);
+        });
     }
 
     /**

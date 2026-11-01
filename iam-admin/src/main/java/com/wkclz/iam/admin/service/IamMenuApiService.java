@@ -6,9 +6,12 @@ import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
 import com.wkclz.iam.admin.bean.resp.ApiBoundResp;
 import com.wkclz.iam.common.entity.IamMenuApi;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -24,6 +27,9 @@ import java.util.List;
 public class IamMenuApiService extends BaseService<IamMenuApi, IamMenuApiMapper> {
 
     private static final Logger log = LoggerFactory.getLogger(IamMenuApiService.class);
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
     public List<IamMenuApi> getMenuList(String menuCode) {
@@ -47,6 +53,7 @@ public class IamMenuApiService extends BaseService<IamMenuApi, IamMenuApiMapper>
         duplicateCheck(entity);
         mapper.insert(entity);
         log.info("菜单-API绑定成功, menuCode={}, apiCode={}", entity.getMenuCode(), entity.getApiCode());
+        publishAppChanged(entity.getAppCode());
         return entity;
     }
 
@@ -58,7 +65,20 @@ public class IamMenuApiService extends BaseService<IamMenuApi, IamMenuApiMapper>
         }
         deleteById(oldEntity);
         log.info("菜单-API解绑成功, menuCode={}, apiCode={}", oldEntity.getMenuCode(), oldEntity.getApiCode());
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
+    }
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
     }
 
     private void duplicateCheck(IamMenuApi entity) {

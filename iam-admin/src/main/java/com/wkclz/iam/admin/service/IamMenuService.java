@@ -13,6 +13,7 @@ import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
 import com.wkclz.iam.admin.mapper.IamMenuMapper;
 import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.common.entity.IamMenu;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.iam.common.entity.IamMenuApi;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -64,6 +66,9 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
 
     @Autowired
     private IamMenuApiMapper iamMenuApiMapper;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public List<IamMenuDto> menuList(IamMenu entity) {
         return mapper.getAppMenuList(entity.getAppCode());
@@ -233,6 +238,10 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         resp.setParentFixHints(parentFixHints);
         log.info("导入菜单完成, 新增菜单={}, 更新菜单={}, 重建绑定={}, 父级修复数={}",
             resp.getInsertMenuCount(), resp.getUpdateMenuCount(), resp.getRebuildBindCount(), parentFixHints.size());
+        // 按导入涉及的应用发布权限变更（导入可能跨应用，逐应用发布）
+        items.stream().map(item -> item.node().getAppCode())
+            .filter(code -> code != null && !code.isEmpty()).distinct()
+            .forEach(this::publishAppChanged);
         return resp;
     }
 
@@ -360,6 +369,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         entity.setMenuCode(redisIdGenerator.generateIdWithPrefix("menu_"));
         mapper.insert(entity);
         log.info("菜单创建成功, menuCode={}, menuType={}", entity.getMenuCode(), entity.getMenuType());
+        publishAppChanged(entity.getAppCode());
         return entity;
     }
 
@@ -373,6 +383,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         }
         IamMenu.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 
@@ -398,7 +409,20 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
             log.info("已清理字段组菜单的字段绑定, menuCode={}", oldEntity.getMenuCode());
         }
         deleteById(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
+    }
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
     }
 
     /**

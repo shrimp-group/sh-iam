@@ -59,5 +59,15 @@ public interface IamUserRoleMapper extends BaseMapper<IamUserRole> {
      */
     int disableExpiredBindings();
 
+    /**
+     * 查询即将到期生效的绑定涉及的用户编码（enableStatus 将 0→1）
+     */
+    List<String> listEnableCandidates();
+
+    /**
+     * 查询即将到期失效的绑定涉及的用户编码（enableStatus 将 1→0）
+     */
+    List<String> listDisableCandidates();
+
 }
 

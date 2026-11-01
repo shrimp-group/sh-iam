@@ -15,6 +15,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -46,7 +47,11 @@ class PermissionChangeSubscriberTest {
 
     @BeforeEach
     void setUp() {
-        subscriber = new PermissionChangeSubscriber(containerProvider, authCacheManager, config);
+        // 订阅器为 @Resource 字段注入，测试经反射装配（对齐主代码注入风格）
+        subscriber = new PermissionChangeSubscriber();
+        ReflectionTestUtils.setField(subscriber, "containerProvider", containerProvider);
+        ReflectionTestUtils.setField(subscriber, "authCacheManager", authCacheManager);
+        ReflectionTestUtils.setField(subscriber, "config", config);
     }
 
     private Message messageOf(String json) {

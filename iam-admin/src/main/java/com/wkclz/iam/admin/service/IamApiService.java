@@ -16,6 +16,7 @@ import com.wkclz.iam.admin.mapper.IamMenuApiMapper;
 import com.wkclz.iam.session.bean.ApiRequestControl;
 import com.wkclz.iam.common.dto.IamApiDto;
 import com.wkclz.iam.common.entity.IamApi;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.iam.common.entity.IamApiField;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -66,6 +68,8 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
     private IamApiFieldMapper iamApiFieldMapper;
     @Autowired
     private EntityFieldAnalyzer entityFieldAnalyzer;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public PageData<IamApiDto> getApiPage(IamApiDto entity) {
         return PageQuery.page(entity, mapper::getApiList);
@@ -114,7 +118,23 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
                 mapper.updateById(update);
             }
         }
+        // 按粘贴涉及的应用发布权限变更
+        entitys.stream().map(IamApi::getAppCode)
+            .filter(code -> code != null && !code.isEmpty()).distinct()
+            .forEach(this::publishAppChanged);
         return inserts.size() + updates.size();
+    }
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
     }
 
     private List<IamApiDto> getAllApis() {
@@ -238,6 +258,10 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         resp.setInsertFieldCount((long) fieldInserts.size());
         resp.setUpdateFieldCount((long) fieldUpdates.size());
         log.info("导入API完成, 新增API={}, 更新API={}, 新增字段={}, 更新字段={}", resp.getInsertApiCount(), resp.getUpdateApiCount(), resp.getInsertFieldCount(), resp.getUpdateFieldCount());
+        // 按导入涉及的应用发布权限变更
+        req.getApis().stream().map(ApiImportReq.ApiImportItemReq::getAppCode)
+            .filter(code -> code != null && !code.isEmpty()).distinct()
+            .forEach(this::publishAppChanged);
         return resp;
     }
 
@@ -428,6 +452,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         duplicateCheck(entity);
         entity.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
         mapper.insert(entity);
+        publishAppChanged(entity.getAppCode());
         return entity;
     }
 
@@ -439,6 +464,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         }
         IamApi.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 
@@ -452,6 +478,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
         deleteById(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 

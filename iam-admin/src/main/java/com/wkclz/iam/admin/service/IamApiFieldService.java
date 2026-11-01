@@ -8,12 +8,14 @@ import com.wkclz.iam.admin.mapper.IamApiMapper;
 import com.wkclz.iam.admin.mapper.IamMenuFieldMapper;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.iam.common.entity.IamApiField;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,8 @@ public class IamApiFieldService extends BaseService<IamApiField, IamApiFieldMapp
 
     @Autowired
     private IamApiMapper iamApiMapper;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
     @Autowired
     private RedisIdGenerator redisIdGenerator;
     @Autowired
@@ -73,6 +77,7 @@ public class IamApiFieldService extends BaseService<IamApiField, IamApiFieldMapp
         entity.setFieldCode(redisIdGenerator.generateIdWithPrefix("field_"));
         mapper.insert(entity);
         log.info("API字段权限创建成功, fieldCode={}", entity.getFieldCode());
+        publishAppChanged(entity.getAppCode());
         return entity;
     }
 
@@ -102,6 +107,7 @@ public class IamApiFieldService extends BaseService<IamApiField, IamApiFieldMapp
         IamApiField.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
         log.info("API字段权限更新成功, id={}", entity.getId());
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 
@@ -123,7 +129,20 @@ public class IamApiFieldService extends BaseService<IamApiField, IamApiFieldMapp
 
         deleteById(oldEntity);
         log.info("API字段权限删除成功, fieldCode={}", oldEntity.getFieldCode());
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
+    }
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
     }
 
     /**

@@ -11,10 +11,12 @@ import com.wkclz.iam.admin.bean.resp.MenuFieldResp;
 import com.wkclz.iam.common.entity.IamApiField;
 import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.iam.common.entity.IamMenuField;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.service.BaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,8 @@ public class IamMenuFieldService extends BaseService<IamMenuField, IamMenuFieldM
     private IamApiFieldMapper iamApiFieldMapper;
     @Autowired
     private IamMenuFieldMapper iamMenuFieldMapper;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 查询字段组已绑定的字段列表（含字段详情和API信息）
@@ -70,6 +74,7 @@ public class IamMenuFieldService extends BaseService<IamMenuField, IamMenuFieldM
         mapper.insert(entity);
 
         log.info("菜单字段绑定成功, menuCode={}, fieldCode={}", req.getMenuCode(), req.getFieldCode());
+        publishAppChanged(req.getAppCode());
         return entity;
     }
 
@@ -104,6 +109,7 @@ public class IamMenuFieldService extends BaseService<IamMenuField, IamMenuFieldM
         }
 
         log.info("批量保存菜单字段绑定完成, menuCode={}", menuCode);
+        publishAppChanged(appCode);
     }
 
     /**
@@ -118,6 +124,19 @@ public class IamMenuFieldService extends BaseService<IamMenuField, IamMenuFieldM
         }
         deleteById(entity);
         log.info("菜单字段解绑成功, id={}", id);
+        publishAppChanged(entity.getAppCode());
+    }
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
     }
 
     /**

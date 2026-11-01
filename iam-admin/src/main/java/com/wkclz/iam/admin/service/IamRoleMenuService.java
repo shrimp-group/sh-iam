@@ -8,11 +8,13 @@ import com.wkclz.iam.admin.bean.resp.RoleBoundResp;
 import com.wkclz.iam.admin.mapper.IamRoleMenuMapper;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamRoleMenu;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.service.BaseService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -36,9 +38,13 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
     @Autowired
     private IamRoleService iamRoleService;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     public IamRoleMenu create(IamRoleMenu entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
+        publishAppChangedByRole(entity.getRoleCode());
         return entity;
     }
 
@@ -52,6 +58,7 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
         }
         IamRoleMenu.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
+        publishAppChangedByRole(oldEntity.getRoleCode());
         return oldEntity;
     }
 
@@ -66,7 +73,23 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
         deleteById(oldEntity);
+        publishAppChangedByRole(oldEntity.getRoleCode());
         return oldEntity;
+    }
+
+    /**
+     * 经角色编码查询应用编码并发布应用静态资源变更事件（查询失败仅记日志跳过，不阻断业务）
+     */
+    private void publishAppChangedByRole(String roleCode) {
+        IamRole param = new IamRole();
+        param.setRoleCode(roleCode);
+        IamRole role = iamRoleService.selectOneByEntity(param);
+        if (role == null || role.getAppCode() == null || role.getAppCode().isEmpty()) {
+            log.warn("未查询到角色应用编码，跳过权限变更发布: roleCode={}", roleCode);
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(role.getAppCode()));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", role.getAppCode());
     }
 
     private void duplicateCheck(IamRoleMenu entity) {
@@ -148,6 +171,11 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
             deleteByIds(ids);
         }
         log.info("角色-菜单绑定保存完成, roleCode={}, 新增{}条, 移除{}条", roleCode, toAdd.size(), toRemove.size());
+        // 复用前文已查询的 appCode 发布权限变更
+        if (appCode != null && !appCode.isEmpty()) {
+            eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+            log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
+        }
     }
 
 }

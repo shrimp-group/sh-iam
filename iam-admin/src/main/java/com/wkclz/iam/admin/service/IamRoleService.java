@@ -6,12 +6,14 @@ import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamRoleMapper;
 import com.wkclz.iam.common.dto.IamRoleDto;
 import com.wkclz.iam.common.entity.IamRole;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,6 +36,9 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
     @Autowired
     private RedisIdGenerator redisIdGenerator;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
     public List<IamRoleDto> roleList(IamRole entity) {
@@ -78,6 +83,7 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         duplicateCheck(entity);
         entity.setRoleCode(redisIdGenerator.generateIdWithPrefix("role_"));
         mapper.insert(entity);
+        publishAppChanged(entity.getAppCode());
         return entity;
     }
 
@@ -89,6 +95,7 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         }
         IamRole.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 
@@ -110,7 +117,20 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         }
         log.info("删除角色, roleCode={}, roleName={}", oldEntity.getRoleCode(), oldEntity.getRoleName());
         deleteById(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
+    }
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
     }
 
     private void duplicateCheck(IamRole entity) {
