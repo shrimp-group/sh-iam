@@ -3,12 +3,13 @@ package com.wkclz.iam.portal.rest;
 import com.wkclz.core.base.R;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.core.identity.UserIdentity;
-import com.wkclz.iam.common.dto.IamMenuDto;
 import com.wkclz.iam.portal.Route;
 import com.wkclz.iam.portal.bean.req.ChangePasswordReq;
 import com.wkclz.iam.portal.entity.VueRouterMenu;
 import com.wkclz.iam.portal.service.PasswordLoginService;
 import com.wkclz.iam.portal.service.SsoResourceService;
+import com.wkclz.iam.session.bean.auth.AuthMenu;
+import com.wkclz.iam.session.service.AuthPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +34,8 @@ public class UserInfoRest {
     private PasswordLoginService passwordLoginService;
     @Autowired
     private SsoResourceService ssoResourceService;
+    @Autowired
+    private AuthPermissionService authPermissionService;
 
     @GetMapping(Route.USER_INFO)
     @Operation(summary = "获取用户信息")
@@ -43,13 +46,16 @@ public class UserInfoRest {
 
     @GetMapping(Route.USER_MENU_TREE)
     @Operation(summary = "获取用户菜单树")
-    public R<List<IamMenuDto>> userMenuTree(HttpServletRequest request) {
+    public R<List<AuthMenu>> userMenuTree(HttpServletRequest request) {
         String appCode = IdentityContext.getAppCode();
         if (StringUtils.isBlank(appCode)) {
             return R.error("appCode is blank in Headers");
         }
-        List<IamMenuDto> tree = ssoResourceService.getUserMenuTree(appCode);
-        return R.ok(tree);
+        UserIdentity identity = IdentityContext.get();
+        if (identity == null || StringUtils.isBlank(identity.getUserCode())) {
+            return R.error("userCode is blank");
+        }
+        return R.ok(authPermissionService.getUserMenuTree(identity.getUserCode(), appCode));
     }
 
     @GetMapping(Route.USER_MENU_TREE_RUOYI)
@@ -59,9 +65,12 @@ public class UserInfoRest {
         if (StringUtils.isBlank(appCode)) {
             return R.error("appCode is blank in Headers");
         }
-        List<IamMenuDto> menus = ssoResourceService.getUserMenuTree(appCode);
-        List<VueRouterMenu> vueRouterMenus = ssoResourceService.getUserMenuTreeRuoyi(menus);
-        return R.ok(vueRouterMenus);
+        UserIdentity identity = IdentityContext.get();
+        if (identity == null || StringUtils.isBlank(identity.getUserCode())) {
+            return R.error("userCode is blank");
+        }
+        List<AuthMenu> tree = authPermissionService.getUserMenuTree(identity.getUserCode(), appCode);
+        return R.ok(ssoResourceService.getUserMenuTreeRuoyi(tree));
     }
 
     @PostMapping(Route.USER_CHANGE_PASSWORD)

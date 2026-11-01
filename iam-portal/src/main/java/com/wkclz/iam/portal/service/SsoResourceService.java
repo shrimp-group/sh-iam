@@ -1,41 +1,30 @@
 package com.wkclz.iam.portal.service;
 
-import com.wkclz.iam.common.dto.IamMenuDto;
-import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.iam.portal.entity.VueRouterMenu;
 import com.wkclz.iam.portal.entity.VueRouterMeta;
-import com.wkclz.iam.portal.mapper.SsoResourceMapper;
+import com.wkclz.iam.session.bean.auth.AuthMenu;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * SSO 菜单资源服务 — 用户菜单树计算已由 AuthPermissionService（iam-session，三级缓存）承担，
+ * 本类仅负责若依 VueRouter 格式转换。
+ */
 @Service
 public class SsoResourceService {
 
     private static final Logger log = LoggerFactory.getLogger(SsoResourceService.class);
 
-    @Autowired
-    private SsoResourceMapper ssoResourceMapper;
-
-    public List<IamMenuDto> getUserMenuList(String appCode) {
-        return ssoResourceMapper.getUserMenu(appCode);
-    }
-
-    public List<IamMenuDto> getUserMenuTree(String appCode) {
-        List<IamMenuDto> userMenu = ssoResourceMapper.getUserMenu(appCode);
-        return makeTree(userMenu);
-    }
-
     /**
      * 获取若依格式的菜单树
      */
-    public List<VueRouterMenu> getUserMenuTreeRuoyi(List<IamMenuDto> menus) {
+    public List<VueRouterMenu> getUserMenuTreeRuoyi(List<AuthMenu> menus) {
         log.info("开始构建若依格式菜单树，菜单数量: {}", menus.size());
         Map<String, List<String>> buttonsMap = new HashMap<>();
         Map<String, Integer> namesCount = new HashMap<>();
@@ -44,35 +33,13 @@ public class SsoResourceService {
         return vueRouterMenus;
     }
 
-    private static List<IamMenuDto> makeTree(List<IamMenuDto> dtos) {
-        List<IamMenuDto> tree = new ArrayList<>();
-        Map<String, IamMenuDto> menuMap = dtos.stream().collect(Collectors.toMap(IamMenu::getMenuCode, t -> t));
-        for (IamMenuDto l : dtos) {
-            String parentCode = l.getParentCode();
-            if ("0".equals(parentCode)) {
-                tree.add(l);
-            } else {
-                IamMenuDto p = menuMap.get(parentCode);
-                if (p != null) {
-                    List<IamMenuDto> children = p.getChildren();
-                    if (children == null) {
-                        children = new ArrayList<>();
-                        p.setChildren(children);
-                    }
-                    children.add(l);
-                }
-            }
-        }
-        return tree;
-    }
-
     /**
      * 将菜单树转换为若依 VueRouter 菜单结构
      */
-    private static List<VueRouterMenu> menuTreeVueRouterTree(List<IamMenuDto> menus, String parentRoute, Map<String, List<String>> buttonsMap, Map<String, Integer> namesCount) {
+    private static List<VueRouterMenu> menuTreeVueRouterTree(List<AuthMenu> menus, String parentRoute, Map<String, List<String>> buttonsMap, Map<String, Integer> namesCount) {
         List<VueRouterMenu> vrMenus = new ArrayList<>();
 
-        for (IamMenuDto menu : menus) {
+        for (AuthMenu menu : menus) {
             if (!"MENU".equals(menu.getMenuType())) {
                 continue;
             }
@@ -132,13 +99,13 @@ public class SsoResourceService {
     /**
      * 提取子菜单中的按钮编码
      */
-    private static List<String> getMenuButtons(List<IamMenuDto> menus) {
+    private static List<String> getMenuButtons(List<AuthMenu> menus) {
         if (CollectionUtils.isEmpty(menus)) {
             return null;
         }
         return menus.stream()
                 .filter(t -> "BUTTON".equals(t.getMenuType()))
-                .map(IamMenu::getButtonCode)
+            .map(AuthMenu::getButtonCode)
                 .filter(StringUtils::isNotBlank)
                 .toList();
     }

@@ -110,13 +110,13 @@ class AuthPermissionFilterTest {
 
     @Test
     void returns403WhenApiNotManaged() throws ServletException, IOException {
-        // 开关开启后全量纳管：未纳管接口直接拒绝
+        // 开关开启后全量纳管：未纳管接口直接拒绝（对外文案统一为「无接口访问权限」）
         stubManaged(false);
         filter.doFilter(request, response, chain);
         verify(chain, never()).doFilter(request, response);
         assertEquals(403, response.getStatus());
         String body = response.getContentAsString(StandardCharsets.UTF_8);
-        assertEquals("{\"message\":\"接口未纳管\"}", body);
+        assertEquals("{\"message\":\"无接口访问权限\"}", body);
         verify(authPermissionService, never()).hasApiPermission(anyString(), anyString(), anyString(), anyString());
     }
 
