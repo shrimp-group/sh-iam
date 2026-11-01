@@ -20,6 +20,11 @@ public interface Route {
     String USER_MENU_TREE = "/user/menu/tree";
     String USER_MENU_TREE_RUOYI = "/user/menu/tree/ruoyi";
 
+    // 权限资源远程取数（iam-session 远程形态，AK 验签）
+    String PUBLIC_AUTH_APP_RESOURCE = "/public/auth/app-resource";
+    String PUBLIC_AUTH_USER_ROLES = "/public/auth/user-roles";
+    String PUBLIC_AUTH_CHANGES = "/public/auth/changes";
+
     // 注册模块
     String PUBLIC_SSO_REGISTER = "/public/sso/register";
     String PUBLIC_SSO_REGISTER_VERIFY = "/public/sso/register/verify";

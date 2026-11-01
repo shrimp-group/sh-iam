@@ -26,6 +26,10 @@ public class IamPortalConfig {
     @Value("${iam.portal.password-history-size:5}")
     private Integer passwordHistorySize;
 
-
+    /**
+     * 权限资源远程取数鉴权 token（简单共享密钥；密钥对方式后续重新设计）
+     */
+    @Value("${iam.portal.auth.token:}")
+    private String authToken;
 
 }
