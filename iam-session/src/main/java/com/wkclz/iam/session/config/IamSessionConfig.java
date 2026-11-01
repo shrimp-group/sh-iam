@@ -79,4 +79,58 @@ public class IamSessionConfig {
     @Value("${iam.request-control.rate-limit.max-requests:100}")
     private Integer requestControlRateLimitMaxRequests;
 
+    /**
+     * 接口权限判断开关（AuthPermissionFilter），默认 true（未纳管接口自动放行，不受影响）
+     */
+    @Value("${iam.auth.check.enabled:true}")
+    private Boolean authCheckEnabled;
+
+    /**
+     * L1 应用静态资源缓存最大应用数（容量 LRU），默认 100
+     */
+    @Value("${iam.auth.cache.static-max-apps:100}")
+    private Integer authCacheStaticMaxApps;
+
+    /**
+     * 远程 facade 形态下 L1 静态资源 TTL（秒，静态陈旧硬界）；仅配置 iam.session.remote.server-url 时生效，本地形态不受影响，默认 300
+     */
+    @Value("${iam.auth.cache.static-remote-ttl-seconds:300}")
+    private Integer authCacheStaticRemoteTtlSeconds;
+
+    /**
+     * L2 用户角色缓存最大用户数（兼 L3 用户层容量），默认 10000
+     */
+    @Value("${iam.auth.cache.user-max-users:10000}")
+    private Integer authCacheUserMaxUsers;
+
+    /**
+     * L2 与 L3 用户层空闲 TTL（秒，expireAfterAccess）：用户久不活跃后缓存清理，活跃访问自动续期，默认 30min
+     */
+    @Value("${iam.auth.cache.user-idle-seconds:1800}")
+    private Integer authCacheUserIdleSeconds;
+
+    /**
+     * L3 URL 级计算结果时效（秒，expireAfterWrite），默认 300
+     */
+    @Value("${iam.auth.cache.computed-ttl-seconds:300}")
+    private Integer authCacheComputedTtlSeconds;
+
+    /**
+     * L3 单用户最大 URL 条目数，默认 1024
+     */
+    @Value("${iam.auth.cache.computed-max-urls:1024}")
+    private Integer authCacheComputedMaxUrls;
+
+    /**
+     * 权限变更通知 Redis Pub/Sub channel，默认 iam:auth:change
+     */
+    @Value("${iam.auth.change.channel:iam:auth:change}")
+    private String authChangeChannel;
+
+    /**
+     * 远程形态权限变更轮询间隔（秒）：0=关闭（默认），跨 Redis 部署时建议 30
+     */
+    @Value("${iam.auth.change.poll-interval-seconds:0}")
+    private Integer authChangePollIntervalSeconds;
+
 }
