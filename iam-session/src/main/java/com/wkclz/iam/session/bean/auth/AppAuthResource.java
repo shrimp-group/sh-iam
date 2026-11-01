@@ -4,6 +4,9 @@ import com.wkclz.iam.session.bean.ApiRequestControl;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,5 +81,24 @@ public class AppAuthResource {
      */
     public record ApiControlEntry(String apiCode, String apiMethod, String apiUri,
                                   ApiRequestControl requestControl) {
+    }
+
+    /**
+     * 构造空资源（集合字段均为可变空集合，避免调用方 NPE），供 NoOp 兜底实现使用。
+     *
+     * @param appCode 应用编码
+     * @return 空静态资源
+     */
+    public static AppAuthResource empty(String appCode) {
+        AppAuthResource resource = new AppAuthResource();
+        resource.setAppCode(appCode);
+        resource.setLoadTime(System.currentTimeMillis());
+        resource.setRoleCodes(new LinkedHashSet<>());
+        resource.setMenus(new ArrayList<>());
+        resource.setRoleMenuMap(new HashMap<>());
+        resource.setMenuApiMap(new HashMap<>());
+        resource.setRequestControls(new ArrayList<>());
+        resource.setApiFields(new ArrayList<>());
+        return resource;
     }
 }
