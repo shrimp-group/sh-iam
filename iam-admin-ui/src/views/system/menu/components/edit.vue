@@ -2,7 +2,7 @@
   <el-dialog :title="title" v-model="open" width="1200px">
     <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
       <el-row :gutter="20">
-        <el-col :span="10">
+        <el-col :span="12">
           <el-form-item label="父菜单" prop="parentCode">
             <div class="parent-breadcrumb">
               <el-breadcrumb separator-class="el-icon-arrow-right" class="menu-breadcrumb">
@@ -14,12 +14,12 @@
             </div>
           </el-form-item>
           <el-row :gutter="20">
-            <el-col :span="12">
+            <el-col :span="10">
               <el-form-item label="应用编码" prop="appCode">
                 <el-input v-model="form.appCode" placeholder="请输入应用编码" disabled/>
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="14">
               <el-form-item label="菜单类型" prop="menuType">
                 <el-radio-group v-model="form.menuType">
                   <el-radio-button v-for="item in MENU_TYPE" :key="item.value" :label="item.label" :value="item.value" />
@@ -35,7 +35,7 @@
             <el-input v-model="form.remark" placeholder="请输入备注" type="textarea" :rows="10"/>
           </el-form-item>
         </el-col>
-        <el-col :span="14">
+        <el-col :span="12">
           <div v-if="form.menuType === 'MENU'">
             <el-form-item label="菜单名称" prop="menuName">
               <el-input v-model="form.menuName" placeholder="请输入菜单名称" />
@@ -47,7 +47,7 @@
             </el-form-item>
             <el-form-item label="组件" prop="component" :rules="[{ required: true, message: '页面组件不能为空', trigger: 'blur' }]">
               <div style="display: flex; gap: 8px; align-items: center;">
-                <el-input v-model="form.component" placeholder="请输入组件" style="flex: 1; width: 450px;" />
+                <el-input v-model="form.component" placeholder="请输入组件" style="flex: 1; width: 350px;" />
                 <el-select v-model="quickComponent" placeholder="快捷填充" @change="selectComponent" clearable style="width: 120px;">
                   <el-option label="Layout" value="Layout" />
                   <el-option label="ParentView" value="ParentView" />

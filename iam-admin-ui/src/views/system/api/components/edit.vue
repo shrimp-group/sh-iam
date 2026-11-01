@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="title" v-model="open" width="1080px" :close-on-click-modal="false">
+  <el-dialog :title="title" v-model="open" width="1200px" :close-on-click-modal="false">
     <el-tabs v-model="activeTab">
       <!-- Tab 1: 基本信息 -->
       <el-tab-pane label="基本信息" name="basic">

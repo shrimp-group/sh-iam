@@ -38,7 +38,7 @@
               </el-breadcrumb>
             </div>
 
-            <el-table v-loading="loading" :data="showList">
+            <el-table v-loading="loading" :data="showList" class="el-table-level">
               <el-table-column label="角色名称" prop="roleName" min-width="120">
                 <template #default="{row}">
                   <!-- 非叶子 -->
@@ -100,6 +100,7 @@
               row-key="roleCode"
               :tree-props="{ children: 'children' }"
               :default-expand-all="false"
+              class="el-table-tree"
             >
               <el-table-column label="角色名称" prop="roleName" min-width="200" />
               <el-table-column label="是否可申请" prop="applicable" width="100">
@@ -416,6 +417,14 @@ function handleEditChange() {
 </script>
 
 <style scoped lang="scss">
+
+.el-table-tree {
+  height: calc(100vh - 230px);
+}
+.el-table-level {
+  height: calc(100vh - 214px);
+}
+
 .role-breadcrumb {
   font-size: 14px;
   margin: 8px 0;
