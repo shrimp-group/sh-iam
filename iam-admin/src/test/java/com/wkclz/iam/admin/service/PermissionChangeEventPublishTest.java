@@ -7,7 +7,6 @@ import com.wkclz.iam.common.entity.IamMenu;
 import com.wkclz.iam.common.entity.IamRole;
 import com.wkclz.iam.common.entity.IamRoleMenu;
 import com.wkclz.iam.common.entity.IamUserRole;
-import com.wkclz.iam.common.event.AdminSecurityEvent;
 import com.wkclz.iam.session.enums.AuthChangeType;
 import com.wkclz.iam.session.event.PermissionChangeEvent;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,8 +37,8 @@ class PermissionChangeEventPublishTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Test
-    void userRoleUnbindPublishesBothEvents() {
-        // 过渡态：unbind 同时发布既有 AdminSecurityEvent 与 userChanged（Task 13 移除旧事件）
+    void userRoleUnbindPublishesPermissionChange() {
+        // 用户角色解绑仅发布 userChanged（AdminSecurityEvent.ROLE_CHANGED 已退役）
         IamUserRoleMapper mapper = org.mockito.Mockito.mock(IamUserRoleMapper.class);
         IamUserRoleService service = new IamUserRoleService();
         ReflectionTestUtils.setField(service, "mapper", mapper);
@@ -54,13 +53,10 @@ class PermissionChangeEventPublishTest {
         service.unbind(1L);
 
         ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(captor.capture());
-        List<Object> events = captor.getAllValues();
-        assertEquals(2, events.size());
-        assertInstanceOf(AdminSecurityEvent.class, events.get(0));
-        PermissionChangeEvent changeEvent = assertInstanceOf(PermissionChangeEvent.class, events.get(1));
-        assertEquals(AuthChangeType.USER, changeEvent.getType());
-        assertEquals("user_1", changeEvent.getTargetKey());
+        verify(eventPublisher, org.mockito.Mockito.times(1)).publishEvent(captor.capture());
+        PermissionChangeEvent event = assertInstanceOf(PermissionChangeEvent.class, captor.getValue());
+        assertEquals(AuthChangeType.USER, event.getType());
+        assertEquals("user_1", event.getTargetKey());
     }
 
     @Test

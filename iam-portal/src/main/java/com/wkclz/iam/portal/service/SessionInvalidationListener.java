@@ -16,9 +16,9 @@ import org.springframework.stereotype.Component;
  * <ul>
  *   <li>PASSWORD_RESET → destroyAllSessions(PASSWORD_RESET_BY_ADMIN)</li>
  *   <li>STATUS_CHANGED → destroyAllSessions(USER_DISABLED)</li>
- *   <li>ROLE_CHANGED → 不销毁会话，仅记录日志</li>
  * </ul>
- * 所有方法 try-catch 包裹，异常不影响 iam-admin 主流程。</p>
+ * 所有方法 try-catch 包裹，异常不影响 iam-admin 主流程。
+ * 用户角色变更不在此处理——由 PermissionChangeEvent 经权限缓存清理链路接管。</p>
  */
 @Component
 public class SessionInvalidationListener {
@@ -36,7 +36,6 @@ public class SessionInvalidationListener {
         switch (event.getType()) {
             case PASSWORD_RESET -> handlePasswordReset(event);
             case STATUS_CHANGED -> handleStatusChanged(event);
-            case ROLE_CHANGED -> handleRoleChanged(event);
         }
     }
 
@@ -58,15 +57,6 @@ public class SessionInvalidationListener {
         } catch (Exception e) {
             log.error("用户状态变更会话销毁失败: userCode={}, newStatus={}, error={}",
                 event.getUserCode(), event.getNewStatus(), e.getMessage(), e);
-        }
-    }
-
-    private void handleRoleChanged(AdminSecurityEvent event) {
-        try {
-            log.info("收到用户角色变更事件, userCode={}, 不销毁会话，待权限缓存实现", event.getUserCode());
-            // TODO: 权限缓存刷新 → 发布 AuthCacheRefreshEvent
-        } catch (Exception e) {
-            log.error("用户角色变更处理失败: userCode={}, error={}", event.getUserCode(), e.getMessage(), e);
         }
     }
 }
