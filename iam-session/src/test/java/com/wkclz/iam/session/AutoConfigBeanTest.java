@@ -1,7 +1,7 @@
 package com.wkclz.iam.session;
 
-import com.wkclz.iam.session.cache.ApiControlCache;
-import com.wkclz.iam.session.spi.ApiRequestControlProvider;
+import com.wkclz.iam.session.spi.AuthResourceFacade;
+import com.wkclz.iam.session.spi.NoOpAuthResourceFacade;
 import com.wkclz.redis.helper.RedisHelper;
 import com.wkclz.redis.helper.RedisLock;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * 自动配置 Bean 注册复现测试 — 验证 @ConditionalOnMissingBean + @Component 在 iam-session 自动配置中的行为。
+ * 自动配置 Bean 注册测试 — 验证 SPI 装配模式（NoOp 始终注册 + @Primary 覆盖）在 iam-session 自动配置中的行为。
  */
 class AutoConfigBeanTest {
 
@@ -26,26 +26,24 @@ class AutoConfigBeanTest {
         .withBean(RedisLock.class, () -> mock(RedisLock.class));
 
     @Test
-    void sessionAloneShouldRegisterNoOpProviderAndBuildCache() {
+    void sessionAloneShouldRegisterNoOpFacade() {
         runner.run(context -> {
-            assertThat(context).hasSingleBean(ApiControlCache.class);
             // 无外部实现时，NoOp 始终注册作为兜底
-            assertThat(context).hasSingleBean(ApiRequestControlProvider.class);
-            assertThat(context.getBean(ApiRequestControlProvider.class))
-                .isInstanceOf(com.wkclz.iam.session.spi.NoOpApiRequestControlProvider.class);
+            assertThat(context).hasSingleBean(AuthResourceFacade.class);
+            assertThat(context.getBean(AuthResourceFacade.class))
+                .isInstanceOf(NoOpAuthResourceFacade.class);
         });
     }
 
     @Test
-    void externalPrimaryProviderShouldOverrideNoOp() {
-        runner.withBean(ApiRequestControlProvider.class,
-                () -> mock(ApiRequestControlProvider.class),
+    void externalPrimaryFacadeShouldOverrideNoOp() {
+        runner.withBean(AuthResourceFacade.class,
+                () -> mock(AuthResourceFacade.class),
                 beanDefinition -> beanDefinition.setPrimary(true))
             .run(context -> {
-                assertThat(context).hasSingleBean(ApiControlCache.class);
                 // 有 @Primary 实现时，注入选择 Primary 而非 NoOp
-                assertThat(context.getBean(ApiRequestControlProvider.class))
-                    .isNotInstanceOf(com.wkclz.iam.session.spi.NoOpApiRequestControlProvider.class);
+                assertThat(context.getBean(AuthResourceFacade.class))
+                    .isNotInstanceOf(NoOpAuthResourceFacade.class);
             });
     }
 }

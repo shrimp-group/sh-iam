@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * 权限资源供给 SPI — 权限缓存按需加载的数据源契约。
  *
- * <p>实现形态（装配模式参照 {@link ApiRequestControlProvider}：NoOp 始终注册 + 上层实现类
+ * <p>实现形态（装配模式：NoOp 始终注册 + 上层实现类
  * 标注 {@code @Primary} 覆盖，不使用 {@code @ConditionalOnMissingBean} —— 其搭配
  * {@code @Component} 在自动配置组件扫描中条件评估不可靠）：</p>
  * <ul>

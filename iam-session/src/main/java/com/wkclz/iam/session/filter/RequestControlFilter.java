@@ -4,7 +4,8 @@ import com.alibaba.fastjson2.JSON;
 import com.wkclz.core.base.R;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.iam.session.bean.ApiRequestControl;
-import com.wkclz.iam.session.cache.ApiControlCache;
+import com.wkclz.iam.session.bean.auth.AppAuthResource;
+import com.wkclz.iam.session.cache.AuthCacheManager;
 import com.wkclz.iam.session.config.IamSessionConfig;
 import com.wkclz.iam.session.service.RequestControlResolver;
 import com.wkclz.iam.session.service.SlidingWindowRateLimiter;
@@ -14,9 +15,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -31,18 +31,20 @@ import java.util.concurrent.TimeUnit;
  * 基于登录用户（IdentityContext）对已配置请求控制的 API 执行互斥（RedisLock，watchdog 自动续期）与
  * 滑动窗口限流（SlidingWindowRateLimiter）双重控制；任一控制拒绝则返回 429。
  *
+ * <p>配置来源：应用静态资源缓存（AuthCacheManager.matchRequestControl，按 appCode + AntPathMatcher 最长匹配）。
+ * appCode 为空时视为无匹配放行（语义降级安全）。</p>
+ *
  * <p>执行流程：全局开关 → 用户身份 → 配置匹配 → 配置解析 → 互斥控制 → 限流控制 → 放行 → 释放互斥锁。</p>
  *
  * <p>执行位置：@Order(Ordered.LOWEST_PRECEDENCE)（= MAX，注意不能 +1 否则溢出为 Integer.MIN_VALUE 排到链最外层），
- * 位于 SessionAuthFilter（LOWEST_PRECEDENCE - 5）之后，处于过滤器链最内层，执行时身份已由 SessionAuthFilter 设置。</p>
+ * 位于 AuthPermissionFilter（LOWEST_PRECEDENCE - 3）之后，处于过滤器链最内层，执行时身份已由 SessionAuthFilter 设置。</p>
  *
  * @author shrimp
  */
+@Slf4j
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class RequestControlFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(RequestControlFilter.class);
 
     /**
      * 互斥锁 Redis Key 前缀
@@ -66,16 +68,16 @@ public class RequestControlFilter extends OncePerRequestFilter {
 
     private final IamSessionConfig config;
     private final RequestControlResolver resolver;
-    private final ApiControlCache apiControlCache;
+    private final AuthCacheManager authCacheManager;
     private final RedisLock redisLock;
     private final SlidingWindowRateLimiter rateLimiter;
 
     public RequestControlFilter(IamSessionConfig config, RequestControlResolver resolver,
-                                ApiControlCache apiControlCache, RedisLock redisLock,
+                                AuthCacheManager authCacheManager, RedisLock redisLock,
                                 SlidingWindowRateLimiter rateLimiter) {
         this.config = config;
         this.resolver = resolver;
-        this.apiControlCache = apiControlCache;
+        this.authCacheManager = authCacheManager;
         this.redisLock = redisLock;
         this.rateLimiter = rateLimiter;
     }
@@ -100,8 +102,10 @@ public class RequestControlFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 3. 未匹配到请求控制 API → 放行
-        ApiControlCache.ApiControlEntry entry = apiControlCache.match(request.getMethod(), request.getRequestURI());
+        // 3. appCode 为空或未匹配到请求控制 API → 放行（appCode 为空语义降级安全）
+        String appCode = IdentityContext.getAppCode();
+        AppAuthResource.ApiControlEntry entry = StringUtils.isBlank(appCode)
+            ? null : authCacheManager.matchRequestControl(appCode, request.getMethod(), request.getRequestURI());
         if (entry == null) {
             log.info("请求未匹配到请求控制 API，直接放行: method={}, uri={}", request.getMethod(), request.getRequestURI());
             chain.doFilter(request, response);

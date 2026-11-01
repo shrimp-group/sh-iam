@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * AuthResourceFacade 本地实现 — co-deploy 形态数据供给方。
  *
  * <p>以 {@code @Primary} 覆盖 iam-session 始终注册的 {@code NoOpAuthResourceFacade}
- * （装配模式对齐 ApiRequestControlProviderImpl，不使用 @ConditionalOnMissingBean）；
+ * （装配模式：NoOp 始终注册，@Primary 覆盖，不使用 @ConditionalOnMissingBean）；
  * 将 {@link SsoAuthResourceMapper} 的 7 条按应用查询装配为 {@link AppAuthResource}（按键索引的静态快照）。</p>
  *
  * <p>查询异常直接向上抛出（RuntimeException），由缓存调用方 fail-open 处理；

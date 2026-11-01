@@ -183,7 +183,7 @@ public class AuthCacheManager {
     }
 
     /**
-     * 匹配请求控制配置（AntPathMatcher 最长匹配，逻辑迁移自 ApiControlCache.match，增加 appCode 维度）。
+     * 匹配请求控制配置（AntPathMatcher 最长匹配，增加 appCode 维度）。
      *
      * <p>方法匹配规则：配置的 apiMethod 为 {@code REQUEST} 时可匹配任意请求方法，否则忽略大小写精确相等。</p>
      *
