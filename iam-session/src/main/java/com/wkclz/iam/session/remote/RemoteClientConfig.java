@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
  *   <li>{@code iam.session.remote.server-url} —— SSO 服务端地址（必填，条件装配触发器）</li>
  *   <li>{@code iam.session.remote.app-id} —— AK 鉴权应用 ID</li>
  *   <li>{@code iam.session.remote.app-secret} —— AK 鉴权应用密钥（RSA 私钥）</li>
+ *   <li>{@code iam.session.remote.auth-token} —— 权限资源远程取数鉴权 token（与 portal 端 iam.portal.auth.token 配对）</li>
  *   <li>{@code iam.session.remote.static.enabled} —— 静态资源过滤开关</li>
  *   <li>{@code iam.session.remote.static.subfix} —— 静态资源后缀</li>
  * </ul>
@@ -43,6 +44,11 @@ public class RemoteClientConfig {
      * AK 鉴权应用密钥（RSA 私钥）
      */
     private String appSecret;
+
+    /**
+     * 权限资源远程取数鉴权 token（与 portal 端 iam.portal.auth.token 配对；密钥对方式后续重新设计）
+     */
+    private String authToken;
 
     /**
      * 静态资源过滤配置
