@@ -7,6 +7,7 @@ import com.wkclz.iam.portal.mapper.SsoAuthResourceMapper;
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
 import com.wkclz.iam.session.bean.auth.AuthApi;
 import com.wkclz.iam.session.bean.auth.AuthApiField;
+import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -47,9 +49,10 @@ class LocalAuthResourceFacadeTest {
     }
 
     /**
-     * 桩基础数据（loadAppResource 会调用全部 7 个查询，逐一 stub 避免严格模式告警）
+     * 桩基础数据（loadAppResource 会调用全部 8 个查询，逐一 stub 避免严格模式告警）
      */
     private void stubAll() {
+        when(mapper.selectApp(anyString())).thenReturn(app("appA", "应用A", "TOKEN_API"));
         when(mapper.listAppRoles(anyString())).thenReturn(new LinkedHashSet<>(List.of("r1", "r2")));
         when(mapper.listAppMenus(anyString())).thenReturn(new ArrayList<>(List.of(
             menu("m1", "0", "MENU", null, 1),
@@ -73,6 +76,7 @@ class LocalAuthResourceFacadeTest {
         AppAuthResource resource = facade.loadAppResource("appA");
 
         assertEquals("appA", resource.getAppCode());
+        assertEquals("TOKEN_API", resource.getApp().getAuthType());
         assertEquals(Set.of("r1", "r2"), resource.getRoleCodes());
         assertTrue(resource.getLoadTime() > 0);
 
@@ -96,6 +100,15 @@ class LocalAuthResourceFacadeTest {
         assertEquals(1, resource.getRequestControls().size());
         assertEquals("api_1", resource.getRequestControls().get(0).apiCode());
         assertEquals(Boolean.TRUE, resource.getRequestControls().get(0).requestControl().getEnable());
+    }
+
+    @Test
+    void appMissingYieldsNullApp() {
+        // 应用不存在：selectApp 返回 null，app 字段保持 null（消费侧默认规则兜底）
+        stubAll();
+        when(mapper.selectApp(anyString())).thenReturn(null);
+        AppAuthResource resource = facade.loadAppResource("appA");
+        assertNull(resource.getApp());
     }
 
     @Test
@@ -139,6 +152,14 @@ class LocalAuthResourceFacadeTest {
     }
 
     // ========== 构造辅助 ==========
+
+    private AuthApp app(String appCode, String appName, String authType) {
+        AuthApp app = new AuthApp();
+        app.setAppCode(appCode);
+        app.setAppName(appName);
+        app.setAuthType(authType);
+        return app;
+    }
 
     private AuthMenu menu(String menuCode, String parentCode, String menuType, String buttonCode, int sort) {
         AuthMenu m = new AuthMenu();

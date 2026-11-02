@@ -3,8 +3,10 @@ package com.wkclz.iam.session.service;
 import com.wkclz.core.exception.SystemException;
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
 import com.wkclz.iam.session.bean.auth.AuthApi;
+import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import com.wkclz.iam.session.cache.AuthCacheManager;
+import com.wkclz.iam.session.enums.AppAuthType;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,8 +15,9 @@ import org.springframework.util.AntPathMatcher;
 import java.util.*;
 
 /**
- * 权限计算服务 — 低频菜单树计算（每次直接从 L1+L2 计算，不缓存结果）与
- * 高频按 URL 接口权限判断（经 {@link AuthCacheManager#hasUrlPermission} 走 L3 缓存 true/false）。
+ * 权限计算服务 — 低频菜单树计算（每次直接从 L1+L2 计算，不缓存结果）、
+ * 高频按 URL 接口权限判断（经 {@link AuthCacheManager#hasUrlPermission} 走 L3 缓存 true/false），
+ * 以及按应用鉴权类型判断 requireApiPermission（TOKEN 免接口权限校验，缺失/未知默认 TOKEN_API fail-closed）。
  *
  * <p><b>缓存快照不可变</b>：{@link AppAuthResource} 内对象（menuMap/roleMenuMap/apiMap/menuApiMap 等）
  * 为多请求共享实例，任何计算不得修改其字段 —— 组树必须浅拷贝节点，严禁对 menuMap 内实例 setChildren
@@ -117,6 +120,19 @@ public class AuthPermissionService {
                 appCode, userCode, method, uri, e);
             return true;
         }
+    }
+
+    /**
+     * 判断应用是否需要接口权限校验：authType=TOKEN_API 需要；TOKEN 或缺失/未知按 TOKEN_API 安全默认。
+     *
+     * @param appCode 应用编码
+     * @return 需要校验返回 true（TOKEN 应用返回 false）
+     */
+    public boolean requireApiPermission(String appCode) {
+        log.info("判断应用鉴权类型: appCode={}", appCode);
+        AppAuthResource res = manager.getAppResource(appCode);
+        AuthApp app = res.getApp();
+        return AppAuthType.of(app == null ? null : app.getAuthType()).requireApiPermission();
     }
 
     /**

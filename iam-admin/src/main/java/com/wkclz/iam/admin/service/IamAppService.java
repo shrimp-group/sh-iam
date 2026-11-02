@@ -6,9 +6,14 @@ import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
 import com.wkclz.iam.admin.mapper.IamAppMapper;
 import com.wkclz.iam.common.entity.IamApp;
+import com.wkclz.iam.session.event.PermissionChangeEvent;
 import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +26,11 @@ import java.util.List;
  
 @Service
 public class IamAppService extends BaseService<IamApp, IamAppMapper> {
+
+    private static final Logger log = LoggerFactory.getLogger(IamAppService.class);
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public PageData<IamApp> getAppPage(IamApp entity) {
         return PageQuery.page(entity, mapper::getAppList);
@@ -40,6 +50,7 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
         }
         IamApp.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 
@@ -53,6 +64,7 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
         deleteById(oldEntity);
+        publishAppChanged(oldEntity.getAppCode());
         return oldEntity;
     }
 
@@ -61,6 +73,18 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
         return mapper.getAppOptions();
     }
 
+
+    /**
+     * 发布应用静态资源变更事件（appCode 为空跳过）
+     */
+    private void publishAppChanged(String appCode) {
+        if (appCode == null || appCode.isEmpty()) {
+            log.warn("appCode 为空，跳过权限变更发布");
+            return;
+        }
+        eventPublisher.publishEvent(PermissionChangeEvent.appChanged(appCode));
+        log.info("已发布权限变更事件: type=APP_STATIC, key={}", appCode);
+    }
 
     private void duplicateCheck(IamApp entity) {
         // 唯一条件为空，直接通过

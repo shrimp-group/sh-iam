@@ -26,8 +26,8 @@ import java.nio.charset.StandardCharsets;
  * → <b>AuthPermissionFilter(LOWEST_PRECEDENCE - 3)</b> → RequestControlFilter(LOWEST_PRECEDENCE)。</p>
  *
  * <p>放行条件（任一满足即放行，判断全部委托 {@link AuthPermissionService}）：全局开关关闭 / 白名单 /
- * 无身份（非白名单无会话已被 SessionAuthFilter 401）；appCode 必需（缺失 403）；
- * 开关开启后接口全量纳管（未纳管 403）；已纳管无权限 → 403。</p>
+ * 无身份（非白名单无会话已被 SessionAuthFilter 401）/ 应用鉴权类型 TOKEN（仅需会话认证）；
+ * appCode 必需（缺失 403）；开关开启后接口全量纳管（未纳管 403）；已纳管无权限 → 403。</p>
  */
 @Slf4j
 @Component
@@ -70,13 +70,18 @@ public class AuthPermissionFilter extends OncePerRequestFilter {
             writeForbidden(response, "缺少应用标识(appCode)");
             return;
         }
-        // 5. 开关开启后全量纳管：未纳管接口直接拒绝
+        // 5. 应用鉴权类型：TOKEN 仅需会话认证，跳过纳管与接口权限校验
+        if (!authPermissionService.requireApiPermission(appCode)) {
+            chain.doFilter(request, response);
+            return;
+        }
+        // 6. 开关开启后全量纳管：未纳管接口直接拒绝
         if (!authPermissionService.isManagedApi(appCode, method, uri)) {
             log.warn("接口权限拒绝（未纳管）: userCode={}, appCode={}, method={}, uri={}", userCode, appCode, method, uri);
             writeForbidden(response, "无接口访问权限");
             return;
         }
-        // 6. 已纳管：判断用户接口权限
+        // 7. 已纳管：判断用户接口权限
         if (authPermissionService.hasApiPermission(appCode, userCode, method, uri)) {
             chain.doFilter(request, response);
             return;

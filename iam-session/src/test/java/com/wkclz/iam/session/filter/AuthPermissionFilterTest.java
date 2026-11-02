@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * AuthPermissionFilter 单元测试 — 开关/白名单/身份/appCode/纳管/权限 全分支。
+ * AuthPermissionFilter 单元测试 — 开关/白名单/身份/appCode/鉴权类型/纳管/权限 全分支。
  */
 class AuthPermissionFilterTest {
 
@@ -61,6 +61,8 @@ class AuthPermissionFilterTest {
         identity.setUserCode(USER);
         IdentityContext.set(identity, "token");
         IdentityContext.setAppCode(APP);
+        // 默认 TOKEN_API（需接口权限校验），TOKEN 场景单独覆盖
+        when(authPermissionService.requireApiPermission(APP)).thenReturn(true);
     }
 
     @AfterEach
@@ -106,6 +108,16 @@ class AuthPermissionFilterTest {
         String body = response.getContentAsString(StandardCharsets.UTF_8);
         assertEquals("{\"message\":\"缺少应用标识(appCode)\"}", body);
         verify(authPermissionService, never()).isManagedApi(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void passesThroughWhenAppAuthTypeToken() throws ServletException, IOException {
+        // 应用鉴权类型 TOKEN：仅需会话认证，跳过纳管与接口权限校验
+        when(authPermissionService.requireApiPermission(APP)).thenReturn(false);
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+        verify(authPermissionService, never()).isManagedApi(anyString(), anyString(), anyString());
+        verify(authPermissionService, never()).hasApiPermission(anyString(), anyString(), anyString(), anyString());
     }
 
     @Test

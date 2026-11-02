@@ -2,6 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.portal.mapper.SsoAuthResourceMapper">
 
+    <!-- 应用信息（鉴权类型决定鉴权深度） -->
+    <select id="selectApp" parameterType="java.lang.String" resultType="com.wkclz.iam.session.bean.auth.AuthApp">
+        SELECT
+        app_code,
+        app_name,
+        auth_type
+        FROM
+        iam_app
+        WHERE
+        deleted = 0
+        AND app_code = #{appCode}
+    </select>
+
     <!-- 应用内全部角色编码 -->
     <select id="listAppRoles" parameterType="java.lang.String" resultType="java.lang.String">
         SELECT

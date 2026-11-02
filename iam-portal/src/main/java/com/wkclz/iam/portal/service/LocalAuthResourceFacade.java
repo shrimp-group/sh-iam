@@ -9,6 +9,7 @@ import com.wkclz.iam.session.bean.ApiRequestControl;
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
 import com.wkclz.iam.session.bean.auth.AuthApi;
 import com.wkclz.iam.session.bean.auth.AuthApiField;
+import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import com.wkclz.iam.session.spi.AuthResourceFacade;
 import jakarta.annotation.Resource;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
  *
  * <p>以 {@code @Primary} 覆盖 iam-session 始终注册的 {@code NoOpAuthResourceFacade}
  * （装配模式：NoOp 始终注册，@Primary 覆盖，不使用 @ConditionalOnMissingBean）；
- * 将 {@link SsoAuthResourceMapper} 的 7 条按应用查询装配为 {@link AppAuthResource}（按键索引的静态快照）。</p>
+ * 将 {@link SsoAuthResourceMapper} 的 8 条按应用查询装配为 {@link AppAuthResource}（按键索引的静态快照）。</p>
  *
  * <p>查询异常直接向上抛出（RuntimeException），由缓存调用方 fail-open 处理；
  * 关系指向应用外/已删除 API 时跳过该关系并记 warn，不阻断整体加载。</p>
@@ -54,6 +55,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
     public AppAuthResource loadAppResource(String appCode) {
         log.info("加载应用静态资源: appCode={}", appCode);
         try {
+            AuthApp app = ssoAuthResourceMapper.selectApp(appCode);
             Set<String> roleCodes = ssoAuthResourceMapper.listAppRoles(appCode);
             List<AuthMenu> menus = ssoAuthResourceMapper.listAppMenus(appCode);
             List<IamRoleMenu> roleMenus = ssoAuthResourceMapper.listRoleMenus(appCode);
@@ -64,6 +66,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
 
             AppAuthResource resource = new AppAuthResource();
             resource.setAppCode(appCode);
+            resource.setApp(app);
 
             // 应用角色（防御 null）
             resource.setRoleCodes(roleCodes == null ? new LinkedHashSet<>() : new LinkedHashSet<>(roleCodes));
@@ -128,8 +131,9 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             resource.setRequestControls(requestControls);
 
             resource.setLoadTime(System.currentTimeMillis());
-            log.info("加载应用静态资源完成: appCode={}, roles={}, menus={}, apis={}, roleMenuRels={}, menuApiRels={}, requestControls={}",
-                appCode, resource.getRoleCodes().size(), menuMap.size(), apiMap.size(),
+            log.info("加载应用静态资源完成: appCode={}, appName={}, authType={}, roles={}, menus={}, apis={}, roleMenuRels={}, menuApiRels={}, requestControls={}",
+                appCode, app == null ? null : app.getAppName(), app == null ? null : app.getAuthType(),
+                resource.getRoleCodes().size(), menuMap.size(), apiMap.size(),
                 roleMenuMap.values().stream().mapToInt(Set::size).sum(),
                 menuApiMap.values().stream().mapToInt(Set::size).sum(), requestControls.size());
             return resource;

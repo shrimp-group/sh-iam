@@ -2,6 +2,7 @@ package com.wkclz.iam.session.service;
 
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
 import com.wkclz.iam.session.bean.auth.AuthApi;
+import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import com.wkclz.iam.session.cache.AuthCacheManager;
 import com.wkclz.iam.session.cache.AuthComputedCache;
@@ -201,6 +202,33 @@ class AuthPermissionServiceTest {
     void computationErrorFailsOpen() {
         facade.failLoads = true;
         assertTrue(service.hasApiPermission("app", "userR1", "GET", "/a/b"));
+    }
+
+    @Test
+    void requireApiPermissionDefaultsTrueWhenAppMissing() {
+        // 默认规则：empty 资源无 app 对象（authType 缺失）→ fail-closed 按 TOKEN_API
+        assertTrue(service.requireApiPermission("app"));
+    }
+
+    @Test
+    void requireApiPermissionFalseWhenTokenType() {
+        // TOKEN 应用仅会话认证，免接口权限校验
+        facade.resource.setApp(app("TOKEN"));
+        assertFalse(service.requireApiPermission("app"));
+    }
+
+    @Test
+    void requireApiPermissionTrueWhenTokenApiType() {
+        // TOKEN_API 应用维持接口权限校验
+        facade.resource.setApp(app("TOKEN_API"));
+        assertTrue(service.requireApiPermission("app"));
+    }
+
+    private AuthApp app(String authType) {
+        AuthApp app = new AuthApp();
+        app.setAppCode("app");
+        app.setAuthType(authType);
+        return app;
     }
 
     @Test

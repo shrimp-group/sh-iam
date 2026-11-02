@@ -37,6 +37,12 @@ public class AppAuthResource {
     private long loadTime;
 
     /**
+     * 应用信息（appCode/appName/authType，将来扩展 app 级权限控制）；应用不存在时为 null
+     */
+    @Schema(description = "应用信息（appCode/appName/authType）")
+    private AuthApp app;
+
+    /**
      * 应用内全部角色编码
      */
     @Schema(description = "应用内全部角色编码")

@@ -5,6 +5,7 @@ import com.wkclz.iam.common.entity.IamMenuApi;
 import com.wkclz.iam.common.entity.IamRoleMenu;
 import com.wkclz.iam.session.bean.auth.AuthApi;
 import com.wkclz.iam.session.bean.auth.AuthApiField;
+import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -20,6 +21,11 @@ import java.util.Set;
  */
 @Mapper
 public interface SsoAuthResourceMapper {
+
+    /**
+     * 应用信息（authType 决定鉴权深度）
+     */
+    AuthApp selectApp(@Param("appCode") String appCode);
 
     /**
      * 应用内全部角色编码
