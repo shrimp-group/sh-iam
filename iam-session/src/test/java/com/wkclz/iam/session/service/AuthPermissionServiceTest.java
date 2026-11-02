@@ -104,7 +104,8 @@ class AuthPermissionServiceTest {
     }
 
     private final FakeFacade facade = new FakeFacade();
-    private final AuthCacheManager manager = new AuthCacheManager(facade, new AuthComputedCache(config()), config());
+    private final AuthCacheManager manager = new AuthCacheManager(facade, new AuthComputedCache(config()), config(),
+        org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class));
     private final AuthPermissionService service = createService();
 
     /**

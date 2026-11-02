@@ -87,6 +87,7 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | `spi`       | `AuthResourceFacade`              | 权限资源供给 SPI（loadAppResource + loadUserRoleCodes，iam-portal 提供 @Primary 实现）                                      |
 | `spi`       | `NoOpAuthResourceFacade`          | AuthResourceFacade 空实现（始终注册兜底，返回空资源）                                                                       |
 | `remote`    | `RemoteAuthResourceFacade`        | AuthResourceFacade 远程实现（@ConditionalOnProperty server-url + @Primary，auth-token 头 + hutool GET + R 解包，fail-fast） |
+| `remote`    | `AuthChangePoller`                | 权限变更轮询器（跨 Redis 主通道，@ConditionalOnProperty server-url + poll-interval-seconds>0，自持单线程调度，异常吞并）    |
 | `config`    | `IamSessionConfig`                | iam-session 全局配置（secret-key / ttl / maxConcurrent / 请求控制默认值 / iam.auth.* 9 项）                                 |
 | 根包        | `IamSessionAutoConfig`            | 自动配置（@AutoConfiguration + @ComponentScan）                                                                             |
 

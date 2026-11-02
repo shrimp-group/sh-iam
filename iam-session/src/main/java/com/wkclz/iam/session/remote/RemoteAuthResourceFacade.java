@@ -6,6 +6,7 @@ import com.wkclz.core.base.R;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.SystemException;
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
+import com.wkclz.iam.session.bean.auth.PermissionChangeCommand;
 import com.wkclz.iam.session.spi.AuthResourceFacade;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
@@ -73,7 +74,7 @@ public class RemoteAuthResourceFacade implements AuthResourceFacade {
 
         StringJoiner qs = new StringJoiner("&");
         query.forEach((k, v) -> qs.add(URLEncoder.encode(k, StandardCharsets.UTF_8) + "=" + URLEncoder.encode(v, StandardCharsets.UTF_8)));
-        String url = serverUrl + path + "?" + qs;
+        String url = serverUrl + path + (qs.length() > 0 ? "?" + qs : "");
 
         String body = executeGet(url);
         R<T> r = JSON.parseObject(body, type);
@@ -82,6 +83,14 @@ public class RemoteAuthResourceFacade implements AuthResourceFacade {
             throw SystemException.of("远程取数返回失败: path={}, code={}", path, r == null ? null : r.getCode());
         }
         return r.getData();
+    }
+
+    /**
+     * 拉取权限变更指令（每键最新），供 {@link AuthChangePoller} 轮询调用
+     */
+    List<PermissionChangeCommand> fetchChanges() {
+        return getData("/iam-portal/public/auth/changes", Map.of(), new TypeReference<R<List<PermissionChangeCommand>>>() {
+        });
     }
 
     /**

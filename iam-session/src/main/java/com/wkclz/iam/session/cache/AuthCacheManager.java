@@ -1,13 +1,17 @@
 package com.wkclz.iam.session.cache;
 
+import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
 import com.wkclz.iam.session.bean.auth.PermissionChangeCommand;
 import com.wkclz.iam.session.config.IamSessionConfig;
+import com.wkclz.iam.session.remote.RemoteClientConfig;
 import com.wkclz.iam.session.spi.AuthResourceFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
@@ -26,7 +30,7 @@ import java.util.function.Supplier;
  * <table border="1">
  *   <tr><th>层</th><th>类型</th><th>键</th><th>加载</th><th>失效</th></tr>
  *   <tr><td>L1</td><td>APP_STATIC</td><td>appCode</td><td>首次计算按需（facade.loadAppResource，一次加载一个应用全量）</td>
- *       <td>APP_STATIC 指令精确清理 + 容量 LRU，无 TTL（远程形态由 Task 19 追加 TTL 硬界）</td></tr>
+ *       <td>APP_STATIC 指令精确清理 + 容量 LRU；本地形态无 TTL，远程形态 expireAfterWrite TTL 硬界（跨 Redis 静态陈旧性兜底）</td></tr>
  *   <tr><td>L2</td><td>USER_ROLE</td><td>userCode</td><td>首次触发该用户权限计算（facade.loadUserRoleCodes）</td>
  *       <td>USER 指令 / 会话终结（evictUser reason=SESSION_END）+ 空闲 TTL（expireAfterAccess）+ 容量 LRU</td></tr>
  *   <tr><td>L3</td><td>USER_COMPUTED</td><td>appCode→userCode→urlKey</td><td>首次判断该 URL 按需单点计算</td>
@@ -51,9 +55,10 @@ public class AuthCacheManager {
 
     private final AuthResourceFacade facade;
     private final AuthComputedCache computedCache;
+    private final ObjectProvider<RemoteClientConfig> remoteClientConfigProvider;
 
     /**
-     * L1 应用静态资源缓存（无 TTL，仅指令清理 + 容量 LRU）
+     * L1 应用静态资源缓存（本地形态无 TTL；远程形态带 expireAfterWrite TTL 硬界 + 容量 LRU）
      */
     private final Cache<String, AppAuthResource> staticCache;
 
@@ -69,10 +74,21 @@ public class AuthCacheManager {
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public AuthCacheManager(AuthResourceFacade facade, AuthComputedCache computedCache, IamSessionConfig config) {
+    @Autowired
+    public AuthCacheManager(AuthResourceFacade facade, AuthComputedCache computedCache, IamSessionConfig config,
+                            ObjectProvider<RemoteClientConfig> remoteClientConfigProvider) {
+        this(facade, computedCache, config, remoteClientConfigProvider, Ticker.systemTicker());
+    }
+
+    /**
+     * 测试构造（包可见）：可注入 Ticker 以验证 L1 远程形态 TTL 过期
+     */
+    AuthCacheManager(AuthResourceFacade facade, AuthComputedCache computedCache, IamSessionConfig config,
+                     ObjectProvider<RemoteClientConfig> remoteClientConfigProvider, Ticker ticker) {
         this.facade = facade;
         this.computedCache = computedCache;
-        this.staticCache = buildStaticCache(config);
+        this.remoteClientConfigProvider = remoteClientConfigProvider;
+        this.staticCache = buildStaticCache(config, ticker);
         this.userRoleCache = CacheBuilder.newBuilder()
             .maximumSize(config.getAuthCacheUserMaxUsers())
             .expireAfterAccess(config.getAuthCacheUserIdleSeconds(), TimeUnit.SECONDS)
@@ -80,12 +96,21 @@ public class AuthCacheManager {
     }
 
     /**
-     * L1 构建工厂（远程形态 TTL 由 Task 19 增补扩展点）
+     * L1 构建工厂 — 三层防线语义：本地形态（同 Redis，Pub/Sub 可达）无 TTL；
+     * 远程形态（跨 Redis，轮询为主通道）追加 expireAfterWrite TTL 作为静态数据陈旧性硬界
+     * （轮询失败/延迟期间由 TTL 兜底刷新）。
      */
-    private Cache<String, AppAuthResource> buildStaticCache(IamSessionConfig config) {
-        return CacheBuilder.newBuilder()
+    private Cache<String, AppAuthResource> buildStaticCache(IamSessionConfig config, Ticker ticker) {
+        CacheBuilder<Object, Object> builder = CacheBuilder.newBuilder()
             .maximumSize(config.getAuthCacheStaticMaxApps())
-            .build();
+            .ticker(ticker);
+        RemoteClientConfig remote = remoteClientConfigProvider.getIfAvailable();
+        Integer remoteTtl = config.getAuthCacheStaticRemoteTtlSeconds();
+        if (remote != null && StringUtils.isNotBlank(remote.getServerUrl()) && remoteTtl != null && remoteTtl > 0) {
+            builder.expireAfterWrite(remoteTtl, TimeUnit.SECONDS);
+            log.info("[auth-cache] L1 远程形态启用 TTL 硬界: ttl={}s", remoteTtl);
+        }
+        return builder.build();
     }
 
     /**

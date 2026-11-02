@@ -50,7 +50,29 @@ class AuthCacheManagerTest {
     private final CountingFacade facade = new CountingFacade();
     private final AuthComputedCache computedCache =
         new AuthComputedCache(300, 1800, 100, 100, 10, Ticker.systemTicker());
-    private final AuthCacheManager manager = new AuthCacheManager(facade, computedCache, config());
+    private final AuthCacheManager manager = new AuthCacheManager(facade, computedCache, config(), noRemote());
+
+    @SuppressWarnings("unchecked")
+    private static org.springframework.beans.factory.ObjectProvider<com.wkclz.iam.session.remote.RemoteClientConfig> noRemote() {
+        // getIfAvailable() 未打桩默认返回 null（本地形态）
+        return org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+    }
+
+    /**
+     * 可推进时间源（验证远程形态 L1 TTL）
+     */
+    private static class MutableTicker extends Ticker {
+        private final java.util.concurrent.atomic.AtomicLong nanos = new java.util.concurrent.atomic.AtomicLong();
+
+        void advanceSeconds(long seconds) {
+            nanos.addAndGet(java.util.concurrent.TimeUnit.SECONDS.toNanos(seconds));
+        }
+
+        @Override
+        public long read() {
+            return nanos.get();
+        }
+    }
 
     private IamSessionConfig config() {
         IamSessionConfig config = new IamSessionConfig();
@@ -170,5 +192,46 @@ class AuthCacheManagerTest {
             new AppAuthResource.ApiControlEntry("api_1", "GET", "/api/**", null));
         // appA 有配置，appB 未配置
         assertNull(manager.matchRequestControl("appB", "GET", "/api/1"));
+    }
+
+    private org.springframework.beans.factory.ObjectProvider<com.wkclz.iam.session.remote.RemoteClientConfig> remoteProvider(
+        com.wkclz.iam.session.remote.RemoteClientConfig remote) {
+        org.springframework.beans.factory.ObjectProvider<com.wkclz.iam.session.remote.RemoteClientConfig> provider =
+            org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+        org.mockito.Mockito.when(provider.getIfAvailable()).thenReturn(remote);
+        return provider;
+    }
+
+    @Test
+    void remoteFormL1ExpiresAfterTtl() {
+        com.wkclz.iam.session.remote.RemoteClientConfig remote = new com.wkclz.iam.session.remote.RemoteClientConfig();
+        remote.setServerUrl("http://sso.example.com");
+        IamSessionConfig config = config();
+        config.setAuthCacheStaticRemoteTtlSeconds(300);
+        MutableTicker ticker = new MutableTicker();
+        AuthCacheManager remoteManager = new AuthCacheManager(facade, computedCache, config, remoteProvider(remote), ticker);
+
+        remoteManager.getAppResource("appA");
+        assertEquals(1, facade.appLoads.get());
+        ticker.advanceSeconds(299);
+        remoteManager.getAppResource("appA");
+        assertEquals(1, facade.appLoads.get());
+        // 累计 301s > TTL 300s：过期重载（静态陈旧性硬界）
+        ticker.advanceSeconds(2);
+        remoteManager.getAppResource("appA");
+        assertEquals(2, facade.appLoads.get());
+    }
+
+    @Test
+    void localFormL1HasNoTtl() {
+        MutableTicker ticker = new MutableTicker();
+        AuthCacheManager localManager = new AuthCacheManager(facade, computedCache, config(), noRemote(), ticker);
+
+        localManager.getAppResource("appA");
+        assertEquals(1, facade.appLoads.get());
+        // 本地形态无 TTL：时间远超远程 TTL 后仍命中缓存
+        ticker.advanceSeconds(100_000);
+        localManager.getAppResource("appA");
+        assertEquals(1, facade.appLoads.get());
     }
 }
