@@ -1,6 +1,6 @@
 ---
 name: "iam-session-usage"
-description: "iam-session 模块使用指南——接入项目如何添加依赖、配置、调用登录/获取用户信息等会话管理方法。涉及 SessionManager/TokenService/SessionAuthFilter/IdentityContext 调用、登出/改密销毁会话、客户端远程接入 SSO 服务端时调用。当用户需要在项目中接入 iam-session、调用会话管理 API、读取当前登录用户、扩展 SPI 时调用。"
+description: "iam-session 模块使用指南——接入项目如何添加依赖、配置、调用登录/获取用户信息等会话管理方法。涉及 SessionManager/TokenService/SessionAuthFilter/IdentityContext 调用、登出/改密销毁会话、客户端远程接入 SSO 服务端、权限缓存（AuthCacheManager 三级缓存）与权限判断（AuthPermissionService）、AuthResourceFacade SPI 扩展时调用。当用户需要在项目中接入 iam-session、调用会话管理 API、读取当前登录用户、扩展 SPI 时调用。"
 ---
 
 # iam-session 模块使用指南
@@ -9,13 +9,13 @@ iam-session 是 sh-iam 的会话管理层，提供认证方式无关的 Session 
 
 ## 模块定位
 
-| 维度       | 说明                                                                                              |
-|----------|-------------------------------------------------------------------------------------------------|
-| Maven 坐标 | `com.wkclz.iam:iam-session:${revision}`（当前 5.0.0-SNAPSHOT，父 POM `sh-iam`）                      |
-| 核心依赖     | `sh-core`（UserIdentity/IdentityContext）、`sh-redis`（StringRedisTemplate）、`sh-web`（IpHelper）、`jjwt`（HS256） |
-| 部署形态     | 服务端模式 / 客户端模式（条件装配自动切换）                                                                         |
-| 入口配置类    | `IamSessionAutoConfig`（`@AutoConfiguration` + `@ComponentScan("com.wkclz.iam.session")`）          |
-| 关键服务     | `SessionManager` / `TokenService` / `SessionStore` / `SessionAuthFilter` / `RequestRecordFilter` |
+| 维度       | 说明                                                                                                                                                                        |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Maven 坐标 | `com.wkclz.iam:iam-session:${revision}`（当前 5.1.0-SNAPSHOT，父 POM `sh-iam`）                                                                                             |
+| 核心依赖   | `sh-core`（UserIdentity/IdentityContext）、`sh-redis`（StringRedisTemplate）、`sh-web`（IpHelper）、`jjwt`（HS256）                                                         |
+| 部署形态   | 服务端模式 / 客户端模式（条件装配自动切换）                                                                                                                                 |
+| 入口配置类 | `IamSessionAutoConfig`（`@AutoConfiguration` + `@ComponentScan("com.wkclz.iam.session")`）                                                                                  |
+| 关键服务   | `SessionManager` / `TokenService` / `SessionStore` / `SessionAuthFilter` / `RequestRecordFilter` / `AuthCacheManager`（三级权限缓存） / `AuthPermissionService`（权限计算） |
 
 ## 接入步骤
 
@@ -266,13 +266,14 @@ iam-session 依赖 sh-core 提供的请求级身份上下文，这是接入项�
 
 `RemoteClientConfig`（仅客户端模式生效，前缀 `iam.session.remote`）：
 
-| 配置项                                | 字段        | 说明                                |
-|------------------------------------|-----------|-----------------------------------|
-| `iam.session.remote.server-url`    | serverUrl | SSO 服务端地址（**配置后启用客户端模式**）         |
-| `iam.session.remote.app-id`        | appId     | AK 鉴权应用 ID                        |
-| `iam.session.remote.app-secret`    | appSecret | AK 鉴权应用密钥（RSA 私钥）                 |
-| `iam.session.remote.static.enabled` | enabled   | 静态资源过滤开关，默认 `false`              |
-| `iam.session.remote.static.subfix` | subfix    | 静态资源后缀正则片段，默认 `js|css|jpg|png|...` |
+| 配置项                              | 字段      | 说明                                                                 |
+|-------------------------------------|-----------|----------------------------------------------------------------------|
+| `iam.session.remote.server-url`     | serverUrl | SSO 服务端地址（**配置后启用客户端模式**）                           |
+| `iam.session.remote.app-id`         | appId     | AK 鉴权应用 ID                                                       |
+| `iam.session.remote.app-secret`     | appSecret | AK 鉴权应用密钥（RSA 私钥）                                          |
+| `iam.session.remote.auth-token`     | authToken | 权限资源远程取数鉴权 token（与 SSO 端 `iam.portal.auth.token` 配对） |
+| `iam.session.remote.static.enabled` | enabled   | 静态资源过滤开关，默认 `false`                                       |
+| `iam.session.remote.static.subfix`  | subfix    | 静态资源后缀正则片段，默认 `js                                       |css|jpg|png|...` |
 
 ## 使用示例
 
@@ -587,11 +588,12 @@ public class CustomWhiteListMatcher extends WhiteListMatcher {
 
 ## SPI 扩展点
 
-| SPI                       | 默认实现                            | 触发条件                                  | 用途                          |
-|--------------------------|---------------------------------|---------------------------------------|-----------------------------|
-| `RequestRecordHandler`   | `NoOpRequestRecordHandler`      | `@ConditionalOnMissingBean`           | 请求日志持久化                     |
-| `SessionEventListener`   | `NoOpSessionEventListener`      | Spring 自动选择                           | 会话生命周期审计                    |
-| `SsoFacade`              | `RemoteSsoFacadeImpl`           | `@ConditionalOnProperty(server-url)`  | 客户端远程调用 SSO 服务端             |
+| SPI                    | 默认实现                               | 触发条件                                                                                            | 用途                           |
+|------------------------|----------------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------------|
+| `RequestRecordHandler` | `NoOpRequestRecordHandler`             | `@ConditionalOnMissingBean`                                                                         | 请求日志持久化                 |
+| `SessionEventListener` | `NoOpSessionEventListener`             | Spring 自动选择                                                                                     | 会话生命周期审计               |
+| `SsoFacade`            | `RemoteSsoFacadeImpl`                  | `@ConditionalOnProperty(server-url)`                                                                | 客户端远程调用 SSO 服务端      |
+| `AuthResourceFacade`   | `NoOpAuthResourceFacade`（空资源兜底） | co-deploy：portal `LocalAuthResourceFacade`(@Primary)；客户端：`RemoteAuthResourceFacade`(@Primary) | 权限资源供给（三级缓存数据源） |
 
 扩展方式：实现接口 + `@Component` 注册，覆盖默认实现。
 
@@ -605,6 +607,100 @@ public class CustomWhiteListMatcher extends WhiteListMatcher {
 | 请求日志持久化  | `RequestRecordHandlerImpl`（iam-portal）→ 本地数据库 | `RemoteRequestRecordHandler` → HTTP 调用 SSO 服务端 |
 | 登出       | `SessionManager.destroySession` 本地销毁 | `SsoFacade.logout()` 远程销毁 + 本地清理      |
 | 登录       | 业务方实现（参考 iam-portal `PasswordLoginService`） | 调用 SSO 服务端登录接口（不实现本地登录）              |
+
+## 权限缓存与权限判断
+
+iam-session 内置三级权限缓存（Guava）与接口权限判断，接入项目无需额外开发即可获得：
+
+- **接口权限过滤**：`AuthPermissionFilter`（@Order -3，会话认证之后）按当前用户判断接口权限，无权限返回 403；全局开关
+  `iam.auth.check.enabled`（默认 true）
+- **菜单树接口**：`/iam-portal/user/menu/tree`（portal 提供）按当前用户计算授权菜单树，直接返回 `List<AuthMenu>`
+
+### 三级缓存结构
+
+| 层               | 键                      | 内容                                            | 失效策略                                                 |
+|------------------|-------------------------|-------------------------------------------------|----------------------------------------------------------|
+| L1 APP_STATIC    | appCode                 | 应用全量静态资源（角色/菜单/关系/API/限流配置） | APP_STATIC 指令清理 + LRU；本地无 TTL，远程形态 TTL 硬界 |
+| L2 USER_ROLE     | userCode                | 用户有效角色                                    | USER 指令 / 会话终结 + 空闲 TTL + LRU                    |
+| L3 USER_COMPUTED | appCode→userCode→urlKey | 按 URL 权限判断结果（true/false，未命中才计算） | URL 级 TTL + 用户级空闲 TTL + 指令联动清理 + LRU         |
+
+### AuthResourceFacade 接入（数据源三形态）
+
+权限缓存按需加载数据，数据源经 `AuthResourceFacade` SPI 供给（NoOp 始终注册兜底 + @Primary 覆盖模式，不用
+@ConditionalOnMissingBean）：
+
+| 形态   | 生效条件                                           | 实现                                                                                        |
+|--------|----------------------------------------------------|---------------------------------------------------------------------------------------------|
+| NoOp   | 始终注册                                           | 返回空资源（权限判断退化为全放行）                                                          |
+| Local  | co-deploy（依赖 iam-portal，未配 server-url）      | `LocalAuthResourceFacade`（@Primary）直查 DB                                                |
+| Remote | 客户端部署（配置 `iam.session.remote.server-url`） | `RemoteAuthResourceFacade`（@Primary）HTTP 调 SSO 端 `/public/auth/**`（auth-token 头鉴权） |
+
+自定义数据源：实现 `AuthResourceFacade` + `@Component @Primary` 注册即可覆盖（方法：`loadAppResource(appCode)` /
+`loadUserRoleCodes(userCode)`）。
+
+### AuthPermissionService 用法（业务代码）
+
+```java
+
+@Autowired
+private AuthPermissionService authPermissionService;
+
+// 低频：当前用户授权菜单树（每次计算，不缓存；返回快照浅拷贝，可安全修改）
+List<AuthMenu> tree = authPermissionService.getUserMenuTree(userCode, appCode);
+
+// 高频：接口权限判断（经 L3 缓存 true/false；内部异常 fail-open 放行）
+boolean ok = authPermissionService.hasApiPermission(appCode, userCode, "GET", "/api/order/1");
+
+// 接口是否被菜单纳管（未纳管时过滤器放行）
+boolean managed = authPermissionService.isManagedApi(appCode, "GET", "/api/order/1");
+```
+
+### 变更通知链路（管理端改权限后缓存如何更新）
+
+```
+iam-admin Service（角色/菜单/API/用户角色变更入口）
+  → 发布 PermissionChangeEvent（appChanged(appCode) / userChanged(userCode)，事务提交后）
+  → PermissionChangePublisher 双写 Redis：Pub/Sub channel（iam.auth.change.channel）+ 变更日志 Hash（iam:auth:change-log，每键最新，TTL 7 天）
+  → 同 Redis：PermissionChangeSubscriber 实时订阅 → applyCommand（时间戳去重）
+  → 跨 Redis：AuthChangePoller 轮询 /changes 端点 → applyCommand（与订阅共用，幂等并存）
+  → 指令清理：APP_STATIC → L1+L3 整组；USER → L2+L3 该用户（精确清理，不波及他人）
+```
+
+自定义业务修改权限数据时，发布同类事件即可联动清理：
+
+```java
+eventPublisher.publishEvent(PermissionChangeEvent.appChanged("appA")); // 应用级静态资源变更
+    eventPublisher.
+
+publishEvent(PermissionChangeEvent.userChanged("user_1")); // 用户级变更
+```
+
+### 用户缓存生命周期
+
+- 空闲过期：`iam.auth.cache.user-idle-seconds`（默认 1800s）无访问自动清理
+- 会话终结：退出登录 / 登录超时 / 被踢出 → SessionEvent 监听（AuthCacheSessionCleaner）→ 剩余会话为 0 时清理该用户
+  L2+L3（多端登录仍有剩余则保留）
+
+### iam.auth.* 配置
+
+| 配置                                       | 默认值            | 说明                               |
+|--------------------------------------------|-------------------|------------------------------------|
+| `iam.auth.check.enabled`                   | true              | 接口权限判断开关                   |
+| `iam.auth.cache.static-max-apps`           | 100               | L1 最大应用数                      |
+| `iam.auth.cache.static-remote-ttl-seconds` | 300               | 远程形态 L1 TTL 硬界（本地不生效） |
+| `iam.auth.cache.user-max-users`            | 10000             | L2 最大用户数（兼 L3 用户层）      |
+| `iam.auth.cache.user-idle-seconds`         | 1800              | L2/L3 用户层空闲 TTL（秒）         |
+| `iam.auth.cache.computed-ttl-seconds`      | 300               | L3 URL 级时效（秒）                |
+| `iam.auth.cache.computed-max-urls`         | 1024              | L3 单用户最大 URL 条目             |
+| `iam.auth.change.channel`                  | `iam:auth:change` | 变更通知 Pub/Sub channel           |
+| `iam.auth.change.poll-interval-seconds`    | 0（建议 30）      | 远程形态轮询间隔，0=关闭           |
+
+### 常见问题：缓存不更新排查
+
+1. 查 `[auth-cache]` 日志：`APPLIED` = 指令已应用；`IGNORED_STALE` = 指令时间戳不新于已处理（去重生效，非故障）
+2. 均无日志 → 确认管理端操作事务已提交（AFTER_COMMIT 才发布）；跨 Redis 场景确认 `poll-interval-seconds` 已配置
+3. 权限判断在 L3 TTL（默认 300s）内存在已知偏差窗口，属设计预期
+4. 远程取数 401 → 核对 `iam.portal.auth.token` 与 `iam.session.remote.auth-token` 配对一致
 
 ## 数据模型
 
