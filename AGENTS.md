@@ -2,7 +2,8 @@
 
 ## 项目概述
 
-sh-iam 是基于 Spring Boot 3.x 的身份认证与访问管理 (IAM) 系统，提供 SSO 登录、JWT 鉴权、用户/角色/菜单/应用/密钥管理等完整能力。项目版本 `5.0.0-SNAPSHOT`，Java 25，继承框架父 POM `sh-parent`。
+sh-iam 是基于 Spring Boot 3.x 的身份认证与访问管理 (IAM) 系统，提供 SSO 登录、JWT 鉴权、用户/角色/菜单/应用/密钥管理、权限缓存与权限判断等完整能力。项目版本
+`5.1.0-SNAPSHOT`，Java 25，继承框架父 POM `sh-parent`。
 
 ---
 
@@ -92,6 +93,10 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | 根包        | `IamSessionAutoConfig`            | 自动配置（@AutoConfiguration + @ComponentScan）                                                                             |
 
 > 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）、sh-web。不依赖 iam-common，请求控制模型自持。认证方式无关，仅管理会话生命周期与请求控制。
+>
+> **权限资源 SPI 三形态**（`AuthResourceFacade`，NoOp 始终注册兜底 + @Primary 覆盖）：co-deploy 部署时 portal 的
+> `LocalAuthResourceFacade`（直查 DB）生效；客户端部署（配置 `iam.session.remote.server-url`）时 `RemoteAuthResourceFacade`
+> （HTTP + auth-token 头）生效；跨 Redis 场景由 `AuthChangePoller` 轮询变更日志 + L1 远程 TTL 硬界兜底（详见 STORY-048）。
 
 ### iam-common (`com.wkclz.iam.common`)
 
@@ -118,6 +123,7 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | 包         | 类                                                                                                                                                                                                                                                                                                                         | 说明                                                                                        |
 |------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | `config`   | IamPortalConfig                                                                                                                                                                                                                                                                                                            | Portal 配置 (密码过期天数、RSA 公私钥、远程取数鉴权 token)                                  |
+| `bean.req` | AuthAppResourceReq, AuthUserRolesReq                                                                                                                                                                                                                                                                                       | 权限资源远程取数请求封装（@NotBlank + @Schema）                                             |
 | `rest`     | LoginRest, CaptchaRest, RegisterRest, UserInfoRest, AuthResourceRest(权限资源远程取数 token 鉴权)                                                                                                                                                                                                                          | 登录/验证码/注册/用户信息接口 (均使用 @Validated + @Tag + @Operation，参数校验通过注解实现) |
 | `contract` | LocalSsoFacadeContract                                                                                                                                                                                                                                                                                                     | SSO 门面本地实现                                                                            |
 | `service`  | IamLoginService, IamSessionService, SsoResourceService(仅若依菜单树转换, 菜单计算已由 AuthPermissionService 承担), UsernameCacheService, IamRequestService, SsoAppService(登录页应用信息查询, 仅 appName/loginBgp), RequestRecordHandlerImpl, LocalAuthResourceFacade(权限资源缓存 SPI 本地实现, 查询装配 AppAuthResource) | SSO 核心业务逻辑                                                                            |
@@ -126,17 +132,17 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 
 ### iam-admin (`com.wkclz.iam.admin`)
 
-| 包           | 类                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 说明                                                                                                                |
-|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `rest`      | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, AccessKeyApiRest, UserAuthRest, DataDimensionRest, RoleMenuRest, MenuApiRest, RoleDataRest, UserMenuRest, LoginRecordRest, RequestRecordRest, EntityFieldRest, MenuFieldRest, ApiFieldRest                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | REST 控制器 (均使用 @Validated + @Tag + @Operation，参数校验通过 Req 注解实现)                                                     |
+| 包          | 类                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | 说明                                                                                                                            |
+|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `rest`      | UserRest, RoleRest, MenuRest, AppRest, ApiRest, AccessKeyRest, AccessKeyApiRest, UserAuthRest, DataDimensionRest, RoleMenuRest, MenuApiRest, RoleDataRest, UserMenuRest, LoginRecordRest, RequestRecordRest, EntityFieldRest, MenuFieldRest, ApiFieldRest                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | REST 控制器 (均使用 @Validated + @Tag + @Operation，参数校验通过 Req 注解实现)                                                  |
 | `bean.req`  | UserPageReq, UserCreateReq, UserUpdateReq, UserRoleBindReq, RoleListReq, RoleCreateReq, RoleUpdateReq, RoleMenuSaveReq, RoleUserPageReq, RoleUserBindReq, RoleUserUnbindReq, RoleDataListReq, RoleDataBindReq, MenuListReq, MenuCreateReq, MenuUpdateReq, MenuApiBindReq, MenuApiListReq, MenuFieldBindReq, MenuFieldSaveReq, AppPageReq, AppCreateReq, AppUpdateReq, ApiPageReq, ApiCreateReq, ApiUpdateReq, ApiListReq, ApiPasteReq, ApiFieldCreateReq, ApiFieldUpdateReq, AccessKeyPageReq, AccessKeyCreateReq, AccessKeyUpdateReq, AccessKeyApiBindReq, UserAuthListReq, UserAuthCreateReq, UserAuthUpdateReq, UserAuthResetPasswordReq, DataDimPageReq, DataDimCreateReq, DataDimUpdateReq, UserMenuListReq, LoginRecordPageReq, RequestRecordPageReq | 请求参数封装 (继承 PageReq/UpdateReq/IdReq/RemoveReq 或 implements Serializable，使用 @NotBlank/@NotNull/@NotEmpty/@Valid 校验) |
-| `bean.resp` | UserResp, RoleResp, MenuResp, AppResp, ApiResp, ApiDetailResp, ApiBoundResp, MenuDetailResp, MenuApiResp, MenuRoleResp, MenuUserResp, AccessKeyResp, AccessKeyApiResp, UserAuthResp, DataDimResp, RoleDataResp, RoleBoundResp, RoleUserResp, UserRoleResp, UserMenuSourceResp, LoginRecordResp, RequestRecordResp, ApiFieldResp, MenuFieldResp, EntityFieldNode                                                                                                                                                                                                                                                                                                                                                                                            | 响应封装 (继承 EntityResp，使用 @Schema 描述)                                                                                |
-| `service`   | IamUserService, IamRoleService(含角色树构建+子角色删除校验), IamMenuService(含路由路径校验+子菜单删除校验), IamUserMenuService, IamUserRoleService, ...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 17+ Service                                                                                                       |
-| `mapper`    | IamUserMapper, IamRoleMapper, ...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 17 个 Mapper + XML                                                                                                 |
-| `helper`    | EntityFieldAnalyzer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 实体字段分析器 (字段树生成、API返回值实体类自动定位、方法参数推断实体类)                                                                           |
+| `bean.resp` | UserResp, RoleResp, MenuResp, AppResp, ApiResp, ApiDetailResp, ApiBoundResp, MenuDetailResp, MenuApiResp, MenuRoleResp, MenuUserResp, AccessKeyResp, AccessKeyApiResp, UserAuthResp, DataDimResp, RoleDataResp, RoleBoundResp, RoleUserResp, UserRoleResp, UserMenuSourceResp, LoginRecordResp, RequestRecordResp, ApiFieldResp, MenuFieldResp, EntityFieldNode                                                                                                                                                                                                                                                                                                                                                                                            | 响应封装 (继承 EntityResp，使用 @Schema 描述)                                                                                   |
+| `service`   | IamUserService, IamRoleService(含角色树构建+子角色删除校验), IamMenuService(含路由路径校验+子菜单删除校验), IamUserMenuService, IamUserRoleService, ...（角色/菜单/API/用户角色等变更入口均发布 PermissionChangeEvent，驱动权限缓存清理）                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 17+ Service                                                                                                                     |
+| `mapper`    | IamUserMapper, IamRoleMapper, ...                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 17 个 Mapper + XML                                                                                                              |
+| `helper`    | EntityFieldAnalyzer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 实体字段分析器 (字段树生成、API返回值实体类自动定位、方法参数推断实体类)                                                        |
 | `job`       | UserRoleExpireJobHandler                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | 用户角色有效期定时任务 (XXL-Job + @Scheduled 双触发)                                                                            |
-| `init`      | RestfulScan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 启动时扫描 @Router 注解 → 同步 API 到数据库                                                                                    |
-| 根包          | IamAdminAutoConfig, Route                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)                                                                                   |
+| `init`      | RestfulScan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 启动时扫描 @Router 注解 → 同步 API 到数据库                                                                                     |
+| 根包        | IamAdminAutoConfig, Route                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 自动配置 + 路由常量接口 (前缀 `/iam-admin`)                                                                                     |
 
 ### iam-admin-ui 前端关键组件 (`src/views/`)
 
@@ -278,18 +284,28 @@ iam_request_record ── 请求日志 (独立)
          9. 记录登录日志 + 更新登录信息
 ```
 
-### 鉴权流程 (SessionAuthFilter)
+### 鉴权流程 (过滤器链：RequestRecordFilter → SessionAuthFilter → AuthPermissionFilter → RequestControlFilter)
 
 ```
-请求 → RequestRecordFilter → SessionAuthFilter:
-  1. 无条件设置 appCode + tenantCode（每个请求）
-  2. 获取身份（准入唯一依据 = 完整会话）：resolve token → validateAndRefresh（JWT 有效 + Redis 会话存在）
-  3. 准入判断：
-     - 白名单 (/*/public/**) → 无论有无身份，放行；无有效会话时 best-effort 解析 claims 仅用于审计日志
-     - 非白名单 + 无有效会话 → 401（JWT 过期 / 登出后 Redis 会话已删 均被拦截）
-     - 非白名单 + 有效会话 → 放行
-  4. IdentityContext.clear() 由外层 RequestRecordFilter.finally 负责
+请求 → RequestRecordFilter → SessionAuthFilter → AuthPermissionFilter → RequestControlFilter:
+
+  RequestRecordFilter (-10)：包装请求/响应 → 采集日志 → finally 中 IdentityContext.clear()
+  SessionAuthFilter (-5)：
+    1. 无条件设置 appCode + tenantCode（每个请求）
+    2. 获取身份（准入唯一依据 = 完整会话）：resolve token → validateAndRefresh（JWT 有效 + Redis 会话存在）
+    3. 准入判断：
+       - 白名单 (/*/public/**) → 无论有无身份，放行；无有效会话时 best-effort 解析 claims 仅用于审计日志
+       - 非白名单 + 无有效会话 → 401（JWT 过期 / 登出后 Redis 会话已删 均被拦截）
+       - 非白名单 + 有效会话 → 放行
+  AuthPermissionFilter (-3)（iam.auth.check.enabled 开关控制，基于三级权限缓存）：
+    1. 开关关闭 / 白名单 / 无身份 → 放行
+    2. appCode 缺失 → 403「缺少应用标识(appCode)」
+    3. 未纳管接口（isManagedApi=false）→ 403「无接口访问权限」（开关开启后全量纳管）
+    4. 已纳管 → hasApiPermission（L3 按 URL 缓存 true/false）→ 无权限 403
+  RequestControlFilter (LOWEST)：已配置请求控制的 API 执行互斥（RedisLock）+ 滑动窗口限流 → 拒绝 429
 ```
+
+> 菜单资源接口 `/user/menu/tree`、`/user/menu/tree/ruoyi` 由 AuthPermissionService 按当前用户三级缓存计算授权菜单树（不再返回应用全量菜单）。
 
 ### 用户创建流程 (IamUserService.customCreate)
 
@@ -335,11 +351,28 @@ iam_request_record ── 请求日志 (独立)
 
 ### iam-portal 配置 (`iam.portal.*`)
 
-| 配置 | 说明 | 默认值 |
-|------|------|--------|
-| `iam.portal.password.expire-days` | 密码过期天数 | 180 |
-| `iam.login.private-key` | RSA 私钥 (密码解密) | - |
-| `iam.login.public-key` | RSA 公钥 (密码加密) | - |
+| 配置                              | 说明                                                                                        | 默认值 |
+|-----------------------------------|---------------------------------------------------------------------------------------------|--------|
+| `iam.portal.password.expire-days` | 密码过期天数                                                                                | 180    |
+| `iam.login.private-key`           | RSA 私钥 (密码解密)                                                                         | -      |
+| `iam.login.public-key`            | RSA 公钥 (密码加密)                                                                         | -      |
+| `iam.portal.auth.token`           | 权限资源远程取数鉴权 token（与 iam.session.remote.auth-token 配对；密钥对方式后续重新设计） | -      |
+
+### iam-session 权限缓存配置 (`iam.auth.*`，位于 IamSessionConfig)
+
+| 配置                                       | 说明                                     | 默认值            |
+|--------------------------------------------|------------------------------------------|-------------------|
+| `iam.auth.check.enabled`                   | 接口权限判断开关（AuthPermissionFilter） | true              |
+| `iam.auth.cache.static-max-apps`           | L1 最大应用数                            | 100               |
+| `iam.auth.cache.static-remote-ttl-seconds` | 远程形态 L1 TTL 硬界（本地形态不生效）   | 300               |
+| `iam.auth.cache.user-max-users`            | L2 最大用户数（兼 L3 用户层）            | 10000             |
+| `iam.auth.cache.user-idle-seconds`         | L2/L3 用户层空闲 TTL（秒）               | 1800              |
+| `iam.auth.cache.computed-ttl-seconds`      | L3 URL 级时效（秒）                      | 300               |
+| `iam.auth.cache.computed-max-urls`         | L3 单用户最大 URL 条目                   | 1024              |
+| `iam.auth.change.channel`                  | 变更通知 Redis Pub/Sub channel           | `iam:auth:change` |
+| `iam.auth.change.poll-interval-seconds`    | 远程形态轮询间隔（0=关闭，建议 30）      | 0                 |
+
+> 客户端部署对端配置：`iam.session.remote.auth-token`（与 portal 端 `iam.portal.auth.token` 配对）。
 
 ### iam-session 请求控制配置 (`iam.request-control.*`，位于 IamSessionConfig)
 
@@ -436,11 +469,11 @@ iam_request_record ── 请求日志 (独立)
 
 ### 实现状态概览
 
-| 状态      | 数量 | 说明                   |
-|---------|----|----------------------|
-| ✅ 已完成   | 34 | 核心功能已实现              |
-| ⚠️ 部分完成 | 12 | 存在差距，详见各故事说明         |
-| ❌ 未实现   | 1  | STORY-010 HTTP 安全过滤器 |
+| 状态        | 数量 | 说明                      |
+|-------------|------|---------------------------|
+| ✅ 已完成   | 35   | 核心功能已实现            |
+| ⚠️ 部分完成 | 12   | 存在差距，详见各故事说明  |
+| ❌ 未实现   | 1    | STORY-010 HTTP 安全过滤器 |
 
 ### 公共基础模块 (iam-common)
 
@@ -483,33 +516,34 @@ iam_request_record ── 请求日志 (独立)
 
 ### 管理后台模块 (iam-admin)
 
-| Story ID     | 故事名称                   | 优先级 | 文档                                                                                                                                                   |
-|--------------|------------------------|-----|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| STORY-025    | ✅ 用户 CRUD 管理           | P0  | [STORY-025](docs/stories/STORY-025-user-crud.md)                                                                                                     |
-| STORY-026    | ⚠️ 用户认证方式管理（部分实现）      | P1  | [STORY-026](docs/stories/STORY-026-user-auth-management.md)                                                                                          |
-| STORY-027    | ✅ 角色 CRUD 管理           | P0  | [STORY-027](docs/stories/STORY-027-role-crud.md)                                                                                                     |
-| STORY-028    | ✅ 菜单 CRUD 与树形管理        | P0  | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md)                                                                                                |
-| STORY-029    | ✅ 应用 CRUD 管理           | P0  | [STORY-029](docs/stories/STORY-029-app-crud.md)                                                                                                      |
-| STORY-030    | ✅ API 路由 CRUD 管理       | P0  | [STORY-030](docs/stories/STORY-030-api-crud.md)                                                                                                      |
-| STORY-030-01 | ⚠️ API 详情页与菜单绑定数（部分实现） | P1  | API 详情弹窗展示已绑定菜单全路径，API 列表增加 menuBindCount 字段和 menuBindStatus 过滤                                                                                      |
-| STORY-031    | ✅ API 自动扫描同步           | P1  | [STORY-031](docs/stories/STORY-031-api-auto-scan.md)                                                                                                 |
-| STORY-032    | ✅ 访问密钥 CRUD 管理         | P1  | [STORY-032](docs/stories/STORY-032-access-key-crud.md)                                                                                               |
-| STORY-033    | ⚠️ AK-API 关联管理（部分实现）   | P1  | [STORY-033](docs/stories/STORY-033-ak-api-binding.md)                                                                                                |
-| STORY-034    | ✅ 角色-菜单关联管理            | P0  | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)                                                                                             |
-| STORY-035    | ✅ 角色-用户与用户-角色关联管理      | P0  | [STORY-035](docs/stories/STORY-035-user-role-binding.md) — 角色下用户查询已改为分页，支持 username 精确匹配、nickname 模糊搜索，返回 PageData<RoleUserResp>（含 createTime）       |
-| STORY-036    | ✅ 菜单-API 关联管理          | P0  | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)                                                                                              |
-| STORY-036-01 | ⚠️ 菜单详情页与穿梭框绑定（部分实现）   | P1  | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列，已绑定角色（roleCode+roleName），关联用户（username/nickname/roleName/startTime/endTime/enableStatus） |
-| STORY-037    | ⚠️ 数据权限维度管理（部分实现）      | P1  | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)                                                                                           |
-| STORY-038    | ⚠️ 角色-数据权限关联管理（部分实现）   | P1  | [STORY-038](docs/stories/STORY-038-role-data-binding.md)                                                                                             |
-| STORY-039    | ⚠️ 登录日志查询（部分实现）        | P1  | [STORY-039](docs/stories/STORY-039-login-record-query.md)                                                                                            |
-| STORY-040    | ⚠️ 请求日志查询（部分实现）        | P1  | [STORY-040](docs/stories/STORY-040-request-record-query.md)                                                                                          |
-| STORY-041    | ✅ 当前用户菜单查询             | P0  | [STORY-041](docs/stories/STORY-041-user-menu-query.md)                                                                                               |
-| STORY-042    | ✅ Admin 自动配置与路由常量      | P0  | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                             |
-| STORY-043    | ✅ API 请求控制（互斥+滑动窗口限流）  | P1  | [STORY-043](docs/stories/管理后台/043-API请求控制.md)                                                                                                        |
-| STORY-044    | ✅ API 导出与导入（剪贴板 JSON）   | P1  | [STORY-044](docs/stories/管理后台/044-API导入导出.md)                                                                                                        |
-| STORY-045    | ✅ 登录页应用标题动态化            | P1  | [STORY-045](docs/stories/SSO登录/045-登录页应用标题动态化.md)                                                                                                   |
-| STORY-046    | ✅ 菜单导出与导入（树形递归+绑定接口） | P1  | [STORY-046](docs/stories/管理后台/046-菜单导出导入.md)                                                                                                        |
-| STORY-047    | ✅ 数据维度导出与导入（单表）        | P1  | [STORY-047](docs/stories/管理后台/047-数据维度导出导入.md)                                                                                                     |
+| Story ID     | 故事名称                               | 优先级 | 文档                                                                                                                                                                                                                   |
+|--------------|----------------------------------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| STORY-025    | ✅ 用户 CRUD 管理                      | P0     | [STORY-025](docs/stories/STORY-025-user-crud.md)                                                                                                                                                                       |
+| STORY-026    | ⚠️ 用户认证方式管理（部分实现）        | P1     | [STORY-026](docs/stories/STORY-026-user-auth-management.md)                                                                                                                                                            |
+| STORY-027    | ✅ 角色 CRUD 管理                      | P0     | [STORY-027](docs/stories/STORY-027-role-crud.md)                                                                                                                                                                       |
+| STORY-028    | ✅ 菜单 CRUD 与树形管理                | P0     | [STORY-028](docs/stories/STORY-028-menu-crud-tree.md)                                                                                                                                                                  |
+| STORY-029    | ✅ 应用 CRUD 管理                      | P0     | [STORY-029](docs/stories/STORY-029-app-crud.md)                                                                                                                                                                        |
+| STORY-030    | ✅ API 路由 CRUD 管理                  | P0     | [STORY-030](docs/stories/STORY-030-api-crud.md)                                                                                                                                                                        |
+| STORY-030-01 | ⚠️ API 详情页与菜单绑定数（部分实现）  | P1     | API 详情弹窗展示已绑定菜单全路径，API 列表增加 menuBindCount 字段和 menuBindStatus 过滤                                                                                                                                |
+| STORY-031    | ✅ API 自动扫描同步                    | P1     | [STORY-031](docs/stories/STORY-031-api-auto-scan.md)                                                                                                                                                                   |
+| STORY-032    | ✅ 访问密钥 CRUD 管理                  | P1     | [STORY-032](docs/stories/STORY-032-access-key-crud.md)                                                                                                                                                                 |
+| STORY-033    | ⚠️ AK-API 关联管理（部分实现）         | P1     | [STORY-033](docs/stories/STORY-033-ak-api-binding.md)                                                                                                                                                                  |
+| STORY-034    | ✅ 角色-菜单关联管理                   | P0     | [STORY-034](docs/stories/STORY-034-role-menu-binding.md)                                                                                                                                                               |
+| STORY-035    | ✅ 角色-用户与用户-角色关联管理        | P0     | [STORY-035](docs/stories/STORY-035-user-role-binding.md) — 角色下用户查询已改为分页，支持 username 精确匹配、nickname 模糊搜索，返回 PageData<RoleUserResp>（含 createTime）                                           |
+| STORY-036    | ✅ 菜单-API 关联管理                   | P0     | [STORY-036](docs/stories/STORY-036-menu-api-binding.md)                                                                                                                                                                |
+| STORY-036-01 | ⚠️ 菜单详情页与穿梭框绑定（部分实现）  | P1     | 菜单详情弹窗（全量API+已绑定API前端组装），已绑定的绑定按钮禁用，绑定/解绑后前端本地更新，菜单列表增加接口数列，已绑定角色（roleCode+roleName），关联用户（username/nickname/roleName/startTime/endTime/enableStatus） |
+| STORY-037    | ⚠️ 数据权限维度管理（部分实现）        | P1     | [STORY-037](docs/stories/STORY-037-data-dimension-crud.md)                                                                                                                                                             |
+| STORY-038    | ⚠️ 角色-数据权限关联管理（部分实现）   | P1     | [STORY-038](docs/stories/STORY-038-role-data-binding.md)                                                                                                                                                               |
+| STORY-039    | ⚠️ 登录日志查询（部分实现）            | P1     | [STORY-039](docs/stories/STORY-039-login-record-query.md)                                                                                                                                                              |
+| STORY-040    | ⚠️ 请求日志查询（部分实现）            | P1     | [STORY-040](docs/stories/STORY-040-request-record-query.md)                                                                                                                                                            |
+| STORY-041    | ✅ 当前用户菜单查询                    | P0     | [STORY-041](docs/stories/STORY-041-user-menu-query.md)                                                                                                                                                                 |
+| STORY-042    | ✅ Admin 自动配置与路由常量            | P0     | [STORY-042](docs/stories/STORY-042-admin-auto-config.md)                                                                                                                                                               |
+| STORY-043    | ✅ API 请求控制（互斥+滑动窗口限流）   | P1     | [STORY-043](docs/stories/管理后台/043-API请求控制.md)                                                                                                                                                                  |
+| STORY-044    | ✅ API 导出与导入（剪贴板 JSON）       | P1     | [STORY-044](docs/stories/管理后台/044-API导入导出.md)                                                                                                                                                                  |
+| STORY-045    | ✅ 登录页应用标题动态化                | P1     | [STORY-045](docs/stories/SSO登录/045-登录页应用标题动态化.md)                                                                                                                                                          |
+| STORY-046    | ✅ 菜单导出与导入（树形递归+绑定接口） | P1     | [STORY-046](docs/stories/管理后台/046-菜单导出导入.md)                                                                                                                                                                 |
+| STORY-047    | ✅ 数据维度导出与导入（单表）          | P1     | [STORY-047](docs/stories/管理后台/047-数据维度导出导入.md)                                                                                                                                                             |
+| STORY-048    | ✅ 权限信息缓存与权限判断              | P0     | [STORY-048](docs/stories/管理后台/048-权限缓存与权限判断.md)                                                                                                                                                           |
 
 ### 故事依赖关系概览
 
