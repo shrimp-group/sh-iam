@@ -33,6 +33,11 @@ public interface SsoAuthResourceMapper {
     Set<String> listAppRoles(@Param("appCode") String appCode);
 
     /**
+     * 应用内公共角色编码（is_public=1，无需申请，访问即生效）
+     */
+    Set<String> listAppPublicRoleCodes(@Param("appCode") String appCode);
+
+    /**
      * 应用内全部菜单（MENU 与 BUTTON 两类）
      */
     List<AuthMenu> listAppMenus(@Param("appCode") String appCode);

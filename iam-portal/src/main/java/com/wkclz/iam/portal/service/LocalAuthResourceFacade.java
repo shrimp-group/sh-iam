@@ -4,30 +4,18 @@ import com.alibaba.fastjson2.JSON;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.iam.common.entity.IamMenuApi;
 import com.wkclz.iam.common.entity.IamRoleMenu;
+import com.wkclz.iam.portal.config.IamPortalConfig;
 import com.wkclz.iam.portal.mapper.SsoAuthResourceMapper;
 import com.wkclz.iam.session.bean.ApiRequestControl;
-import com.wkclz.iam.session.bean.auth.AppAuthResource;
-import com.wkclz.iam.session.bean.auth.AuthApi;
-import com.wkclz.iam.session.bean.auth.AuthApiField;
-import com.wkclz.iam.session.bean.auth.AuthApp;
-import com.wkclz.iam.session.bean.auth.AuthMenu;
+import com.wkclz.iam.session.bean.auth.*;
 import com.wkclz.iam.session.spi.AuthResourceFacade;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,6 +37,8 @@ import java.util.stream.Collectors;
 public class LocalAuthResourceFacade implements AuthResourceFacade {
 
     @Resource
+    private IamPortalConfig config;
+    @Resource
     private SsoAuthResourceMapper ssoAuthResourceMapper;
 
     @Override
@@ -57,6 +47,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
         try {
             AuthApp app = ssoAuthResourceMapper.selectApp(appCode);
             Set<String> roleCodes = ssoAuthResourceMapper.listAppRoles(appCode);
+            Set<String> publicRoleCodes = ssoAuthResourceMapper.listAppPublicRoleCodes(appCode);
             List<AuthMenu> menus = ssoAuthResourceMapper.listAppMenus(appCode);
             List<IamRoleMenu> roleMenus = ssoAuthResourceMapper.listRoleMenus(appCode);
             List<AuthApi> apis = ssoAuthResourceMapper.listAppApis(appCode);
@@ -70,6 +61,9 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
 
             // 应用角色（防御 null）
             resource.setRoleCodes(roleCodes == null ? new LinkedHashSet<>() : new LinkedHashSet<>(roleCodes));
+
+            // 应用公共角色（is_public=1，无需申请，访问即生效）
+            resource.setPublicRoleCodes(publicRoleCodes == null ? new LinkedHashSet<>() : new LinkedHashSet<>(publicRoleCodes));
 
             // menuMap：LinkedHashMap 保 sort 序（menuCode → 节点）
             Map<String, AuthMenu> menuMap = menus == null ? new LinkedHashMap<>()
@@ -131,9 +125,9 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             resource.setRequestControls(requestControls);
 
             resource.setLoadTime(System.currentTimeMillis());
-            log.info("加载应用静态资源完成: appCode={}, appName={}, authType={}, roles={}, menus={}, apis={}, roleMenuRels={}, menuApiRels={}, requestControls={}",
+            log.info("加载应用静态资源完成: appCode={}, appName={}, authType={}, roles={}, publicRoles={}, menus={}, apis={}, roleMenuRels={}, menuApiRels={}, requestControls={}",
                 appCode, app == null ? null : app.getAppName(), app == null ? null : app.getAuthType(),
-                resource.getRoleCodes().size(), menuMap.size(), apiMap.size(),
+                resource.getRoleCodes().size(), resource.getPublicRoleCodes().size(), menuMap.size(), apiMap.size(),
                 roleMenuMap.values().stream().mapToInt(Set::size).sum(),
                 menuApiMap.values().stream().mapToInt(Set::size).sum(), requestControls.size());
             return resource;
@@ -147,13 +141,29 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
     public List<String> loadUserRoleCodes(String userCode) {
         log.info("加载用户有效角色: userCode={}", userCode);
         try {
+            // super 用户（配置 iam.portal.super-users）返回哨兵角色，权限计算视为拥有应用内全部角色
+            if (isSuperUser(userCode)) {
+                log.info("super 用户返回哨兵角色: userCode={}", userCode);
+                return List.of(AuthResourceFacade.SUPER_ROLE_CODE);
+            }
             List<String> roleCodes = ssoAuthResourceMapper.listUserActiveRoleCodes(userCode);
-            List<String> result = roleCodes == null ? new ArrayList<>() : roleCodes;
+            // 剔除与哨兵同名的真实角色编码，确保 super 语义只来源于配置判断
+            List<String> result = roleCodes == null ? new ArrayList<>() : roleCodes.stream().filter(code -> !AuthResourceFacade.SUPER_ROLE_CODE.equals(code)).toList();
             log.info("加载用户有效角色完成: userCode={}, roles={}", userCode, result.size());
             return result;
         } catch (RuntimeException e) {
             log.error("加载用户有效角色失败: userCode={}, error={}", userCode, e.getMessage(), e);
             throw e;
         }
+    }
+
+    /**
+     * super 用户判定：配置项 trim 后与 userCode 精确匹配（防御配置尾随空格导致的错判）
+     */
+    private boolean isSuperUser(String userCode) {
+        if (userCode == null || config.getSuperUsers() == null) {
+            return false;
+        }
+        return config.getSuperUsers().stream().map(String::trim).anyMatch(userCode::equals);
     }
 }

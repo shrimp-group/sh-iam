@@ -53,6 +53,13 @@ import java.util.function.Supplier;
 @Component
 public class AuthCacheManager {
 
+    /**
+     * 合并部署（未配置 iam.session.app-code）时鉴权资源的全局打平键。
+     * <p>真实 appCode 由 redisIdGenerator 生成（app_ 前缀），与哨兵无冲突；与 SUPER_ROLE_CODE 同属哨兵命名空间约定。</p>
+     */
+    public static final String GLOBAL_KEY = "__GLOBAL__";
+
+    private final IamSessionConfig config;
     private final AuthResourceFacade facade;
     private final AuthComputedCache computedCache;
     private final ObjectProvider<RemoteClientConfig> remoteClientConfigProvider;
@@ -88,6 +95,7 @@ public class AuthCacheManager {
         this.facade = facade;
         this.computedCache = computedCache;
         this.remoteClientConfigProvider = remoteClientConfigProvider;
+        this.config = config;
         this.staticCache = buildStaticCache(config, ticker);
         this.userRoleCache = CacheBuilder.newBuilder()
             .maximumSize(config.getAuthCacheUserMaxUsers())
@@ -130,6 +138,10 @@ public class AuthCacheManager {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new RuntimeException("加载应用静态资源缓存失败: appCode=" + appCode + ", error=" + cause.getMessage(), cause);
         }
+    }
+
+    public IamSessionConfig getConfig() {
+        return config;
     }
 
     /**
@@ -189,6 +201,9 @@ public class AuthCacheManager {
                 staticCache.invalidate(cmd.getTargetKey());
                 computedCache.evictApp(cmd.getTargetKey());
                 logState("APP_STATIC", cmd.getTargetKey(), "LOADED→EVICTED", "CHANGE_CMD");
+                // 合并部署：打平资源受任何应用的资源变更影响，无法精确反推受影响键 → 联动全清（独立部署时 GLOBAL 不存在，幂等空操作）
+                staticCache.invalidate(GLOBAL_KEY);
+                computedCache.evictApp(GLOBAL_KEY);
             }
             case USER -> evictUser(cmd.getTargetKey(), "CHANGE_CMD");
         }

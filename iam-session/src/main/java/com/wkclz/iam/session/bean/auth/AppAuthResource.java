@@ -49,6 +49,12 @@ public class AppAuthResource {
     private Set<String> roleCodes;
 
     /**
+     * 应用内公共角色编码（is_public=1，无需申请，用户访问应用即自动拥有）
+     */
+    @Schema(description = "应用内公共角色编码")
+    private Set<String> publicRoleCodes;
+
+    /**
      * 应用内全部菜单：menuCode → 节点（LinkedHashMap 保 sort 序，MENU 与 BUTTON 两类）。
      * <p>快照不可变约束：缓存内对象为多请求共享实例，消费方不得修改其字段（组树须浅拷贝节点）。</p>
      */
@@ -108,6 +114,7 @@ public class AppAuthResource {
         resource.setAppCode(appCode);
         resource.setLoadTime(System.currentTimeMillis());
         resource.setRoleCodes(new LinkedHashSet<>());
+        resource.setPublicRoleCodes(new LinkedHashSet<>());
         resource.setMenuMap(new LinkedHashMap<>());
         resource.setRoleMenuMap(new HashMap<>());
         resource.setApiMap(new HashMap<>());

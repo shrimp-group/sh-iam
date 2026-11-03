@@ -2,142 +2,170 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wkclz.iam.portal.mapper.SsoAuthResourceMapper">
 
-    <!-- 应用信息（鉴权类型决定鉴权深度） -->
+    <!-- 应用信息（鉴权类型决定鉴权深度；__GLOBAL__ 打平资源无单一应用，返回 null → fail-closed） -->
     <select id="selectApp" parameterType="java.lang.String" resultType="com.wkclz.iam.session.bean.auth.AuthApp">
         SELECT
-        app_code,
-        app_name,
-        auth_type
+            app_code,
+            app_name,
+            auth_type
         FROM
-        iam_app
+            iam_app
         WHERE
-        deleted = 0
-        AND app_code = #{appCode}
+            deleted = 0
+            AND app_code = #{appCode}
     </select>
 
-    <!-- 应用内全部角色编码 -->
+    <!-- 应用内全部角色编码（__GLOBAL__ 时为全系统角色） -->
     <select id="listAppRoles" parameterType="java.lang.String" resultType="java.lang.String">
         SELECT
-        role_code
+            role_code
         FROM
-        iam_role
+            iam_role
         WHERE
-        deleted = 0
-        AND app_code = #{appCode}
+            deleted = 0
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND app_code = #{appCode}
+            </if>
+    </select>
+
+    <!-- 应用内公共角色编码（无需申请，用户访问应用即自动拥有） -->
+    <select id="listAppPublicRoleCodes" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+            role_code
+        FROM
+            iam_role
+        WHERE
+            deleted = 0
+            AND is_public = 1
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND app_code = #{appCode}
+            </if>
     </select>
 
     <!-- 应用内全部菜单（MENU 与 BUTTON 两类），字段对齐 iam-session AuthMenu -->
     <select id="listAppMenus" parameterType="java.lang.String" resultType="com.wkclz.iam.session.bean.auth.AuthMenu">
         SELECT
-        menu_code,
-        parent_code,
-        menu_name,
-        icon,
-        menu_type,
-        route_path,
-        component,
-        button_code,
-        hidden,
-        sort
+            menu_code,
+            parent_code,
+            menu_name,
+            icon,
+            menu_type,
+            route_path,
+            component,
+            button_code,
+            hidden,
+            sort
         FROM
-        iam_menu
+            iam_menu
         WHERE
-        deleted = 0
-        AND app_code = #{appCode}
+            deleted = 0
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND app_code = #{appCode}
+            </if>
         ORDER BY
-        sort ASC,
-        id ASC
+            sort ASC,
+            id ASC
     </select>
 
-    <!-- 应用内角色菜单关系（join iam_role 限定应用） -->
+    <!-- 应用内角色菜单关系（join iam_role 限定应用；__GLOBAL__ 时 join 仍保证角色有效） -->
     <select id="listRoleMenus" parameterType="java.lang.String" resultType="com.wkclz.iam.common.entity.IamRoleMenu">
         SELECT
-        rm.role_code,
-        rm.menu_code
+            rm.role_code,
+            rm.menu_code
         FROM
-        iam_role_menu rm
-        INNER JOIN iam_role r ON r.role_code = rm.role_code AND r.deleted = 0
+            iam_role_menu rm
+            INNER JOIN iam_role r ON r.role_code = rm.role_code AND r.deleted = 0
         WHERE
-        rm.deleted = 0
-        AND r.app_code = #{appCode}
+            rm.deleted = 0
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND r.app_code = #{appCode}
+            </if>
     </select>
 
     <!-- 应用内全部 API 定义（apiCode → method/uri，权限匹配依据） -->
     <select id="listAppApis" parameterType="java.lang.String" resultType="com.wkclz.iam.session.bean.auth.AuthApi">
         SELECT
-        api_code,
-        api_method,
-        api_uri
+            api_code,
+            api_method,
+            api_uri
         FROM
-        iam_api
+            iam_api
         WHERE
-        deleted = 0
-        AND app_code = #{appCode}
+            deleted = 0
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND app_code = #{appCode}
+            </if>
     </select>
 
     <!-- 应用内菜单-API 关联（纯关系实体，与 listRoleMenus 同构） -->
     <select id="listMenuApis" parameterType="java.lang.String" resultType="com.wkclz.iam.common.entity.IamMenuApi">
         SELECT
-        ma.menu_code,
-        ma.api_code
+            ma.menu_code,
+            ma.api_code
         FROM
-        iam_menu_api ma
-        INNER JOIN iam_menu m ON m.menu_code = ma.menu_code AND m.deleted = 0
-        INNER JOIN iam_api a ON a.api_code = ma.api_code AND a.deleted = 0
+            iam_menu_api ma
+            INNER JOIN iam_menu m ON m.menu_code = ma.menu_code AND m.deleted = 0
+            INNER JOIN iam_api a ON a.api_code = ma.api_code AND a.deleted = 0
         WHERE
-        ma.deleted = 0
-        AND m.app_code = #{appCode}
+            ma.deleted = 0
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND m.app_code = #{appCode}
+            </if>
     </select>
 
     <!-- 应用内接口字段权限 -->
     <select id="listApiFields" parameterType="java.lang.String"
             resultType="com.wkclz.iam.session.bean.auth.AuthApiField">
         SELECT
-        api_code,
-        field_code,
-        field_name,
-        json_path,
-        action,
-        mask_rule
+            api_code,
+            field_code,
+            field_name,
+            json_path,
+            action,
+            mask_rule
         FROM
-        iam_api_field
+            iam_api_field
         WHERE
-        deleted = 0
-        AND app_code = #{appCode}
+            deleted = 0
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND app_code = #{appCode}
+            </if>
         ORDER BY
-        sort ASC,
-        id ASC
+            sort ASC,
+            id ASC
     </select>
 
     <!-- 应用内已配置请求控制的 API -->
     <select id="listRequestControlApis" parameterType="java.lang.String"
             resultType="com.wkclz.iam.common.entity.IamApi">
         SELECT
-        api_code,
-        api_method,
-        api_uri,
-        request_control
+            api_code,
+            api_method,
+            api_uri,
+            request_control
         FROM
-        iam_api
+            iam_api
         WHERE
-        deleted = 0
-        AND app_code = #{appCode}
-        AND request_control IS NOT NULL
-        AND request_control != ''
+            deleted = 0
+            AND request_control IS NOT NULL
+            AND request_control != ''
+            <if test="appCode != null and appCode != '__GLOBAL__'">
+                AND app_code = #{appCode}
+            </if>
     </select>
 
     <!-- 用户全部有效角色编码（启用状态且有效期覆盖当前时间，跨应用） -->
     <select id="listUserActiveRoleCodes" parameterType="java.lang.String" resultType="java.lang.String">
         SELECT
-        role_code
+            role_code
         FROM
-        iam_user_role
+            iam_user_role
         WHERE
-        deleted = 0
-        AND user_code = #{userCode}
-        AND enable_status = 1
-        AND (start_time IS NULL OR start_time &lt;= NOW())
-        AND (end_time IS NULL OR end_time &gt;= NOW())
+            deleted = 0
+            AND user_code = #{userCode}
+            AND enable_status = 1
+            AND (start_time IS NULL OR start_time &lt;= NOW())
+            AND (end_time IS NULL OR end_time &gt;= NOW())
     </select>
 
 </mapper>
