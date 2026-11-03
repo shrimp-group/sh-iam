@@ -79,7 +79,7 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | `event`     | `AuthCacheSessionCleaner`         | 会话终结钩子（SessionEvent 监听，剩余会话为 0 时 evictUser(SESSION_END)）                                                   |
 | `filter`    | `SessionAuthFilter`               | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断，不做 clear）                               |
 | `filter`    | `RequestRecordFilter`             | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）                                   |
-| `filter`    | `AuthPermissionFilter`            | 接口权限判断过滤器（@Order -3：开关/白名单/无身份放行，appCode 必需，全量纳管校验，无权限 403）                             |
+| `filter`    | `AuthPermissionFilter`            | 接口权限判断过滤器（@Order -3：白名单/无身份放行，ownerKey 分流=独立部署 app-code / 合并部署 __GLOBAL__，全量纳管校验，无权限 403） |
 | `filter`    | `TokenResolver`                   | Token 提取 SPI（Authorization: Bearer → token）                                                                             |
 | `filter`    | `WhiteListMatcher`                | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）                                                                    |
 | `filter`    | `RequestControlFilter`            | 请求控制过滤器（配置来源 = AuthCacheManager.matchRequestControl，用户级互斥 RedisLock + 滑动窗口限流，拒绝 429）            |
@@ -297,11 +297,12 @@ iam_request_record ── 请求日志 (独立)
        - 白名单 (/*/public/**) → 无论有无身份，放行；无有效会话时 best-effort 解析 claims 仅用于审计日志
        - 非白名单 + 无有效会话 → 401（JWT 过期 / 登出后 Redis 会话已删 均被拦截）
        - 非白名单 + 有效会话 → 放行
-  AuthPermissionFilter (-3)（iam.auth.check.enabled 开关控制，基于三级权限缓存）：
-    1. 开关关闭 / 白名单 / 无身份 → 放行
-    2. appCode 缺失 → 403「缺少应用标识(appCode)」
-    3. 未纳管接口（isManagedApi=false）→ 403「无接口访问权限」（开关开启后全量纳管）
-    4. 已纳管 → hasApiPermission（L3 按 URL 缓存 true/false）→ 无权限 403
+  AuthPermissionFilter (-3)（鉴权基准 = 服务归属资源键 ownerKey，与调用方 header appCode 无关；基于三级权限缓存）：
+    1. 白名单 / 无身份 → 放行
+    2. ownerKey = iam.session.app-code 配置值（独立部署）/ __GLOBAL__（合并部署，L1 资源打平）
+    3. requireApiPermission(ownerKey)=false（TOKEN）→ 放行（独立部署按应用 auth_type；合并部署按 iam.auth.auth-type）
+    4. 未纳管接口（isManagedApi=false）→ 403「无接口访问权限」（TOKEN_API 全量纳管）
+    5. 已纳管 → hasApiPermission（L3 按 URL 缓存 true/false）→ 无权限 403
   RequestControlFilter (LOWEST)：已配置请求控制的 API 执行互斥（RedisLock）+ 滑动窗口限流 → 拒绝 429
 ```
 
@@ -362,7 +363,8 @@ iam_request_record ── 请求日志 (独立)
 
 | 配置                                       | 说明                                     | 默认值            |
 |--------------------------------------------|------------------------------------------|-------------------|
-| `iam.auth.check.enabled`                   | 接口权限判断开关（AuthPermissionFilter） | true              |
+| `iam.auth.auth-type`                       | 合并部署全局鉴权类型（TOKEN/TOKEN_API；独立部署按应用 auth_type） | TOKEN_API         |
+| `iam.session.app-code`                     | 独立部署服务归属应用编码（空=合并部署，L1 打平 __GLOBAL__） | 空                |
 | `iam.auth.cache.static-max-apps`           | L1 最大应用数                            | 100               |
 | `iam.auth.cache.static-remote-ttl-seconds` | 远程形态 L1 TTL 硬界（本地形态不生效）   | 300               |
 | `iam.auth.cache.user-max-users`            | L2 最大用户数（兼 L3 用户层）            | 10000             |

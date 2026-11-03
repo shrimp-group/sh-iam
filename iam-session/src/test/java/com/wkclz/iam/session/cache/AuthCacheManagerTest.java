@@ -167,6 +167,18 @@ class AuthCacheManagerTest {
     }
 
     @Test
+    void appStaticCommandAlsoInvalidatesGlobalResource() {
+        // 合并部署：打平资源（__GLOBAL__）随任意应用的 APP_STATIC 指令联动清理
+        manager.getAppResource("appA");
+        manager.getAppResource(AuthCacheManager.GLOBAL_KEY);
+        assertEquals(2, facade.appLoads.get());
+        manager.applyCommand(cmd(AuthChangeType.APP_STATIC, "appA", 100));
+        manager.getAppResource("appA");
+        manager.getAppResource(AuthCacheManager.GLOBAL_KEY);
+        assertEquals(4, facade.appLoads.get());
+    }
+
+    @Test
     void matchRequestControlLongestMatchWins() {
         facade.controlsAppCode = "appA";
         facade.controls = List.of(

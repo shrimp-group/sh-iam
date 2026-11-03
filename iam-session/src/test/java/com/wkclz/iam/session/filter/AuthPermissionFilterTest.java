@@ -20,13 +20,14 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * AuthPermissionFilter 单元测试 — 开关/白名单/身份/appCode/鉴权类型/纳管/权限 全分支。
+ * AuthPermissionFilter 单元测试 — 白名单/身份/部署形态（独立=配置 app-code / 合并=全局打平）/鉴权类型/纳管/权限 全分支。
  */
 class AuthPermissionFilterTest {
 
@@ -45,7 +46,6 @@ class AuthPermissionFilterTest {
     @BeforeEach
     void setUp() {
         config = new IamSessionConfig();
-        config.setAuthCheckEnabled(true);
         whiteListMatcher = mock(WhiteListMatcher.class);
         authPermissionService = mock(AuthPermissionService.class);
         // 过滤器为 @Resource 字段注入，测试经反射装配（对齐主代码注入风格）
@@ -61,8 +61,6 @@ class AuthPermissionFilterTest {
         identity.setUserCode(USER);
         IdentityContext.set(identity, "token");
         IdentityContext.setAppCode(APP);
-        // 默认 TOKEN_API（需接口权限校验），TOKEN 场景单独覆盖
-        when(authPermissionService.requireApiPermission(APP)).thenReturn(true);
     }
 
     @AfterEach
@@ -72,14 +70,6 @@ class AuthPermissionFilterTest {
 
     private void stubManaged(boolean managed) {
         when(authPermissionService.isManagedApi(anyString(), anyString(), anyString())).thenReturn(managed);
-    }
-
-    @Test
-    void passesThroughWhenCheckDisabled() throws ServletException, IOException {
-        config.setAuthCheckEnabled(false);
-        filter.doFilter(request, response, chain);
-        verify(chain).doFilter(request, response);
-        verify(authPermissionService, never()).isManagedApi(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -99,30 +89,31 @@ class AuthPermissionFilterTest {
     }
 
     @Test
-    void returns403WhenNoAppCode() throws ServletException, IOException {
-        // appCode 必需：缺失直接拒绝（无法定位应用静态资源）
+    void standaloneDeploymentUsesConfiguredAppCode() throws ServletException, IOException {
+        // 独立部署：按配置 app-code 判定，header appCode 缺失不再拦截（鉴权基准脱离调用方）
+        config.setAppCode(APP);
         IdentityContext.setAppCode(null);
+        when(authPermissionService.requireApiPermission(APP)).thenReturn(false);
         filter.doFilter(request, response, chain);
-        verify(chain, never()).doFilter(request, response);
-        assertEquals(403, response.getStatus());
-        String body = response.getContentAsString(StandardCharsets.UTF_8);
-        assertEquals("{\"message\":\"缺少应用标识(appCode)\"}", body);
+        verify(chain).doFilter(request, response);
+        verify(authPermissionService).requireApiPermission(APP);
         verify(authPermissionService, never()).isManagedApi(anyString(), anyString(), anyString());
     }
 
     @Test
-    void passesThroughWhenAppAuthTypeToken() throws ServletException, IOException {
-        // 应用鉴权类型 TOKEN：仅需会话认证，跳过纳管与接口权限校验
-        when(authPermissionService.requireApiPermission(APP)).thenReturn(false);
+    void mergedDeploymentUsesGlobalKey() throws ServletException, IOException {
+        // 合并部署：未配置 app-code → 全局打平键判定，与 header appCode 无关
+        when(authPermissionService.requireApiPermission("__GLOBAL__")).thenReturn(false);
         filter.doFilter(request, response, chain);
         verify(chain).doFilter(request, response);
+        verify(authPermissionService).requireApiPermission("__GLOBAL__");
         verify(authPermissionService, never()).isManagedApi(anyString(), anyString(), anyString());
-        verify(authPermissionService, never()).hasApiPermission(anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
     void returns403WhenApiNotManaged() throws ServletException, IOException {
-        // 开关开启后全量纳管：未纳管接口直接拒绝（对外文案统一为「无接口访问权限」）
+        // 全量纳管：未纳管接口直接拒绝（对外文案统一为「无接口访问权限」）
+        when(authPermissionService.requireApiPermission("__GLOBAL__")).thenReturn(true);
         stubManaged(false);
         filter.doFilter(request, response, chain);
         verify(chain, never()).doFilter(request, response);
@@ -134,8 +125,9 @@ class AuthPermissionFilterTest {
 
     @Test
     void passesThroughWhenHasPermission() throws ServletException, IOException {
+        when(authPermissionService.requireApiPermission("__GLOBAL__")).thenReturn(true);
         stubManaged(true);
-        when(authPermissionService.hasApiPermission(APP, USER, "GET", URI)).thenReturn(true);
+        when(authPermissionService.hasApiPermission("__GLOBAL__", USER, "GET", URI)).thenReturn(true);
         filter.doFilter(request, response, chain);
         verify(chain).doFilter(request, response);
         assertEquals(200, response.getStatus());
@@ -143,13 +135,26 @@ class AuthPermissionFilterTest {
 
     @Test
     void returns403WhenPermissionDenied() throws ServletException, IOException {
+        when(authPermissionService.requireApiPermission("__GLOBAL__")).thenReturn(true);
         stubManaged(true);
-        when(authPermissionService.hasApiPermission(APP, USER, "GET", URI)).thenReturn(false);
+        when(authPermissionService.hasApiPermission("__GLOBAL__", USER, "GET", URI)).thenReturn(false);
         filter.doFilter(request, response, chain);
         verify(chain, never()).doFilter(request, response);
         assertEquals(403, response.getStatus());
         assertEquals("application/json;charset=UTF-8", response.getContentType());
         String body = response.getContentAsString(StandardCharsets.UTF_8);
         assertEquals("{\"message\":\"无接口访问权限\"}", body);
+    }
+
+    @Test
+    void standaloneTokenApiChecksPermissionWithConfiguredKey() throws ServletException, IOException {
+        // 独立部署 TOKEN_API：权限判断按配置的 app-code（而非 header appCode）
+        config.setAppCode(APP);
+        when(authPermissionService.requireApiPermission(APP)).thenReturn(true);
+        stubManaged(true);
+        when(authPermissionService.hasApiPermission(eq(APP), eq(USER), anyString(), anyString())).thenReturn(true);
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+        verify(authPermissionService).hasApiPermission(eq(APP), eq(USER), anyString(), anyString());
     }
 }

@@ -21,6 +21,15 @@ import java.util.List;
 public interface AuthResourceFacade {
 
     /**
+     * super 用户哨兵角色码 — 供给方（portal）对配置的 super 用户返回此哨兵，
+     * 权限计算时视为拥有应用内全部角色（无需 iam_user_role 绑定）。
+     *
+     * <p>哨兵码占用角色编码命名空间：供给方实现必须在数据出口剔除与哨兵同名的真实角色编码，
+     * 确保 super 语义只能来源于配置判断。</p>
+     */
+    String SUPER_ROLE_CODE = "__SUPER__";
+
+    /**
      * 按应用一次性加载静态资源（角色/菜单含按钮/角色菜单/菜单API/接口限流/接口字段）。
      *
      * @param appCode 应用编码
@@ -30,6 +39,8 @@ public interface AuthResourceFacade {
 
     /**
      * 加载用户全部有效角色编码（启用状态且在有效期内，跨应用，计算时与应用角色集求交）。
+     *
+     * <p>super 用户（供给方配置）返回 {@link #SUPER_ROLE_CODE} 哨兵，语义为拥有应用内全部角色。</p>
      *
      * @param userCode 用户编码
      * @return 角色编码列表（不为 null）

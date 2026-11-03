@@ -57,7 +57,10 @@ class AuthPermissionServiceTest {
             if (failLoads) {
                 throw new RuntimeException("facade down");
             }
-            // userR1 携带应用外角色 R9（交集过滤验证点）
+            // superUser 携带 super 哨兵（应用内全部角色）；userR1 携带应用外角色 R9（交集过滤验证点）
+            if ("superUser".equals(userCode)) {
+                return List.of(AuthResourceFacade.SUPER_ROLE_CODE);
+            }
             return "userR1R2".equals(userCode) ? List.of("R1", "R2") : List.of("R1", "R9");
         }
 
@@ -190,6 +193,26 @@ class AuthPermissionServiceTest {
     }
 
     @Test
+    void superUserGetsAllRoleMenusWithoutBinding() {
+        // super 哨兵 → 应用内全部角色的菜单并集；未绑任何角色的 M2_BTN 仍被过滤
+        Set<String> codes = flatten(service.getUserMenuTree("superUser", "app"));
+        assertTrue(codes.containsAll(Set.of("M1", "M11", "M1_BTN", "M2", "M3", "M31")));
+        assertFalse(codes.contains("M2_BTN"));
+        // super 接口权限：全部已纳管 API 放行
+        assertTrue(service.hasApiPermission("app", "superUser", "GET", "/a/b"));
+        assertTrue(service.hasApiPermission("app", "superUser", "GET", "/a/x"));
+    }
+
+    @Test
+    void publicRoleGrantedWithoutBinding() {
+        // R2 标记公共角色：userR1 仅绑 R1（R9 应用外）→ 公共角色 R2 免申请自动生效（M31/M3 出现）
+        facade.resource.setPublicRoleCodes(new LinkedHashSet<>(List.of("R2")));
+        Set<String> codes = flatten(service.getUserMenuTree("userR1", "app"));
+        assertTrue(codes.containsAll(Set.of("M1", "M11", "M1_BTN", "M2", "M3", "M31")));
+        assertTrue(service.hasApiPermission("app", "userR1", "GET", "/a/x"));
+    }
+
+    @Test
     void managedApiDetection() {
         // 已纳管：任一菜单绑定 API 匹配
         assertTrue(service.isManagedApi("app", "GET", "/a/b"));
@@ -206,8 +229,20 @@ class AuthPermissionServiceTest {
 
     @Test
     void requireApiPermissionDefaultsTrueWhenAppMissing() {
-        // 默认规则：empty 资源无 app 对象（authType 缺失）→ fail-closed 按 TOKEN_API
+        // 独立部署默认规则：empty 资源无 app 对象（authType 缺失）→ fail-closed 按 TOKEN_API
         assertTrue(service.requireApiPermission("app"));
+    }
+
+    @Test
+    void requireApiPermissionUsesGlobalConfigWhenMerged() {
+        // 合并部署：GLOBAL 键按全局配置 iam.auth.auth-type 判定，与 L1 资源无关
+        IamSessionConfig cfg = new IamSessionConfig();
+        cfg.setAuthType("TOKEN");
+        ReflectionTestUtils.setField(manager, "config", cfg);
+        assertFalse(service.requireApiPermission("__GLOBAL__"));
+
+        cfg.setAuthType("TOKEN_API");
+        assertTrue(service.requireApiPermission("__GLOBAL__"));
     }
 
     @Test

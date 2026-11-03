@@ -7,6 +7,7 @@ import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import com.wkclz.iam.session.cache.AuthCacheManager;
 import com.wkclz.iam.session.enums.AppAuthType;
+import com.wkclz.iam.session.spi.AuthResourceFacade;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class AuthPermissionService {
 
 
     /**
-     * 计算用户菜单树：用户角色 ∩ 应用角色 → 角色菜单汇总 → 祖先链闭包 → 浅拷贝组树。
+     * 计算用户菜单树：有效角色（绑定 ∪ 公共；super 为全部角色）→ 角色菜单汇总 → 祖先链闭包 → 浅拷贝组树。
      *
      * <p>组树规则：parentCode 为 0/null 为根；父节点不在可见集合内的孤儿菜单升为根；
      * 顺序取 menuMap 迭代序（加载时已按 sort, id 排序）；BUTTON 类型天然仅保留已绑定者。</p>
@@ -123,14 +124,18 @@ public class AuthPermissionService {
     }
 
     /**
-     * 判断应用是否需要接口权限校验：authType=TOKEN_API 需要；TOKEN 或缺失/未知按 TOKEN_API 安全默认。
+     * 判断接口是否需要权限校验：
+     * 合并部署（ownerKey={@link AuthCacheManager#GLOBAL_KEY}）按全局配置 {@code iam.auth.auth-type}；
+     * 独立部署按应用 auth_type；应用缺失/未知按 TOKEN_API 安全默认（fail-closed）。
      *
-     * @param appCode 应用编码
-     * @return 需要校验返回 true（TOKEN 应用返回 false）
+     * @param ownerKey 鉴权资源键（应用编码或 GLOBAL）
+     * @return 需要校验返回 true（TOKEN 返回 false）
      */
-    public boolean requireApiPermission(String appCode) {
-        log.info("判断应用鉴权类型: appCode={}", appCode);
-        AppAuthResource res = manager.getAppResource(appCode);
+    public boolean requireApiPermission(String ownerKey) {
+        if (AuthCacheManager.GLOBAL_KEY.equals(ownerKey)) {
+            return AppAuthType.of(manager.getConfig().getAuthType()).requireApiPermission();
+        }
+        AppAuthResource res = manager.getAppResource(ownerKey);
         AuthApp app = res.getApp();
         return AppAuthType.of(app == null ? null : app.getAuthType()).requireApiPermission();
     }
@@ -200,11 +205,24 @@ public class AuthPermissionService {
     }
 
     /**
-     * 汇总用户可见菜单编码：用户角色 ∩ 应用角色 → roleMenuMap 逐角色合并。
+     * 汇总用户可见菜单编码：有效角色 → roleMenuMap 逐角色合并。
+     *
+     * <p>有效角色规则：super 用户（{@link AuthResourceFacade#SUPER_ROLE_CODE} 哨兵）拥有应用内全部角色；
+     * 普通用户 = 绑定角色 ∪ 应用公共角色（无需申请，访问即生效）。</p>
      */
     private Set<String> collectBoundMenuCodes(AppAuthResource res, List<String> userRoles) {
         Set<String> boundMenuCodes = new LinkedHashSet<>();
-        for (String roleCode : userRoles) {
+        if (userRoles.contains(AuthResourceFacade.SUPER_ROLE_CODE)) {
+            for (Set<String> menuCodes : res.getRoleMenuMap().values()) {
+                boundMenuCodes.addAll(menuCodes);
+            }
+            return boundMenuCodes;
+        }
+        Set<String> effectiveRoles = new LinkedHashSet<>(userRoles);
+        if (res.getPublicRoleCodes() != null) {
+            effectiveRoles.addAll(res.getPublicRoleCodes());
+        }
+        for (String roleCode : effectiveRoles) {
             if (!res.getRoleCodes().contains(roleCode)) {
                 continue;
             }

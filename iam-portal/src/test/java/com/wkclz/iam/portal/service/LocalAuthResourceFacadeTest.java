@@ -3,12 +3,14 @@ package com.wkclz.iam.portal.service;
 import com.wkclz.iam.common.entity.IamApi;
 import com.wkclz.iam.common.entity.IamMenuApi;
 import com.wkclz.iam.common.entity.IamRoleMenu;
+import com.wkclz.iam.portal.config.IamPortalConfig;
 import com.wkclz.iam.portal.mapper.SsoAuthResourceMapper;
 import com.wkclz.iam.session.bean.auth.AppAuthResource;
 import com.wkclz.iam.session.bean.auth.AuthApi;
 import com.wkclz.iam.session.bean.auth.AuthApiField;
 import com.wkclz.iam.session.bean.auth.AuthApp;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
+import com.wkclz.iam.session.spi.AuthResourceFacade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +48,7 @@ class LocalAuthResourceFacadeTest {
         // Facade 为 @Resource 字段注入，测试经反射装配（对齐主代码注入风格）
         facade = new LocalAuthResourceFacade();
         ReflectionTestUtils.setField(facade, "ssoAuthResourceMapper", mapper);
+        ReflectionTestUtils.setField(facade, "config", new IamPortalConfig());
     }
 
     /**
@@ -54,6 +57,7 @@ class LocalAuthResourceFacadeTest {
     private void stubAll() {
         when(mapper.selectApp(anyString())).thenReturn(app("appA", "应用A", "TOKEN_API"));
         when(mapper.listAppRoles(anyString())).thenReturn(new LinkedHashSet<>(List.of("r1", "r2")));
+        when(mapper.listAppPublicRoleCodes(anyString())).thenReturn(new LinkedHashSet<>(List.of("r2")));
         when(mapper.listAppMenus(anyString())).thenReturn(new ArrayList<>(List.of(
             menu("m1", "0", "MENU", null, 1),
             menu("m2", "m1", "MENU", null, 2),
@@ -78,6 +82,7 @@ class LocalAuthResourceFacadeTest {
         assertEquals("appA", resource.getAppCode());
         assertEquals("TOKEN_API", resource.getApp().getAuthType());
         assertEquals(Set.of("r1", "r2"), resource.getRoleCodes());
+        assertEquals(Set.of("r2"), resource.getPublicRoleCodes());
         assertTrue(resource.getLoadTime() > 0);
 
         // menuMap：键与顺序（LinkedHashMap 保 sort 序）
@@ -112,6 +117,22 @@ class LocalAuthResourceFacadeTest {
     }
 
     @Test
+    void globalKeyLoadsFlattenedResourceWithoutApp() {
+        // 合并部署：__GLOBAL__ 打平键 → selectApp 返回 null（app 为 null → fail-closed），
+        // 其余查询不过滤应用（mapper 动态 SQL），全量聚合
+        stubAll();
+        when(mapper.selectApp("__GLOBAL__")).thenReturn(null);
+        AppAuthResource resource = facade.loadAppResource("__GLOBAL__");
+
+        assertNull(resource.getApp());
+        assertEquals("__GLOBAL__", resource.getAppCode());
+        assertEquals(Set.of("r1", "r2"), resource.getRoleCodes());
+        assertEquals(Set.of("r2"), resource.getPublicRoleCodes());
+        assertEquals(3, resource.getMenuMap().size());
+        assertEquals(2, resource.getApiMap().size());
+    }
+
+    @Test
     void blankRequestControlSkipped() {
         stubAll();
         when(mapper.listRequestControlApis(anyString())).thenReturn(new ArrayList<>(List.of(
@@ -139,6 +160,26 @@ class LocalAuthResourceFacadeTest {
         when(mapper.listUserActiveRoleCodes("u2")).thenReturn(null);
         assertNotNull(facade.loadUserRoleCodes("u2"));
         assertTrue(facade.loadUserRoleCodes("u2").isEmpty());
+    }
+
+    @Test
+    void superUserYieldsSentinelRole() {
+        // 配置 super 用户 → 不查绑定关系，直接返回哨兵角色；配置尾随空格 trim 后精确匹配
+        IamPortalConfig config = new IamPortalConfig();
+        config.setSuperUsers(List.of("super_1 ", "u9"));
+        ReflectionTestUtils.setField(facade, "config", config);
+
+        assertEquals(List.of(AuthResourceFacade.SUPER_ROLE_CODE), facade.loadUserRoleCodes("super_1"));
+        // 非配置用户不受影响（mapper 未桩时返回 null → 空列表）
+        assertTrue(facade.loadUserRoleCodes("u1").isEmpty());
+    }
+
+    @Test
+    void sentinelNamedRoleFilteredOut() {
+        // DB 中存在与哨兵同名的角色编码时，出口剔除，确保 super 语义只来源于配置判断
+        when(mapper.listUserActiveRoleCodes("u1")).thenReturn(
+            new ArrayList<>(List.of("r1", AuthResourceFacade.SUPER_ROLE_CODE)));
+        assertEquals(List.of("r1"), facade.loadUserRoleCodes("u1"));
     }
 
     @Test

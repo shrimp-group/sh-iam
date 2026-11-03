@@ -80,10 +80,18 @@ public class IamSessionConfig {
     private Integer requestControlRateLimitMaxRequests;
 
     /**
-     * 接口权限判断开关（AuthPermissionFilter），默认 true（未纳管接口自动放行，不受影响）
+     * 合并部署全局鉴权类型（AuthPermissionFilter 未配置 {@link #appCode} 时生效）：
+     * TOKEN=仅会话认证全放行；TOKEN_API=全量纳管+接口权限校验；缺失/未知默认 TOKEN_API（fail-closed）。
+     * 独立部署（配置了 appCode）时鉴权深度按应用 auth_type，此配置不参与。
      */
-    @Value("${iam.auth.check.enabled:true}")
-    private Boolean authCheckEnabled;
+    @Value("${iam.auth.auth-type:TOKEN_API}")
+    private String authType;
+
+    /**
+     * 独立部署的服务归属应用编码；空 = 合并部署（鉴权资源打平为全局，鉴权深度按 {@link #authType}）。
+     */
+    @Value("${iam.session.app-code:}")
+    private String appCode;
 
     /**
      * L1 应用静态资源缓存最大应用数（容量 LRU），默认 100
