@@ -25,9 +25,8 @@ public interface IamApiMapper extends BaseMapper<IamApi> {
 
     List<IamApi> getApis4Paste(@Param("apiCodes") List<String> apiCodes );
 
-    /**
-     * 导入场景批量更新（逐行不同值，CASE WHEN 单 SQL）
-     */
+    List<IamApi> listAllMethodUris();
+
     int updateBatch4Import(@Param("entities") List<IamApi> entities);
 
 }

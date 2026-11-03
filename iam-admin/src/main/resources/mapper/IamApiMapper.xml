@@ -108,9 +108,21 @@
             iam_api
         WHERE
             deleted = 0
-        AND api_code IN ( <foreach collection="apiCodes" item="item" separator=",">#{item}</foreach> )
+            AND api_code IN ( <foreach collection="apiCodes" item="item" separator=",">#{item}</foreach> )
         ORDER BY
             api_uri ASC
+    </select>
+
+    <!-- 全量轻查询：仅 method/uri/apiCode 三列，供全局唯一性（method+uri）校验内存比对 -->
+    <select id="listAllMethodUris" resultType="com.wkclz.iam.common.entity.IamApi">
+        SELECT
+            api_code,
+            api_method,
+            api_uri
+        FROM
+            iam_api
+        WHERE
+            deleted = 0
     </select>
 
     <!-- 导入场景批量更新：逐行不同值，CASE WHEN 单 SQL；update_time 由数据库自动填充 -->
