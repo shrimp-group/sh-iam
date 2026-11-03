@@ -10,6 +10,9 @@
           <el-descriptions-item label="是否可申请">
             <dict-tag :options="BOOLEAN" :value="roleInfo?.applicable" />
           </el-descriptions-item>
+          <el-descriptions-item label="是否公共角色">
+            <dict-tag :options="BOOLEAN" :value="roleInfo?.isPublic" />
+          </el-descriptions-item>
           <el-descriptions-item label="排序">{{ roleInfo?.sort }}</el-descriptions-item>
           <el-descriptions-item label="备注">{{ roleInfo?.remark }}</el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ parseTime(roleInfo?.createTime) }}</el-descriptions-item>

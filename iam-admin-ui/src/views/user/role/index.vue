@@ -58,6 +58,9 @@
               <el-table-column label="是否可申请" prop="applicable" width="100">
                 <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.applicable" /></template>
               </el-table-column>
+              <el-table-column label="是否公共角色" prop="isPublic" width="110">
+                <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.isPublic" /></template>
+              </el-table-column>
               <el-table-column label="用户数" prop="userBindCount" width="80">
                 <template #default="{row}">{{ row.userBindCount || 0 }}</template>
               </el-table-column>
@@ -105,6 +108,9 @@
               <el-table-column label="角色名称" prop="roleName" min-width="200" />
               <el-table-column label="是否可申请" prop="applicable" width="100">
                 <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.applicable" /></template>
+              </el-table-column>
+              <el-table-column label="是否公共角色" prop="isPublic" width="110">
+                <template #default="{row}"><dict-tag :options="BOOLEAN" :value="row.isPublic" /></template>
               </el-table-column>
               <el-table-column label="排序" prop="sort" width="60" v-if="columns.sort.visible"/>
               <el-table-column label="备注" prop="remark" min-width="120" v-if="columns.remark.visible"/>

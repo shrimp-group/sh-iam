@@ -54,6 +54,12 @@ public class IamRole extends BaseEntity {
     @Schema(description = "是否可申请：1-是，0-否")
     private Integer applicable;
 
+    /**
+     * 是否公共角色：1-是，0-否。公共角色无需申请，用户访问应用即自动拥有
+     */
+    @Schema(description = "是否公共角色：1-是，0-否")
+    private Integer isPublic;
+
 
     public static IamRole copy(IamRole source, IamRole target) {
         if (target == null ) { target = new IamRole();}
@@ -65,6 +71,7 @@ public class IamRole extends BaseEntity {
         target.setRoleCode(source.getRoleCode());
         target.setRoleName(source.getRoleName());
         target.setApplicable(source.getApplicable());
+        target.setIsPublic(source.getIsPublic());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
         target.setCreateBy(source.getCreateBy());
@@ -84,9 +91,8 @@ public class IamRole extends BaseEntity {
         if (source.getParentCode() != null) { target.setParentCode(source.getParentCode()); }
         if (source.getRoleCode() != null) { target.setRoleCode(source.getRoleCode()); }
         if (source.getRoleName() != null) { target.setRoleName(source.getRoleName()); }
-        if (source.getApplicable() != null) {
-            target.setApplicable(source.getApplicable());
-        }
+        if (source.getApplicable() != null) {target.setApplicable(source.getApplicable());}
+        if (source.getIsPublic() != null) {target.setIsPublic(source.getIsPublic());}
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
         if (source.getCreateBy() != null) { target.setCreateBy(source.getCreateBy()); }

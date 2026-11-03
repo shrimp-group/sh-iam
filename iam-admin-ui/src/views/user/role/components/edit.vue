@@ -24,6 +24,16 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="是否公共角色" prop="isPublic">
+            <el-radio-group v-model="form.isPublic">
+              <el-radio-button v-for="item in BOOLEAN" :key="item.value" :label="item.label" :value="item.value" />
+            </el-radio-group>
+            <form-tip text="公共角色无需申请，用户访问应用即自动拥有"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
       <el-form-item label="角色名称" prop="roleName">
         <el-input v-model="form.roleName" placeholder="请输入角色名称" />
       </el-form-item>
@@ -69,6 +79,9 @@ const rules = ref({
   applicable: [
     { required: true, message: "是否可申请不能为空", trigger: "blur" }
   ],
+  isPublic: [
+    { required: true, message: "是否公共角色不能为空", trigger: "blur" }
+  ],
   sort: [
     { required: true, message: "排序不能为空", trigger: "blur" }
   ],
@@ -100,6 +113,7 @@ function init(row) {
     form.value.appCode = row?.appCode;
     form.value.sort = 99;
     form.value.applicable = 1;
+    form.value.isPublic = 0;
     form.value.parentCode = row.parentCode;
   } else {
     roleInfo({id: row.id}).then(res => {
