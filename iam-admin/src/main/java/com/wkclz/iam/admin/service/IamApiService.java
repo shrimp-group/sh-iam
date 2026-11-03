@@ -272,6 +272,8 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         List<String> errors = new ArrayList<>();
         Set<String> apiCodeSet = new HashSet<>();
         Set<String> fieldKeySet = new HashSet<>();
+        // method+uri 全局唯一校验（导入项间 + 与库中冲突）
+        duplicateCheck4Import(items, errors);
         for (int i = 0; i < items.size(); i++) {
             ApiImportReq.ApiImportItemReq item = items.get(i);
             String tag = "第" + (i + 1) + "条";
@@ -713,16 +715,14 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
     private void duplicateCheck(IamApi entity) {
         // 唯一条件为空，直接通过
-        if (StringUtils.isBlank(entity.getApiUri()) || StringUtils.isBlank(entity.getApiMethod()) || StringUtils.isBlank(entity.getAppCode())) {
+        if (StringUtils.isBlank(entity.getApiUri()) || StringUtils.isBlank(entity.getApiMethod())) {
             return;
         }
 
-        // 唯一条件不为空，请设置唯一条件
+        // 唯一条件：apiMethod + apiUri 全局唯一（跨应用，支撑合并部署打平鉴权资源）
         IamApi param = new IamApi();
-        // 唯一条件：apiUri + apiMethod + appCode
         param.setApiUri(entity.getApiUri());
         param.setApiMethod(entity.getApiMethod());
-        param.setAppCode(entity.getAppCode());
         param = selectOneByEntity(param);
         if (param == null) {
             return;
@@ -732,6 +732,36 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         }
         // 查到有值，为新增或 id 不一样场景，为数据重复
         throw UserException.of(ResultCode.RECORD_DUPLICATE);
+    }
+
+    /**
+     * 导入项 method+uri 全局唯一校验：导入项之间重复 + 与库中已有记录（不同 apiCode）冲突，任一命中即拒绝
+     */
+    private void duplicateCheck4Import(List<ApiImportReq.ApiImportItemReq> items, List<String> errors) {
+        // 库中已有 method+uri → apiCode（method 忽略大小写，与权限匹配语义一致）
+        Map<String, String> existingKeyMap = new HashMap<>();
+        for (IamApi api : mapper.listAllMethodUris()) {
+            if (StringUtils.isNotBlank(api.getApiMethod()) && StringUtils.isNotBlank(api.getApiUri())) {
+                existingKeyMap.put(api.getApiMethod().toUpperCase() + "|" + api.getApiUri(), api.getApiCode());
+            }
+        }
+        Set<String> importKeySet = new HashSet<>();
+        for (int i = 0; i < items.size(); i++) {
+            ApiImportReq.ApiImportItemReq item = items.get(i);
+            if (StringUtils.isBlank(item.getApiMethod()) || StringUtils.isBlank(item.getApiUri())) {
+                continue;
+            }
+            String key = item.getApiMethod().toUpperCase() + "|" + item.getApiUri();
+            String tag = "第" + (i + 1) + "条";
+            if (!importKeySet.add(key)) {
+                errors.add(tag + "：请求方法+URI 与其他导入项重复（" + item.getApiMethod() + " " + item.getApiUri() + "）");
+                continue;
+            }
+            String existingCode = existingKeyMap.get(key);
+            if (existingCode != null && !existingCode.equals(item.getApiCode())) {
+                errors.add(tag + "：请求方法+URI 已被接口 " + existingCode + " 占用（" + item.getApiMethod() + " " + item.getApiUri() + "）");
+            }
+        }
     }
 
 }
