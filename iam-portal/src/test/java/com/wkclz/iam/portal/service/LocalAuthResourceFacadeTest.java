@@ -65,7 +65,7 @@ class LocalAuthResourceFacadeTest {
         when(mapper.listRoleMenus(anyString())).thenReturn(new ArrayList<>(List.of(
             roleMenu("r1", "m1"), roleMenu("r1", "m2"), roleMenu("r2", "m1"))));
         when(mapper.listAppApis(anyString())).thenReturn(new ArrayList<>(List.of(
-            api("api_1", "GET", "/a/b", 1), api("api_2", "POST", "/a/**", 1))));
+            api("api_1", "GET", "/a/b", 1), api("api_2", "POST", "/a/**", 1), api("api_3", "REQUEST", "/r/x", 1))));
         // m2 关系指向应用外 api_ghost（脏数据），装配时应被跳过
         when(mapper.listMenuApis(anyString())).thenReturn(new ArrayList<>(List.of(
             menuApi("m1", "api_1"), menuApi("m1", "api_2"), menuApi("m2", "api_ghost"))));
@@ -93,12 +93,22 @@ class LocalAuthResourceFacadeTest {
         assertEquals(Set.of("m1"), resource.getRoleMenuMap().get("r2"));
 
         // apiMap
-        assertEquals(2, resource.getApiMap().size());
+        assertEquals(3, resource.getApiMap().size());
         assertEquals("GET", resource.getApiMap().get("api_1").getApiMethod());
 
         // menuApiMap：m1 双 API；m2 的孤儿关系被跳过
         assertEquals(Set.of("api_1", "api_2"), resource.getMenuApiMap().get("m1"));
         assertFalse(resource.getMenuApiMap().containsKey("m2"));
+
+        // 白名单索引：精确键（大写 METHOD:URI）+ 通配小列表（URI 含通配或 method=REQUEST）
+        assertEquals(Set.of("GET:/a/b"), resource.getWhiteListExactKeys());
+        assertEquals(List.of("api_2", "api_3"),
+            resource.getWhiteListWildcardApis().stream().map(AuthApi::getApiCode).toList());
+
+        // 纳管索引：api_1 精确、api_2 通配（api_3 未绑定菜单不入纳管索引）
+        assertEquals(Set.of("GET:/a/b"), resource.getManagedExactKeys());
+        assertEquals(List.of("api_2"),
+            resource.getManagedWildcardApis().stream().map(AuthApi::getApiCode).toList());
 
         // apiFields / requestControls
         assertEquals(1, resource.getApiFields().size());
@@ -129,7 +139,7 @@ class LocalAuthResourceFacadeTest {
         assertEquals(Set.of("r1", "r2"), resource.getRoleCodes());
         assertEquals(Set.of("r2"), resource.getPublicRoleCodes());
         assertEquals(3, resource.getMenuMap().size());
-        assertEquals(2, resource.getApiMap().size());
+        assertEquals(3, resource.getApiMap().size());
     }
 
     @Test

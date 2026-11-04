@@ -100,8 +100,8 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             }
             resource.setMenuApiMap(menuApiMap);
 
-            // 白名单索引：write_flag=1 的 API 按 URI 是否含通配分为精确键（大写 METHOD:URI）与通配小列表；
-            // method/uri 为 null 的 API 不参与（matchApi 对 null method/uri 恒 false，语义一致）
+            // 白名单索引：write_flag=1 的 API 分为精确键（大写 METHOD:URI）与通配小列表（URI 含通配或
+            // method=REQUEST 通配任意请求方法——REQUEST 无法编码进精确键）；method/uri 为 null 的 API 不参与
             Set<String> whiteListExactKeys = new LinkedHashSet<>();
             List<AuthApi> whiteListWildcardApis = new ArrayList<>();
             for (AuthApi api : apiMap.values()) {
@@ -111,7 +111,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
                 if (api.getWriteFlag() == null || api.getWriteFlag() != 1) {
                     continue;
                 }
-                if (isWildcardUri(api.getApiUri())) {
+                if (isWildcardUri(api.getApiUri()) || isAnyMethodApi(api.getApiMethod())) {
                     whiteListWildcardApis.add(api);
                 } else {
                     whiteListExactKeys.add(api.getApiMethod().toUpperCase() + ":" + api.getApiUri());
@@ -120,7 +120,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             resource.setWhiteListExactKeys(whiteListExactKeys);
             resource.setWhiteListWildcardApis(whiteListWildcardApis);
 
-            // 纳管索引：menuApiMap 关联到的 API 按 URI 是否含通配分为精确键与通配小列表
+            // 纳管索引：menuApiMap 关联到的 API 按同规则分为精确键与通配小列表
             Set<String> managedExactKeys = new LinkedHashSet<>();
             List<AuthApi> managedWildcardApis = new ArrayList<>();
             for (Set<String> apiCodes : menuApiMap.values()) {
@@ -129,7 +129,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
                     if (api == null || api.getApiMethod() == null || api.getApiUri() == null) {
                         continue;
                     }
-                    if (isWildcardUri(api.getApiUri())) {
+                    if (isWildcardUri(api.getApiUri()) || isAnyMethodApi(api.getApiMethod())) {
                         managedWildcardApis.add(api);
                     } else {
                         managedExactKeys.add(api.getApiMethod().toUpperCase() + ":" + api.getApiUri());
@@ -212,5 +212,9 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
      */
     private static boolean isWildcardUri(String uri) {
         return uri != null && (uri.contains("*") || uri.contains("?") || uri.contains("{"));
+    }
+
+    private static boolean isAnyMethodApi(String method) {
+        return "REQUEST".equalsIgnoreCase(method);
     }
 }

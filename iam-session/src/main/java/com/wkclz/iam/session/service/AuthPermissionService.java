@@ -267,11 +267,15 @@ public class AuthPermissionService {
     }
 
     /**
-     * API 匹配判定：method 忽略大小写相等 + apiUri Ant 通配匹配请求 URI。
+     * API 匹配判定：method 匹配（apiMethod 配置为 REQUEST 时通配任意请求方法，否则忽略大小写相等）
+     * + apiUri Ant 通配匹配请求 URI。
      */
     private boolean matchApi(AuthApi api, String method, String uri) {
-        return api.getApiMethod() != null && api.getApiMethod().equalsIgnoreCase(method)
-            && api.getApiUri() != null && pathMatcher.match(api.getApiUri(), uri);
+        if (api.getApiMethod() == null || api.getApiUri() == null) {
+            return false;
+        }
+        boolean methodMatched = "REQUEST".equalsIgnoreCase(api.getApiMethod()) || api.getApiMethod().equalsIgnoreCase(method);
+        return methodMatched && pathMatcher.match(api.getApiUri(), uri);
     }
 
     /**

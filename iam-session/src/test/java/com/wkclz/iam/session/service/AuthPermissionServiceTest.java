@@ -87,20 +87,28 @@ class AuthPermissionServiceTest {
             api2.setApiCode("api_2");
             api2.setApiMethod("GET");
             api2.setApiUri("/a/**");
+            AuthApi api3 = new AuthApi();
+            api3.setApiCode("api_3");
+            api3.setApiMethod("REQUEST");
+            api3.setApiUri("/r/x");
             res.getApiMap().put("api_1", api1);
             res.getApiMap().put("api_2", api2);
+            res.getApiMap().put("api_3", api3);
 
-            res.getMenuApiMap().put("M1", Set.of("api_1"));
+            res.getMenuApiMap().put("M1", Set.of("api_1", "api_3"));
             res.getMenuApiMap().put("M31", Set.of("api_2"));
 
-            // 纳管索引（与 menuApiMap 绑定关系一致：M1→api_1 精确、M31→api_2 通配）
+            // 纳管索引（与 menuApiMap 绑定关系一致：M1→api_1 精确、M31→api_2 通配、M1→api_3 REQUEST 通配任意方法）
             res.getManagedExactKeys().add("GET:/a/b");
             res.getManagedWildcardApis().add(api2);
-            // 白名单索引（api_1 精确白名单、api_2 通配白名单）
+            res.getManagedWildcardApis().add(api3);
+            // 白名单索引（api_1 精确白名单、api_2 通配白名单、api_3 REQUEST 白名单）
             api1.setWriteFlag(1);
             api2.setWriteFlag(1);
+            api3.setWriteFlag(1);
             res.getWhiteListExactKeys().add("GET:/a/b");
             res.getWhiteListWildcardApis().add(api2);
+            res.getWhiteListWildcardApis().add(api3);
             return res;
         }
 
@@ -247,6 +255,21 @@ class AuthPermissionServiceTest {
         assertTrue(service.isApiWhiteListed("app", "GET", "/a/anything"));
         // 方法不匹配 → 未命中
         assertFalse(service.isApiWhiteListed("app", "POST", "/a/anything"));
+    }
+
+    @Test
+    void anyMethodApiMatchesAllRequestMethods() {
+        // apiMethod=REQUEST 通配任意请求方法（白名单：api_3 REQUEST /r/x）
+        assertTrue(service.isApiWhiteListed("app", "GET", "/r/x"));
+        assertTrue(service.isApiWhiteListed("app", "POST", "/r/x"));
+        assertTrue(service.isApiWhiteListed("app", "PUT", "/r/x"));
+        assertTrue(service.isApiWhiteListed("app", "DELETE", "/r/x"));
+        // URI 不匹配 → 未命中
+        assertFalse(service.isApiWhiteListed("app", "GET", "/r/y"));
+        // 纳管同语义（api_3 绑定 M1）
+        assertTrue(service.isManagedApi("app", "GET", "/r/x"));
+        assertTrue(service.isManagedApi("app", "DELETE", "/r/x"));
+        assertFalse(service.isManagedApi("app", "GET", "/r/y"));
     }
 
     @Test
