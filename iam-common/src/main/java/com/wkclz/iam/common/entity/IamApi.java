@@ -55,9 +55,9 @@ public class IamApi extends BaseEntity {
     private String apiName;
 
     /**
-     * 是否写操作：0-否，1-是
+     * 白名单标识：1-白名单免鉴权（无需登录可直接访问）
      */
-    @Schema(description = "是否写操作：0-否，1-是")
+    @Schema(description = "白名单标识：1-白名单免鉴权（无需登录可直接访问）")
     private Integer writeFlag;
 
     /**

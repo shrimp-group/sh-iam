@@ -77,11 +77,11 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 | `event`     | `PermissionChangePublisher`       | 事件发布器（@TransactionalEventListener AFTER_COMMIT，Redis Pub/Sub + 变更日志 Hash 双写）                                  |
 | `event`     | `PermissionChangeSubscriber`      | 订阅器（MessageListener，@PostConstruct 订阅 / @PreDestroy 移除，委托 applyCommand 去重清理）                               |
 | `event`     | `AuthCacheSessionCleaner`         | 会话终结钩子（SessionEvent 监听，剩余会话为 0 时 evictUser(SESSION_END)）                                                   |
-| `filter`    | `SessionAuthFilter`               | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断，不做 clear）                               |
+| `filter`    | `SessionAuthFilter`               | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断（含 DB 白名单 write_flag=1 免登录放行），不做 clear）                               |
 | `filter`    | `RequestRecordFilter`             | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）                                   |
-| `filter`    | `AuthPermissionFilter`            | 接口权限判断过滤器（@Order -3：白名单/无身份放行，ownerKey 分流=独立部署 app-code / 合并部署 __GLOBAL__，全量纳管校验，无权限 403） |
+| `filter`    | `AuthPermissionFilter`            | 接口权限判断过滤器（@Order -3：本地白名单 ∪ DB 白名单（iam_api.write_flag=1）/无身份放行，ownerKey 分流=独立部署 app-code / 合并部署 __GLOBAL__，全量纳管校验，无权限 403） |
 | `filter`    | `TokenResolver`                   | Token 提取 SPI（Authorization: Bearer → token）                                                                             |
-| `filter`    | `WhiteListMatcher`                | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;）                                                                    |
+| `filter`    | `WhiteListMatcher`                | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;；会话白名单；接口白名单见 AuthPermissionService.isApiWhiteListed，来源 iam_api.write_flag）                                                                    |
 | `filter`    | `RequestControlFilter`            | 请求控制过滤器（配置来源 = AuthCacheManager.matchRequestControl，用户级互斥 RedisLock + 滑动窗口限流，拒绝 429）            |
 | `spi`       | `RequestRecordHandler`            | 请求日志持久化 SPI（iam-portal 提供实现）                                                                                   |
 | `spi`       | `NoOpRequestRecordHandler`        | RequestRecordHandler 空实现（默认，静默跳过）                                                                               |
@@ -294,11 +294,12 @@ iam_request_record ── 请求日志 (独立)
     1. 无条件设置 appCode + tenantCode（每个请求）
     2. 获取身份（准入唯一依据 = 完整会话）：resolve token → validateAndRefresh（JWT 有效 + Redis 会话存在）
     3. 准入判断：
-       - 白名单 (/*/public/**) → 无论有无身份，放行；无有效会话时 best-effort 解析 claims 仅用于审计日志
+       - 本地白名单 (/*/public/**) → 无论有无身份，放行；无有效会话时 best-effort 解析 claims 仅用于审计日志
+       - DB 白名单（iam_api.write_flag=1，经 L1 缓存）+ 无有效会话 → 免登录放行
        - 非白名单 + 无有效会话 → 401（JWT 过期 / 登出后 Redis 会话已删 均被拦截）
        - 非白名单 + 有效会话 → 放行
   AuthPermissionFilter (-3)（鉴权基准 = 服务归属资源键 ownerKey，与调用方 header appCode 无关；基于三级权限缓存）：
-    1. 白名单 / 无身份 → 放行
+    1. 本地白名单 ∪ DB 白名单（iam_api.write_flag=1）/ 无身份 → 放行
     2. ownerKey = iam.session.app-code 配置值（独立部署）/ __GLOBAL__（合并部署，L1 资源打平）
     3. requireApiPermission(ownerKey)=false（TOKEN）→ 放行（独立部署按应用 auth_type；合并部署按 iam.auth.auth-type）
     4. 未纳管接口（isManagedApi=false）→ 403「无接口访问权限」（TOKEN_API 全量纳管）

@@ -92,6 +92,30 @@ public class AppAuthResource {
     private List<AuthApiField> apiFields;
 
     /**
+     * 白名单精确键集合（write_flag=1 且 URI 无通配的 API，键=大写 METHOD:URI，供白名单 O(1) 判定）
+     */
+    @Schema(description = "白名单精确键集合（大写 METHOD:URI）")
+    private Set<String> whiteListExactKeys;
+
+    /**
+     * 白名单通配 API 小列表（write_flag=1 且 URI 含通配符，供 Ant 遍历兜底）
+     */
+    @Schema(description = "白名单通配 API 小列表")
+    private List<AuthApi> whiteListWildcardApis;
+
+    /**
+     * 已绑定菜单且 URI 无通配的 API 精确键集合（键=大写 METHOD:URI，供纳管判定 O(1) 命中）
+     */
+    @Schema(description = "已纳管精确键集合（大写 METHOD:URI）")
+    private Set<String> managedExactKeys;
+
+    /**
+     * 已绑定菜单且 URI 含通配的 API 小列表（供纳管判定 Ant 遍历兜底）
+     */
+    @Schema(description = "已纳管通配 API 小列表")
+    private List<AuthApi> managedWildcardApis;
+
+    /**
      * 接口限流配置条目。
      *
      * @param apiCode        API 编码
@@ -121,6 +145,10 @@ public class AppAuthResource {
         resource.setMenuApiMap(new HashMap<>());
         resource.setRequestControls(new ArrayList<>());
         resource.setApiFields(new ArrayList<>());
+        resource.setWhiteListExactKeys(new LinkedHashSet<>());
+        resource.setWhiteListWildcardApis(new ArrayList<>());
+        resource.setManagedExactKeys(new LinkedHashSet<>());
+        resource.setManagedWildcardApis(new ArrayList<>());
         return resource;
     }
 }

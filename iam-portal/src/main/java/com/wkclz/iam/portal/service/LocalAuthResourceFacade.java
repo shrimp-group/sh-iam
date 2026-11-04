@@ -100,6 +100,45 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             }
             resource.setMenuApiMap(menuApiMap);
 
+            // 白名单索引：write_flag=1 的 API 按 URI 是否含通配分为精确键（大写 METHOD:URI）与通配小列表；
+            // method/uri 为 null 的 API 不参与（matchApi 对 null method/uri 恒 false，语义一致）
+            Set<String> whiteListExactKeys = new LinkedHashSet<>();
+            List<AuthApi> whiteListWildcardApis = new ArrayList<>();
+            for (AuthApi api : apiMap.values()) {
+                if (api.getApiMethod() == null || api.getApiUri() == null) {
+                    continue;
+                }
+                if (api.getWriteFlag() == null || api.getWriteFlag() != 1) {
+                    continue;
+                }
+                if (isWildcardUri(api.getApiUri())) {
+                    whiteListWildcardApis.add(api);
+                } else {
+                    whiteListExactKeys.add(api.getApiMethod().toUpperCase() + ":" + api.getApiUri());
+                }
+            }
+            resource.setWhiteListExactKeys(whiteListExactKeys);
+            resource.setWhiteListWildcardApis(whiteListWildcardApis);
+
+            // 纳管索引：menuApiMap 关联到的 API 按 URI 是否含通配分为精确键与通配小列表
+            Set<String> managedExactKeys = new LinkedHashSet<>();
+            List<AuthApi> managedWildcardApis = new ArrayList<>();
+            for (Set<String> apiCodes : menuApiMap.values()) {
+                for (String apiCode : apiCodes) {
+                    AuthApi api = apiMap.get(apiCode);
+                    if (api == null || api.getApiMethod() == null || api.getApiUri() == null) {
+                        continue;
+                    }
+                    if (isWildcardUri(api.getApiUri())) {
+                        managedWildcardApis.add(api);
+                    } else {
+                        managedExactKeys.add(api.getApiMethod().toUpperCase() + ":" + api.getApiUri());
+                    }
+                }
+            }
+            resource.setManagedExactKeys(managedExactKeys);
+            resource.setManagedWildcardApis(managedWildcardApis);
+
             // 接口字段权限
             resource.setApiFields(apiFields == null ? new ArrayList<>() : apiFields);
 
@@ -125,11 +164,12 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             resource.setRequestControls(requestControls);
 
             resource.setLoadTime(System.currentTimeMillis());
-            log.info("加载应用静态资源完成: appCode={}, appName={}, authType={}, roles={}, publicRoles={}, menus={}, apis={}, roleMenuRels={}, menuApiRels={}, requestControls={}",
+            log.info("加载应用静态资源完成: appCode={}, appName={}, authType={}, roles={}, publicRoles={}, menus={}, apis={}, roleMenuRels={}, menuApiRels={}, requestControls={}, whiteListExact={}, whiteListWildcard={}, managedExact={}, managedWildcard={}",
                 appCode, app == null ? null : app.getAppName(), app == null ? null : app.getAuthType(),
                 resource.getRoleCodes().size(), resource.getPublicRoleCodes().size(), menuMap.size(), apiMap.size(),
                 roleMenuMap.values().stream().mapToInt(Set::size).sum(),
-                menuApiMap.values().stream().mapToInt(Set::size).sum(), requestControls.size());
+                menuApiMap.values().stream().mapToInt(Set::size).sum(), requestControls.size(),
+                whiteListExactKeys.size(), whiteListWildcardApis.size(), managedExactKeys.size(), managedWildcardApis.size());
             return resource;
         } catch (RuntimeException e) {
             log.error("加载应用静态资源失败: appCode={}, error={}", appCode, e.getMessage(), e);
@@ -165,5 +205,12 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             return false;
         }
         return config.getSuperUsers().stream().map(String::trim).anyMatch(userCode::equals);
+    }
+
+    /**
+     * URI 含 Ant 通配符（`*`/`?`/`{`）判定
+     */
+    private static boolean isWildcardUri(String uri) {
+        return uri != null && (uri.contains("*") || uri.contains("?") || uri.contains("{"));
     }
 }

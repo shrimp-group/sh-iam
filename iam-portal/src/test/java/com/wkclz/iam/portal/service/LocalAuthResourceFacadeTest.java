@@ -65,7 +65,7 @@ class LocalAuthResourceFacadeTest {
         when(mapper.listRoleMenus(anyString())).thenReturn(new ArrayList<>(List.of(
             roleMenu("r1", "m1"), roleMenu("r1", "m2"), roleMenu("r2", "m1"))));
         when(mapper.listAppApis(anyString())).thenReturn(new ArrayList<>(List.of(
-            api("api_1", "GET", "/a/b"), api("api_2", "POST", "/a/**"))));
+            api("api_1", "GET", "/a/b", 1), api("api_2", "POST", "/a/**", 1))));
         // m2 关系指向应用外 api_ghost（脏数据），装配时应被跳过
         when(mapper.listMenuApis(anyString())).thenReturn(new ArrayList<>(List.of(
             menuApi("m1", "api_1"), menuApi("m1", "api_2"), menuApi("m2", "api_ghost"))));
@@ -227,10 +227,15 @@ class LocalAuthResourceFacadeTest {
     }
 
     private AuthApi api(String apiCode, String apiMethod, String apiUri) {
+        return api(apiCode, apiMethod, apiUri, null);
+    }
+
+    private AuthApi api(String apiCode, String apiMethod, String apiUri, Integer writeFlag) {
         AuthApi a = new AuthApi();
         a.setApiCode(apiCode);
         a.setApiMethod(apiMethod);
         a.setApiUri(apiUri);
+        a.setWriteFlag(writeFlag);
         return a;
     }
 

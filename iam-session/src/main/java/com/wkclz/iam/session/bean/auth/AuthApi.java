@@ -29,4 +29,10 @@ public class AuthApi {
      */
     @Schema(description = "API URI")
     private String apiUri;
+
+    /**
+     * 白名单标识：1-白名单免鉴权
+     */
+    @Schema(description = "白名单标识：1-白名单免鉴权")
+    private Integer writeFlag;
 }

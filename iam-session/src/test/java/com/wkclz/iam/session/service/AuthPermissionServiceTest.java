@@ -92,6 +92,15 @@ class AuthPermissionServiceTest {
 
             res.getMenuApiMap().put("M1", Set.of("api_1"));
             res.getMenuApiMap().put("M31", Set.of("api_2"));
+
+            // 纳管索引（与 menuApiMap 绑定关系一致：M1→api_1 精确、M31→api_2 通配）
+            res.getManagedExactKeys().add("GET:/a/b");
+            res.getManagedWildcardApis().add(api2);
+            // 白名单索引（api_1 精确白名单、api_2 通配白名单）
+            api1.setWriteFlag(1);
+            api2.setWriteFlag(1);
+            res.getWhiteListExactKeys().add("GET:/a/b");
+            res.getWhiteListWildcardApis().add(api2);
             return res;
         }
 
@@ -219,6 +228,32 @@ class AuthPermissionServiceTest {
         assertTrue(service.isManagedApi("app", "GET", "/a/anything"));
         // 未纳管：放行
         assertFalse(service.isManagedApi("app", "GET", "/not/bound"));
+    }
+
+    @Test
+    void apiWhiteListedExactKeyHit() {
+        // 精确键命中：method 忽略大小写
+        assertTrue(service.isApiWhiteListed("app", "get", "/a/b"));
+        assertTrue(service.isApiWhiteListed("app", "GET", "/a/b"));
+        // 方法不匹配 → 未命中
+        assertFalse(service.isApiWhiteListed("app", "POST", "/a/b"));
+        // URI 不匹配（不在精确键且不被通配 /a/** 覆盖）→ 未命中
+        assertFalse(service.isApiWhiteListed("app", "GET", "/b/c"));
+    }
+
+    @Test
+    void apiWhiteListedWildcardHit() {
+        // 通配小列表 Ant 匹配（api_2 GET /a/**）
+        assertTrue(service.isApiWhiteListed("app", "GET", "/a/anything"));
+        // 方法不匹配 → 未命中
+        assertFalse(service.isApiWhiteListed("app", "POST", "/a/anything"));
+    }
+
+    @Test
+    void apiWhiteListedFailsClosedOnLoadError() {
+        // 判定链路异常 → fail-closed 于豁免（视为非白名单，不抛异常）
+        facade.failLoads = true;
+        assertFalse(service.isApiWhiteListed("app", "GET", "/a/b"));
     }
 
     @Test

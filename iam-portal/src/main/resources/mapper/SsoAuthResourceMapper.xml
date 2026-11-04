@@ -82,12 +82,13 @@
             </if>
     </select>
 
-    <!-- 应用内全部 API 定义（apiCode → method/uri，权限匹配依据） -->
+    <!-- 应用内全部 API 定义（apiCode → method/uri/writeFlag，权限匹配与白名单依据） -->
     <select id="listAppApis" parameterType="java.lang.String" resultType="com.wkclz.iam.session.bean.auth.AuthApi">
         SELECT
             api_code,
             api_method,
-            api_uri
+            api_uri,
+            write_flag
         FROM
             iam_api
         WHERE

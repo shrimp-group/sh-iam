@@ -31,7 +31,8 @@ import java.nio.charset.StandardCharsets;
  * 配置 {@code iam.session.app-code}（独立部署）→ 按该应用资源与 auth_type；
  * 未配置（合并部署）→ 资源打平为全局（{@code __GLOBAL__}），鉴权深度按全局配置 {@code iam.auth.auth-type}。</p>
  *
- * <p>放行条件（任一满足即放行，判断全部委托 {@link AuthPermissionService}）：白名单 /
+ * <p>放行条件（任一满足即放行，判断全部委托 {@link AuthPermissionService}）：
+ * 白名单（本地 WhiteListMatcher ∪ DB 白名单 iam_api.write_flag=1，按 ownerKey 资源判定）/
  * 无身份（非白名单无会话已被 SessionAuthFilter 401）/ 鉴权类型 TOKEN（仅需会话认证）；
  * TOKEN_API：接口全量纳管（未纳管 403）+ 已纳管无权限 403。</p>
  */
@@ -53,19 +54,19 @@ public class AuthPermissionFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String uri = request.getRequestURI();
 
-        // 1. 白名单 → 放行
-        if (whiteListMatcher.isWhiteListed(uri)) {
+        // 1. 鉴权资源键：独立部署取配置 app-code，合并部署取全局打平键（白名单按 ownerKey 资源判定）
+        String ownerKey = StringUtils.isNotBlank(config.getAppCode()) ? config.getAppCode() : AuthCacheManager.GLOBAL_KEY;
+        // 2. 白名单（本地 ∪ DB）→ 放行
+        if (whiteListMatcher.isWhiteListed(uri) || authPermissionService.isApiWhiteListed(ownerKey, method, uri)) {
             chain.doFilter(request, response);
             return;
         }
-        // 2. 无身份 → 放行（非白名单无会话已被 SessionAuthFilter 401）
+        // 3. 无身份 → 放行（非白名单无会话已被 SessionAuthFilter 401）
         if (IdentityContext.get() == null) {
             chain.doFilter(request, response);
             return;
         }
         String userCode = IdentityContext.get().getUserCode();
-        // 3. 鉴权资源键：独立部署取配置 app-code，合并部署取全局打平键
-        String ownerKey = StringUtils.isNotBlank(config.getAppCode()) ? config.getAppCode() : AuthCacheManager.GLOBAL_KEY;
         // 4. 鉴权类型：TOKEN 仅需会话认证，跳过纳管与接口权限校验
         if (!authPermissionService.requireApiPermission(ownerKey)) {
             chain.doFilter(request, response);

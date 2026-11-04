@@ -17,7 +17,8 @@ import java.util.*;
 
 /**
  * 权限计算服务 — 低频菜单树计算（每次直接从 L1+L2 计算，不缓存结果）、
- * 高频按 URL 接口权限判断（经 {@link AuthCacheManager#hasUrlPermission} 走 L3 缓存 true/false），
+ * 高频按 URL 接口权限判断（经 {@link AuthCacheManager#hasUrlPermission} 走 L3 缓存 true/false）、
+ * 接口白名单判定（DB 白名单，fail-closed 于豁免）与纳管判定（精确索引 + 通配小列表），
  * 以及按应用鉴权类型判断 requireApiPermission（TOKEN 免接口权限校验，缺失/未知默认 TOKEN_API fail-closed）。
  *
  * <p><b>缓存快照不可变</b>：{@link AppAuthResource} 内对象（menuMap/roleMenuMap/apiMap/menuApiMap 等）
@@ -143,6 +144,9 @@ public class AuthPermissionService {
     /**
      * 判断接口是否被应用纳管（任一菜单绑定的 API 匹配请求即已纳管）。
      *
+     * <p>纳管索引判定：精确键（大写 METHOD:URI）O(1) 优先，未命中遍历通配小列表（URI 含通配的 API）；
+     * 匹配语义与遍历实现一致（method 忽略大小写 + uri Ant）。</p>
+     *
      * @param appCode 应用编码
      * @param method  HTTP 方法
      * @param uri     请求 URI
@@ -151,18 +155,46 @@ public class AuthPermissionService {
     public boolean isManagedApi(String appCode, String method, String uri) {
         log.info("判断接口是否纳管: appCode={}, method={}, uri={}", appCode, method, uri);
         AppAuthResource res = manager.getAppResource(appCode);
-        if (res.getMenuApiMap() == null || res.getMenuApiMap().isEmpty()) {
-            return false;
+        if (res.getManagedExactKeys().contains((method == null ? "" : method.toUpperCase()) + ":" + uri)) {
+            return true;
         }
-        for (Set<String> apiCodes : res.getMenuApiMap().values()) {
-            for (String apiCode : apiCodes) {
-                AuthApi api = res.getApiMap().get(apiCode);
-                if (api != null && matchApi(api, method, uri)) {
-                    return true;
-                }
+        for (AuthApi api : res.getManagedWildcardApis()) {
+            if (matchApi(api, method, uri)) {
+                return true;
             }
         }
         return false;
+    }
+
+    /**
+     * 判断接口是否命中 DB 白名单（{@code iam_api.write_flag=1}，免登录免接口权限校验）。
+     *
+     * <p>白名单索引判定：精确键（大写 METHOD:URI）O(1) 优先，未命中遍历通配小列表；
+     * 匹配语义与纳管一致（method 忽略大小写 + uri Ant）。</p>
+     *
+     * <p>fail-closed 于豁免：判定链路异常（如 L1 加载失败）视为非白名单，继续走原鉴权链路。</p>
+     *
+     * @param ownerKey 鉴权资源键（应用编码或 GLOBAL）
+     * @param method   HTTP 方法
+     * @param uri      请求 URI
+     * @return 白名单命中返回 true；异常或未命中返回 false
+     */
+    public boolean isApiWhiteListed(String ownerKey, String method, String uri) {
+        try {
+            AppAuthResource res = manager.getAppResource(ownerKey);
+            if (res.getWhiteListExactKeys().contains((method == null ? "" : method.toUpperCase()) + ":" + uri)) {
+                return true;
+            }
+            for (AuthApi api : res.getWhiteListWildcardApis()) {
+                if (matchApi(api, method, uri)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("接口白名单判定异常，fail-closed 于豁免: ownerKey={}, method={}, uri={}", ownerKey, method, uri, e);
+            return false;
+        }
     }
 
     /**

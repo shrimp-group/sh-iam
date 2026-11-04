@@ -5,12 +5,16 @@ import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.core.identity.UserIdentity;
 import com.wkclz.iam.session.bean.Session;
 import com.wkclz.iam.session.bean.TokenInfo;
+import com.wkclz.iam.session.cache.AuthCacheManager;
+import com.wkclz.iam.session.config.IamSessionConfig;
+import com.wkclz.iam.session.service.AuthPermissionService;
 import com.wkclz.iam.session.service.SessionManager;
 import com.wkclz.iam.session.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +31,10 @@ import java.nio.charset.StandardCharsets;
  * 会话认证过滤器 — 每次请求时尽力设置 IdentityContext，再做准入判断。
  * <p>显式指定 Order（LOWEST_PRECEDENCE - 5），保证位于 RequestRecordFilter（LOWEST_PRECEDENCE - 10）之后、
  * RequestControlFilter（LOWEST_PRECEDENCE）之前，确保身份设置先于请求控制执行。</p>
+ *
+ * <p>准入规则：本地白名单（WhiteListMatcher）或 DB 白名单（iam_api.write_flag=1，按
+ * {@code iam.session.app-code} 配置值或 {@code __GLOBAL__} 资源判定）命中 → 免登录放行；
+ * 否则须持有有效会话（JWT 有效 + Redis 会话存在），无有效会话 401。</p>
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 5)
@@ -40,6 +48,10 @@ public class SessionAuthFilter extends OncePerRequestFilter {
     private SessionManager sessionManager;
     @Autowired
     private WhiteListMatcher whiteListMatcher;
+    @Autowired
+    private IamSessionConfig config;
+    @Autowired
+    private AuthPermissionService authPermissionService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -57,7 +69,7 @@ public class SessionAuthFilter extends OncePerRequestFilter {
             trySessionIdentity(token);
         }
 
-        // 3. 白名单接口：无论有无身份都放行；
+        // 3. 本地白名单接口：无论有无身份都放行；
         //    无有效会话时尽力解析 token claims，仅用于审计日志等场景，不作为准入依据
         if (whiteListMatcher.isWhiteListed(requestUri)) {
             if (IdentityContext.get() == null && token != null) {
@@ -67,8 +79,18 @@ public class SessionAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 4. 非白名单：必须持有有效会话（JWT 未过期且 Redis 会话存在）
+        // 4. 非本地白名单：须持有有效会话（JWT 未过期且 Redis 会话存在）；
+        //    无有效会话时先判 DB 白名单（iam_api.write_flag=1），命中免登录放行
         if (IdentityContext.get() == null) {
+            String ownerKey = StringUtils.isNotBlank(config.getAppCode()) ? config.getAppCode() : AuthCacheManager.GLOBAL_KEY;
+            if (authPermissionService.isApiWhiteListed(ownerKey, request.getMethod(), requestUri)) {
+                if (token != null) {
+                    tryTokenIdentity(token);
+                }
+                log.info("DB 白名单免登录放行: ownerKey={}, method={}, uri={}", ownerKey, request.getMethod(), requestUri);
+                chain.doFilter(request, response);
+                return;
+            }
             // 非白名单 + 无有效会话：401
             log.warn("No valid session for non-whitelisted URI: {}", requestUri);
             writeUnauthorized(response, token == null ? "缺少认证 Token" : "会话无效或已过期");

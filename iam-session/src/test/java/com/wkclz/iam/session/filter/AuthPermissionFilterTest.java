@@ -81,6 +81,32 @@ class AuthPermissionFilterTest {
     }
 
     @Test
+    void passesThroughWhenDbWhiteListed() throws ServletException, IOException {
+        // DB 白名单（iam_api.write_flag=1）：本地白名单未命中、isApiWhiteListed 命中 → 放行，不进入纳管/权限校验
+        when(whiteListMatcher.isWhiteListed(URI)).thenReturn(false);
+        when(authPermissionService.isApiWhiteListed("__GLOBAL__", "GET", URI)).thenReturn(true);
+        filter.doFilter(request, response, chain);
+        verify(chain).doFilter(request, response);
+        verify(authPermissionService).isApiWhiteListed("__GLOBAL__", "GET", URI);
+        verify(authPermissionService, never()).isManagedApi(anyString(), anyString(), anyString());
+        verify(authPermissionService, never()).hasApiPermission(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void returns403WhenNotDbWhiteListed() throws ServletException, IOException {
+        // DB 白名单未命中 → 维持原纳管 403 流程
+        when(whiteListMatcher.isWhiteListed(URI)).thenReturn(false);
+        when(authPermissionService.isApiWhiteListed("__GLOBAL__", "GET", URI)).thenReturn(false);
+        when(authPermissionService.requireApiPermission("__GLOBAL__")).thenReturn(true);
+        stubManaged(false);
+        filter.doFilter(request, response, chain);
+        verify(chain, never()).doFilter(request, response);
+        assertEquals(403, response.getStatus());
+        String body = response.getContentAsString(StandardCharsets.UTF_8);
+        assertEquals("{\"message\":\"无接口访问权限\"}", body);
+    }
+
+    @Test
     void passesThroughWhenNoIdentity() throws ServletException, IOException {
         IdentityContext.clear();
         filter.doFilter(request, response, chain);
