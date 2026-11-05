@@ -182,7 +182,7 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
         log.info("加载用户有效角色: userCode={}", userCode);
         try {
             // super 用户（配置 iam.portal.super-users）返回哨兵角色，权限计算视为拥有应用内全部角色
-            if (isSuperUser(userCode)) {
+            if (config.isSuperUser(userCode)) {
                 log.info("super 用户返回哨兵角色: userCode={}", userCode);
                 return List.of(AuthResourceFacade.SUPER_ROLE_CODE);
             }
@@ -195,16 +195,6 @@ public class LocalAuthResourceFacade implements AuthResourceFacade {
             log.error("加载用户有效角色失败: userCode={}, error={}", userCode, e.getMessage(), e);
             throw e;
         }
-    }
-
-    /**
-     * super 用户判定：配置项 trim 后与 userCode 精确匹配（防御配置尾随空格导致的错判）
-     */
-    private boolean isSuperUser(String userCode) {
-        if (userCode == null || config.getSuperUsers() == null) {
-            return false;
-        }
-        return config.getSuperUsers().stream().map(String::trim).anyMatch(userCode::equals);
     }
 
     /**

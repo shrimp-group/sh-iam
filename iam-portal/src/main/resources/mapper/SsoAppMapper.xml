@@ -12,4 +12,35 @@
             AND deleted = 0
         LIMIT 1
     </select>
+
+    <!-- 全部未删除应用（按 sort 升序） -->
+    <select id="selectAllApps" resultType="com.wkclz.iam.common.entity.IamApp">
+        SELECT
+            app_code,
+            app_name,
+            domain,
+            auth_type,
+            sort
+        FROM
+            iam_app
+        WHERE
+            deleted = 0
+        ORDER BY
+            sort,
+            app_code
+    </select>
+
+    <!-- 用户全部生效角色应用编码（启用状态且有效期覆盖当前时间） -->
+    <select id="selectUserActiveAppCodes" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT DISTINCT
+            app_code
+        FROM
+            iam_user_role
+        WHERE
+            deleted = 0
+            AND user_code = #{userCode}
+            AND enable_status = 1
+            AND (start_time IS NULL OR start_time &lt;= NOW())
+            AND (end_time IS NULL OR end_time &gt;= NOW())
+    </select>
 </mapper>

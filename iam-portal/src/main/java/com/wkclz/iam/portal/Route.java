@@ -43,5 +43,6 @@ public interface Route {
     String PORTAL_NOTICES = "/portal/notices";
     String PORTAL_STATISTICS = "/portal/statistics";
     String PORTAL_TODO_LIST = "/portal/todo-list";
+    String PORTAL_APP_OPTIONS = "/portal/app-options";
 
 }

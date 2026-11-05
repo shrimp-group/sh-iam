@@ -40,4 +40,14 @@ public class IamPortalConfig {
     @Value("${iam.portal.super-users:root}")
     private List<String> superUsers;
 
+    /**
+     * super 用户判定：配置项 trim 后与 userCode 精确匹配（防御配置尾随空格导致的错判）
+     */
+    public boolean isSuperUser(String userCode) {
+        if (userCode == null || superUsers == null) {
+            return false;
+        }
+        return superUsers.stream().map(String::trim).anyMatch(userCode::equals);
+    }
+
 }

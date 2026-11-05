@@ -120,6 +120,27 @@
       </el-row>
     </el-card>
 
+    <!-- 应用入口 -->
+    <el-card v-if="apps.length" class="app-entry-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <span>应用入口</span>
+        </div>
+      </template>
+      <el-row :gutter="20">
+        <el-col :sm="12" :md="8" :lg="6" v-for="app in apps" :key="app.appCode">
+          <div
+            class="app-entry-item"
+            :class="{ 'is-current': app.appCode === runtimeEnv.appCode }"
+            @click="handleAppClick(app)"
+          >
+            <span>{{ app.appCode }}:{{ app.appName }}</span>
+            <el-tag v-if="app.appCode === runtimeEnv.appCode" size="small">当前</el-tag>
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <!-- 最新公告和待办事项 -->
     <el-row :gutter="20" class="content-row">
       <!-- 最新公告 -->
@@ -221,6 +242,8 @@
 <script setup name="Index">
 import { ref, onMounted, markRaw } from 'vue'
 import { User, Monitor, Bell, Document, Setting, Plus, Search, Upload, Menu } from '@element-plus/icons-vue'
+import { portalAppOptions, openAppWindow } from '@sh/ui-core/api/app'
+import { runtimeEnv } from '../../../env.js'
 
 // 今天的日期
 const today = ref('')
@@ -279,6 +302,15 @@ const systemInfo = ref({
   support: '技术支持团队'
 })
 
+// 应用入口列表
+const apps = ref([])
+
+// 应用跳转：当前应用不可点
+const handleAppClick = (app) => {
+  if (app.appCode === runtimeEnv.appCode) return
+  openAppWindow(app)
+}
+
 // 处理快捷操作
 const handleShortcut = (item) => {
   console.log('快捷操作：', item.action)
@@ -301,6 +333,11 @@ onMounted(() => {
     day: 'numeric',
     weekday: 'long'
   })
+
+  // 应用入口列表（失败静默）
+  portalAppOptions().then(res => {
+    apps.value = res.data || []
+  }).catch(() => {})
 })
 </script>
 
@@ -404,6 +441,50 @@ onMounted(() => {
         margin-top: 6px;
         font-size: 12px;
         color: #606266;
+      }
+    }
+  }
+
+  .app-entry-card {
+    margin-bottom: 10px;
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+    }
+
+    .app-entry-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border-radius: 6px;
+
+      &:hover {
+        background-color: #ecf5ff;
+        transform: translateY(-2px);
+      }
+
+      span {
+        font-size: 13px;
+        color: #303133;
+      }
+
+      &.is-current {
+        cursor: default;
+
+        &:hover {
+          background-color: transparent;
+          transform: none;
+        }
+
+        span {
+          color: #909399;
+        }
       }
     }
   }
