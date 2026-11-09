@@ -35,6 +35,9 @@ public class ApiResp extends EntityResp {
     @Schema(description = "白名单标识")
     private Integer writeFlag;
 
+    @Schema(description = "绑定菜单数")
+    private Integer menuBindCount;
+
     @Schema(description = "请求控制配置")
     private ApiRequestControl requestControl;
 

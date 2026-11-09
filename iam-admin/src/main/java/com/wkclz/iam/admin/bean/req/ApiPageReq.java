@@ -34,4 +34,7 @@ public class ApiPageReq extends PageReq {
     @Schema(description = "白名单标识")
     private Integer writeFlag;
 
+    @Schema(description = "绑菜单状态：1-已绑菜单，0-未绑菜单")
+    private Integer menuBindStatus;
+
 }

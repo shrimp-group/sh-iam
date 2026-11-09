@@ -57,9 +57,12 @@
         `update_time`,
         `update_by`,
         `remark`,
-        `version`
+        `version`,
+        ( SELECT COUNT( * ) FROM iam_menu_api ma
+        WHERE ma.menu_code = im1.menu_code AND ma.deleted = 0
+        ) api_bind_count
         FROM
-        iam_menu
+        iam_menu im1
         WHERE
         app_code = #{appCode}
         ORDER BY
