@@ -27,6 +27,14 @@ public interface IamApiMapper extends BaseMapper<IamApi> {
 
     List<IamApi> listAllMethodUris();
 
+    /**
+     * 按需查询：仅返回 uris 中存在的记录（仅按 api_uri IN 匹配，可走索引；method+uri 精确比对由调用方在内存完成）
+     *
+     * @param uris 请求 URI 集合
+     * @return 已存在的记录（含 id/apiCode/apiMethod/apiUri）
+     */
+    List<IamApi> listByUris(@Param("uris") List<String> uris);
+
     int updateBatch4Import(@Param("entities") List<IamApi> entities);
 
 }

@@ -39,6 +39,7 @@
           </el-form-item>
           <el-form-item style="float: right;">
             <el-button type="primary" plain icon="Plus" @click="handleAdd" :disabled="!queryParams.appCode">新增</el-button>
+            <el-button type="primary" icon="FolderAdd" @click="handleBatchAdd">批量新增</el-button>
           </el-form-item>
         </el-form>
         <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
@@ -113,6 +114,7 @@
     <edit ref="editRef" @change="getList"/>
     <detail ref="detailRef" />
     <import-api ref="importRef" @change="getList"/>
+    <batch-add ref="batchAddRef" @change="getList"/>
   </div>
 </template>
 
@@ -121,6 +123,7 @@ import { apiPage, apiRemove, apiExport} from "@/api/system/api";
 import Edit from "./components/edit"
 import Detail from "./components/detail"
 import ImportApi from "./components/import"
+import BatchAdd from "./components/batch-add"
 import AppOptions from "@/views/components/AppOptions"
 import { copy } from "@sh/ui-core/utils/shrimp"
 import { ArrowDown } from "@element-plus/icons-vue"
@@ -190,6 +193,9 @@ function handleAdd() {
     return;
   }
   proxy.$refs["editRef"].init({appCode: queryParams.value.appCode});
+}
+function handleBatchAdd() {
+  proxy.$refs["batchAddRef"].init();
 }
 function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);

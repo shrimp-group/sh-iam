@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.iam.admin.Route;
+import com.wkclz.iam.admin.bean.req.ApiBatchCreateReq;
 import com.wkclz.iam.admin.bean.req.ApiCreateReq;
 import com.wkclz.iam.admin.bean.req.ApiDocReq;
 import com.wkclz.iam.admin.bean.req.ApiExportReq;
@@ -11,12 +12,15 @@ import com.wkclz.iam.admin.bean.req.ApiImportReq;
 import com.wkclz.iam.admin.bean.req.ApiListReq;
 import com.wkclz.iam.admin.bean.req.ApiPageReq;
 import com.wkclz.iam.admin.bean.req.ApiPasteReq;
+import com.wkclz.iam.admin.bean.req.ApiScanReq;
 import com.wkclz.iam.admin.bean.req.ApiUpdateReq;
+import com.wkclz.iam.admin.bean.resp.ApiBatchCreateResp;
 import com.wkclz.iam.admin.bean.resp.ApiDetailResp;
 import com.wkclz.iam.admin.bean.resp.ApiDocResp;
 import com.wkclz.iam.admin.bean.resp.ApiExportResp;
 import com.wkclz.iam.admin.bean.resp.ApiImportResp;
 import com.wkclz.iam.admin.bean.resp.ApiResp;
+import com.wkclz.iam.admin.bean.resp.ApiScanResp;
 import com.wkclz.iam.admin.init.RestfulScan;
 import com.wkclz.iam.admin.service.IamApiService;
 import com.wkclz.iam.session.bean.ApiRequestControl;
@@ -155,6 +159,18 @@ public class ApiRest {
     @Operation(summary = "API导入", description = "按 apiCode 判断存在性，存在更新、不存在新增，全程无删除")
     public R<ApiImportResp> apiImport(@Valid @RequestBody ApiImportReq req) {
         return R.ok(iamApiService.apiImport(req));
+    }
+
+    @GetMapping(Route.API_SCAN)
+    @Operation(summary = "API扫描", description = "扫描运行时代码中的REST接口，支持按条件过滤，标记是否已在库")
+    public R<List<ApiScanResp>> apiScan(ApiScanReq req) {
+        return R.ok(iamApiService.scanApis(req));
+    }
+
+    @PostMapping(Route.API_BATCH_CREATE)
+    @Operation(summary = "API批量新增", description = "批量新增接口，逐条校验 method+uri 全局唯一性")
+    public R<ApiBatchCreateResp> apiBatchCreate(@Valid @RequestBody ApiBatchCreateReq req) {
+        return R.ok(iamApiService.batchCreate(req));
     }
 
     /**

@@ -6,8 +6,10 @@ import com.wkclz.core.base.PageData;
 import com.wkclz.core.enums.ResultCode;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.exception.ValidationException;
+import com.wkclz.iam.admin.bean.req.ApiBatchCreateReq;
 import com.wkclz.iam.admin.bean.req.ApiExportReq;
 import com.wkclz.iam.admin.bean.req.ApiImportReq;
+import com.wkclz.iam.admin.bean.req.ApiScanReq;
 import com.wkclz.iam.admin.bean.resp.*;
 import com.wkclz.iam.admin.helper.EntityFieldAnalyzer;
 import com.wkclz.iam.admin.mapper.IamApiFieldMapper;
@@ -599,6 +601,163 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         }
 
         return docResp;
+    }
+
+    /**
+     * 扫描运行时代码中的 REST 接口，按条件过滤后标记是否已在库
+     *
+     * @param req 扫描过滤条件
+     * @return 过滤后的扫描结果列表
+     */
+    public List<ApiScanResp> scanApis(ApiScanReq req) {
+        log.info("扫描API列表, 过滤条件={}", req);
+        List<RestInfo> mappings = RestHelper.getMapping();
+
+        // 第一步：按扫描结果自身字段过滤（appCode/module/apiMethod/apiUri/apiName），减少后续查库范围
+        List<RestInfo> filtered = new ArrayList<>(mappings.size());
+        for (RestInfo info : mappings) {
+            if (StringUtils.isNotBlank(req.getAppCode()) && !req.getAppCode().equals(info.getAppCode())) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(req.getModule()) && !StringUtils.contains(info.getModule(), req.getModule())) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(req.getApiMethod()) && !req.getApiMethod().equalsIgnoreCase(info.getMethod())) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(req.getApiUri()) && !StringUtils.contains(info.getUri(), req.getApiUri())) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(req.getApiName()) && !StringUtils.contains(info.getDesc(), req.getApiName())) {
+                continue;
+            }
+            filtered.add(info);
+        }
+
+        // 第二步：按需查库——仅按 api_uri IN 查询过滤后扫描结果对应的记录，避免全量加载
+        Set<String> uris = new HashSet<>();
+        for (RestInfo info : filtered) {
+            uris.add(info.getUri());
+        }
+        Map<String, Long> existingMap = new HashMap<>();
+        if (!uris.isEmpty()) {
+            // SQL 仅按 api_uri IN 匹配（可走索引），返回结果中用 method+uri 精确比对
+            List<IamApi> iamApis = mapper.listByUris(new ArrayList<>(uris));
+            for (IamApi api : iamApis) {
+                String key = api.getApiMethod().toUpperCase() + "|" + api.getApiUri();
+                existingMap.put(key, api.getId());
+            }
+        }
+
+        // 第三步：标记 exists，按入库状态过滤，构建响应
+        List<ApiScanResp> respList = new ArrayList<>(filtered.size());
+        for (RestInfo info : filtered) {
+            String key = info.getMethod().toUpperCase() + "|" + info.getUri();
+            Long existingId = existingMap.get(key);
+            boolean exists = existingId != null;
+            if (req.getExists() != null && req.getExists() != exists) {
+                continue;
+            }
+            ApiScanResp resp = new ApiScanResp();
+            resp.setAppCode(info.getAppCode());
+            resp.setModule(info.getModule());
+            resp.setApiMethod(info.getMethod());
+            resp.setApiUri(info.getUri());
+            resp.setApiName(info.getDesc());
+            resp.setWriteFlag(info.getWriteFlag());
+            resp.setExists(exists);
+            resp.setExistingId(existingId);
+            respList.add(resp);
+        }
+        long existsCount = respList.stream().filter(ApiScanResp::getExists).count();
+        log.info("扫描API完成, 扫描总数={}, 过滤后={}, 已入库={}", mappings.size(), respList.size(), existsCount);
+        return respList;
+    }
+
+    /**
+     * 批量新增API：逐条校验 method+uri 全局唯一性，成功项入库，失败项返回原因
+     *
+     * @param req 批量新增请求
+     * @return 成功/失败明细
+     */
+    public ApiBatchCreateResp batchCreate(ApiBatchCreateReq req) {
+        List<ApiBatchCreateReq.ApiBatchCreateItemReq> items = req.getItems();
+        log.info("批量新增API, 条数={}", items.size());
+
+        // 按需查库：仅按 api_uri IN 查询本批 URI 对应的记录，避免全量加载
+        Set<String> uris = new HashSet<>();
+        for (ApiBatchCreateReq.ApiBatchCreateItemReq item : items) {
+            if (StringUtils.isNotBlank(item.getApiUri())) {
+                uris.add(item.getApiUri());
+            }
+        }
+        Map<String, String> existingKeyMap = new HashMap<>();
+        if (!uris.isEmpty()) {
+            // SQL 仅按 api_uri IN 匹配（可走索引），返回结果中用 method+uri 精确比对
+            for (IamApi api : mapper.listByUris(new ArrayList<>(uris))) {
+                existingKeyMap.put(api.getApiMethod().toUpperCase() + "|" + api.getApiUri(), api.getApiCode());
+            }
+        }
+
+        List<IamApi> inserts = new ArrayList<>();
+        List<ApiBatchCreateResp.FailedItem> failedItems = new ArrayList<>();
+        Set<String> batchKeySet = new HashSet<>();
+
+        for (ApiBatchCreateReq.ApiBatchCreateItemReq item : items) {
+            if (StringUtils.isBlank(item.getApiName())) {
+                failedItems.add(buildFailedItem(item, "接口名称不能为空"));
+                continue;
+            }
+            if (StringUtils.isBlank(item.getApiMethod()) || StringUtils.isBlank(item.getApiUri())) {
+                failedItems.add(buildFailedItem(item, "请求方法或URI不能为空"));
+                continue;
+            }
+            String key = item.getApiMethod().toUpperCase() + "|" + item.getApiUri();
+            if (existingKeyMap.containsKey(key)) {
+                failedItems.add(buildFailedItem(item, "接口已存在"));
+                continue;
+            }
+            if (!batchKeySet.add(key)) {
+                failedItems.add(buildFailedItem(item, "同批次内重复"));
+                continue;
+            }
+            IamApi entity = new IamApi();
+            entity.setModule(item.getModule());
+            entity.setAppCode(item.getAppCode());
+            entity.setApiMethod(item.getApiMethod());
+            entity.setApiUri(item.getApiUri());
+            entity.setApiName(item.getApiName());
+            entity.setWriteFlag(item.getWriteFlag() == null ? 0 : item.getWriteFlag());
+            entity.setSort(item.getSort() == null ? 99 : item.getSort());
+            entity.setRemark(item.getRemark());
+            entity.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
+            inserts.add(entity);
+        }
+
+        if (!inserts.isEmpty()) {
+            mapper.insertBatch(inserts);
+            inserts.stream().map(IamApi::getAppCode)
+                .filter(code -> code != null && !code.isEmpty()).distinct()
+                .forEach(this::publishAppChanged);
+        }
+
+        ApiBatchCreateResp resp = new ApiBatchCreateResp();
+        resp.setSuccessCount(inserts.size());
+        resp.setFailedCount(failedItems.size());
+        resp.setFailedItems(failedItems);
+        log.info("批量新增API完成, 成功={}, 失败={}", inserts.size(), failedItems.size());
+        return resp;
+    }
+
+    /**
+     * 构建批量新增失败项
+     */
+    private ApiBatchCreateResp.FailedItem buildFailedItem(ApiBatchCreateReq.ApiBatchCreateItemReq item, String reason) {
+        ApiBatchCreateResp.FailedItem failed = new ApiBatchCreateResp.FailedItem();
+        failed.setApiMethod(item.getApiMethod());
+        failed.setApiUri(item.getApiUri());
+        failed.setReason(reason);
+        return failed;
     }
 
     /**

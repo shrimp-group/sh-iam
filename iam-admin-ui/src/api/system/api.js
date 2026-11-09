@@ -65,3 +65,13 @@ export const apiImport = (data) => {
   return request({url: '/iam-admin/api/import', method: 'post', data})
 }
 
+// 14. API管理-扫描运行时代码中的接口（支持后端过滤）
+export const apiScan = (params) => {
+  return request({url: '/iam-admin/api/scan', method: 'get', params})
+}
+
+// 15. API管理-批量新增
+export const apiBatchCreate = (data) => {
+  return request({url: '/iam-admin/api/batch-create', method: 'post', data})
+}
+
