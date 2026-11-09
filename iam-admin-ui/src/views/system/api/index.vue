@@ -45,8 +45,8 @@
         <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" />
           <el-table-column label="ID" prop="id" width="80" v-if="columns.id.visible"/>
-          <el-table-column label="模块" prop="module" width="120"/>
           <el-table-column label="应用编码" prop="appCode" width="120"/>
+          <el-table-column label="模块" prop="module" width="120"/>
           <el-table-column label="请求方法" prop="apiMethod" width="120">
             <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
           </el-table-column>
@@ -195,7 +195,7 @@ function handleAdd() {
   proxy.$refs["editRef"].init({appCode: queryParams.value.appCode});
 }
 function handleBatchAdd() {
-  proxy.$refs["batchAddRef"].init();
+  proxy.$refs["batchAddRef"].init(queryParams.value.appCode);
 }
 function handleUpdate(row) {
   proxy.$refs["editRef"].init(row);

@@ -1,5 +1,11 @@
 <template>
-  <el-dialog title="批量新增API" v-model="open" width="1200px" :close-on-click-modal="false" top="5vh">
+  <el-dialog title="批量新增API" v-model="open" width="1440px" :close-on-click-modal="false" top="3vh">
+    <el-alert
+      v-if="appCode"
+      :title="'当前应用：' + appCode + '（新增的接口将归属此应用）'"
+      type="info"
+      :closable="false"
+      style="margin-bottom: 12px;" />
     <!-- 搜索条件区 -->
     <el-form :inline="true" :model="searchForm" @submit.native.prevent>
       <el-form-item label="模块">
@@ -33,10 +39,9 @@
       ref="tableRef"
       v-loading="loading"
       :data="scanList"
-      height="480"
+      height="600"
       @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" :selectable="row => !row.exists" />
-      <el-table-column label="应用编码" prop="appCode" width="110" show-overflow-tooltip />
       <el-table-column label="模块" prop="module" width="100" show-overflow-tooltip />
       <el-table-column label="请求方法" prop="apiMethod" width="90">
         <template #default="{row}"><dict-tag :options="API_METHOD" :value="row.apiMethod" /></template>
@@ -131,6 +136,7 @@ const submitLoading = ref(false);
 const tableRef = ref(null);
 const scanList = ref([]);
 const selectedRows = ref([]);
+const appCode = ref("");
 
 const searchForm = ref({
   module: undefined,
@@ -140,10 +146,10 @@ const searchForm = ref({
   status: undefined,
 });
 
-/** 打开弹窗并加载扫描结果 */
-function init() {
+/** 打开弹窗（默认不搜索，需手动点击搜索） */
+function init(code) {
+  appCode.value = code || "";
   open.value = true;
-  loadScan();
 }
 
 /** 加载扫描结果（后端过滤） */
@@ -182,7 +188,7 @@ function handleSearch() {
   loadScan();
 }
 
-/** 重置搜索条件并重新加载 */
+/** 重置搜索条件并清空表格 */
 function resetSearch() {
   searchForm.value = {
     module: undefined,
@@ -191,7 +197,8 @@ function resetSearch() {
     apiName: undefined,
     status: undefined,
   };
-  loadScan();
+  scanList.value = [];
+  selectedRows.value = [];
 }
 
 /** 表格选择变化 */
@@ -201,6 +208,10 @@ function handleSelectionChange(selection) {
 
 /** 单条入库 */
 function handleSingleAdd(row) {
+  if (!appCode.value) {
+    proxy.$modal.msgWarning("请先在左侧选择应用");
+    return;
+  }
   if (!row.apiName) {
     proxy.$modal.msgWarning("请先填写接口名称");
     return;
@@ -223,6 +234,10 @@ function handleSingleAdd(row) {
 
 /** 批量提交 */
 function handleBatchSubmit() {
+  if (!appCode.value) {
+    proxy.$modal.msgWarning("请先在左侧选择应用");
+    return;
+  }
   const rows = selectedRows.value.filter(r => !r.exists);
   if (rows.length === 0) {
     proxy.$modal.msgWarning("请勾选可新增的接口");
@@ -253,11 +268,11 @@ function handleBatchSubmit() {
   });
 }
 
-/** 构建提交项（仅提交后端需要的字段） */
+/** 构建提交项（appCode 使用页面已选中的应用编码） */
 function buildItem(row) {
   return {
     module: row.module,
-    appCode: row.appCode,
+    appCode: appCode.value,
     apiMethod: row.apiMethod,
     apiUri: row.apiUri,
     apiName: row.apiName,
@@ -278,6 +293,7 @@ function markRowExists(row) {
 /** 取消并重置 */
 function cancel() {
   open.value = false;
+  appCode.value = "";
   scanList.value = [];
   selectedRows.value = [];
   resetSearch();
