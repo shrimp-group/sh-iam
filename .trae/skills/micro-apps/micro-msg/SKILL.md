@@ -127,7 +127,7 @@ msgApi.sentMsg("系统公告", "系统将于今晚维护", "https://app.example.
 内部流程：`MsgApi.sentMsg()` → `MsgNotificationService.createNotification(dto)`：
 
 1. 合并 `sentToUser` + `sentToUsers` 并去重
-2. `RedisIdGenerator.generateIdWithPrefix("msg_")` 生成 noticeNo
+2. `RedisIdGenerator.generateBase32IdWithPrefix("msg_")` 生成 noticeNo
 3. 插入 `msg_notification` 记录
 4. 批量插入 `msg_user_record`（readStatus=0, showTimes=0）
 
@@ -219,7 +219,7 @@ msg_user_record.user_code = 接收人
 |-----------------------|---------------------------------------------------------------------------------|
 | MsgApi 注入失败           | 检查 `MsgAutoConfig` 是否被 Spring 扫描到，确认 AutoConfiguration.imports 文件存在             |
 | 发送消息时 userCode 为空     | `PrincipalContext.getUserCode()` 依赖 IAM 上下文，确保请求携带有效 Token                      |
-| noticeNo 重复           | `RedisIdGenerator.generateIdWithPrefix("msg_")` 基于时间戳+Redis自增，极端并发下检查 Redis 连接  |
+| noticeNo 重复           | `RedisIdGenerator.generateBase32IdWithPrefix("msg_")` 基于时间戳+Redis自增，极端并发下检查 Redis 连接  |
 | 个人消息列表超过 100 条        | `personalMsgList` 默认 size=100，前端需展示 99+；完整数据用 `personalMsgPage` 分页查询            |
 | 查看消息详情后 showTimes 未增加 | `getNotice()` 内部调用 `updateShowTimes`，检查 mapper XML 中 `updateShowTimes` SQL 是否正确 |
 | 标记已读不生效               | `markRecodeAsReaded` SQL 同时校验 `userCode`，确保当前用户与记录归属一致                          |

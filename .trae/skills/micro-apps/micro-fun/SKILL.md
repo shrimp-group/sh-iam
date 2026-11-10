@@ -278,7 +278,7 @@ Object testResult = testEngine.exec(dto.getParam());
 | 分类更新报 "请不要选择自身或子节点"      | `checPcode()` 递归校验，pcode 不能指向自身或自身子节点                                                                             |
 | GraalVM Python/Ruby 执行失败 | 需确保运行时环境安装了对应的 GraalVM 语言组件，python-community / ruby-community 依赖已引入                                               |
 | funCode 重复创建失败           | `FunFunctionService.duplicateCheck()` 按 funCode 唯一校验，funCode 不可重复                                                 |
-| 分类 categoryCode 如何生成     | 创建时由 `RedisIdGenerator.generateIdWithPrefix("ctg_")` 自动生成，无需手动指定                                                  |
+| 分类 categoryCode 如何生成     | 创建时由 `RedisIdGenerator.generateBase32IdWithPrefix("ctg_")` 自动生成，无需手动指定                                                  |
 | 函数测试接口如何使用               | POST `/micro-fun/function/test`，需传 funCode/funName/funLanguage/funBody/funReturn + param 参数                       |
 | QLExpress 如何传参           | 参数通过 `DefaultContext.put("param", param)` 传入，脚本中直接引用 `param` 变量                                                   |
 | Groovy 如何传参              | 通过 `Binding.setVariable(funParams, param)` 传入，funParams 字段值作为变量名                                                  |

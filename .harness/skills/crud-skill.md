@@ -150,7 +150,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
         Assert.isNull(baseMapper.selectByUsername(dto.getUsername()), "用户名已存在");
         
         IamUser user = IamUser.copy(dto);
-        user.setUserCode(redisIdGenerator.generateIdWithPrefix("user_"));
+        user.setUserCode(redisIdGenerator.generateBase32IdWithPrefix("user_"));
         baseMapper.insert(user);
         
         // 创建关联记录

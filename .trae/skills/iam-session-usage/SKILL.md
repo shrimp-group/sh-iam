@@ -165,8 +165,9 @@ iam-session 通过 Spring Boot 3.x 自动配置机制注册：
     - `sessionManager.validateAndRefresh(token)`（JWT 有效 + Redis 会话存在）→ 反序列化 `UserIdentity` →
       `IdentityContext.set(identity, token)`
 3. **准入判断**：
-    - 白名单（`WhiteListMatcher` 默认 `/**/public/**`）→ 放行；无有效会话时 `tokenService.parseClaimsBestEffort(token)`
+    - 本地白名单（`WhiteListMatcher` 默认 `/**/public/**`）→ 放行；无有效会话时 `tokenService.parseClaimsBestEffort(token)`
       仅用于审计日志，不作为准入依据
+    - DB 白名单（`iam_api.write_flag=1`，经 L1 缓存）+ 无有效会话 → 免登录放行
     - 非白名单 + 无有效会话 → 返回 401 JSON：`{"message":"缺少认证 Token"}` 或 `{"message":"会话无效或已过期"}`（JWT
       过期 / 登出后 Redis 会话已删均被拦截）
     - 非白名单 + 有效会话 → 放行
@@ -612,15 +613,20 @@ public class CustomWhiteListMatcher extends WhiteListMatcher {
 
 iam-session 内置三级权限缓存（Guava）与接口权限判断，接入项目无需额外开发即可获得：
 
-- **接口权限过滤**：`AuthPermissionFilter`（@Order -3，会话认证之后）按当前用户判断接口权限，无权限返回 403；全局开关
-  `iam.auth.check.enabled`（默认 true）
+- **接口权限过滤**：`AuthPermissionFilter`（@Order -3，会话认证之后）按当前用户判断接口权限，无权限返回 403；
+  鉴权基准 = 服务归属资源键 ownerKey（与调用方 header appCode 无关）：配置 `iam.session.app-code`（独立部署）按应用
+  auth_type；未配置（合并部署）资源打平为 `__GLOBAL__`，鉴权深度按全局 `iam.auth.auth-type`（默认 TOKEN_API）
+- **DB 白名单（接口白名单）**：`iam_api.write_flag=1` 的接口（管理端 API 管理页配置，语义"无需登录可直接访问"）免登录
+  （SessionAuthFilter）且免接口权限校验（AuthPermissionFilter）；判定经 L1 缓存（`AuthPermissionService.isApiWhiteListed`，
+  ownerKey=独立部署 app-code / 合并部署 `__GLOBAL__`），write_flag 变更经既有 APP_STATIC 指令自动刷新；与本地会话白名单
+  （`WhiteListMatcher`，`/**/public/**`）为两个并存机制
 - **菜单树接口**：`/iam-portal/user/menu/tree`（portal 提供）按当前用户计算授权菜单树，直接返回 `List<AuthMenu>`
 
 ### 三级缓存结构
 
 | 层               | 键                      | 内容                                            | 失效策略                                                 |
 |------------------|-------------------------|-------------------------------------------------|----------------------------------------------------------|
-| L1 APP_STATIC    | appCode                 | 应用全量静态资源（角色/菜单/关系/API/限流配置） | APP_STATIC 指令清理 + LRU；本地无 TTL，远程形态 TTL 硬界 |
+| L1 APP_STATIC    | appCode                 | 应用全量静态资源（角色/菜单/关系/API/限流配置） | APP_STATIC 指令清理（含版本校验重载，兜底 invalidate/加载竞态）+ LRU；本地无 TTL，远程形态 TTL 硬界 |
 | L2 USER_ROLE     | userCode                | 用户有效角色                                    | USER 指令 / 会话终结 + 空闲 TTL + LRU                    |
 | L3 USER_COMPUTED | appCode→userCode→urlKey | 按 URL 权限判断结果（true/false，未命中才计算） | URL 级 TTL + 用户级空闲 TTL + 指令联动清理 + LRU         |
 
@@ -658,12 +664,12 @@ boolean managed = authPermissionService.isManagedApi(appCode, "GET", "/api/order
 ### 变更通知链路（管理端改权限后缓存如何更新）
 
 ```
-iam-admin Service（角色/菜单/API/用户角色变更入口）
-  → 发布 PermissionChangeEvent（appChanged(appCode) / userChanged(userCode)，事务提交后）
+iam-admin Service（角色/菜单/API/用户角色变更入口，全部 @Transactional 保证写提交后才发布）
+  → 发布 PermissionChangeEvent（appChanged(appCode) / userChanged(userCode)，AFTER_COMMIT）
   → PermissionChangePublisher 双写 Redis：Pub/Sub channel（iam.auth.change.channel）+ 变更日志 Hash（iam:auth:change-log，每键最新，TTL 7 天）
-  → 同 Redis：PermissionChangeSubscriber 实时订阅 → applyCommand（时间戳去重）
+  → 同 Redis：PermissionChangeSubscriber 实时订阅 → applyCommand（时间戳去重，仅忽略严格更旧的指令，同毫秒仍应用）
   → 跨 Redis：AuthChangePoller 轮询 /changes 端点 → applyCommand（与订阅共用，幂等并存）
-  → 指令清理：APP_STATIC → L1+L3 整组；USER → L2+L3 该用户（精确清理，不波及他人）
+  → 指令清理：APP_STATIC → L1+L3 整组 + 记录 L1 待校验版本（读取时快照旧于指令时间戳则强制重载，兜底失效与并发加载竞态）；USER → L2+L3 该用户（精确清理，不波及他人）
 ```
 
 自定义业务修改权限数据时，发布同类事件即可联动清理：
@@ -685,7 +691,8 @@ publishEvent(PermissionChangeEvent.userChanged("user_1")); // 用户级变更
 
 | 配置                                       | 默认值            | 说明                               |
 |--------------------------------------------|-------------------|------------------------------------|
-| `iam.auth.check.enabled`                   | true              | 接口权限判断开关                   |
+| `iam.auth.auth-type`                       | TOKEN_API         | 合并部署全局鉴权类型（TOKEN/TOKEN_API） |
+| `iam.session.app-code`                     | 空                | 独立部署服务归属应用编码；空=合并部署打平 |
 | `iam.auth.cache.static-max-apps`           | 100               | L1 最大应用数                      |
 | `iam.auth.cache.static-remote-ttl-seconds` | 300               | 远程形态 L1 TTL 硬界（本地不生效） |
 | `iam.auth.cache.user-max-users`            | 10000             | L2 最大用户数（兼 L3 用户层）      |

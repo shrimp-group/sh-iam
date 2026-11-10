@@ -157,8 +157,8 @@ item.setLabel("用户名");
 item.setRequired(1);
 items.add(item);
 dto.setItems(items);
-// Service 内部: formCode = redisIdGenerator.generateIdWithPrefix("form_")
-//              itemCode = redisIdGenerator.generateIdWithPrefix("form_item_")
+// Service 内部: formCode = redisIdGenerator.generateBase32IdWithPrefix("form_")
+//              itemCode = redisIdGenerator.generateBase32IdWithPrefix("form_item_")
 ```
 
 更新表单时，Service 层自动对比新旧 items 实现增量更新（新增/修改/删除）。
@@ -173,7 +173,7 @@ MdmFormRule rule = new MdmFormRule();
 rule.setFormRuleName("用户创建校验");
 rule.setApiMethod("POST");
 rule.setApiUri("/api/user/create");
-// formRuleCode 自动生成: redisIdGenerator.generateIdWithPrefix("form_rule_")
+// formRuleCode 自动生成: redisIdGenerator.generateBase32IdWithPrefix("form_rule_")
 ```
 
 配置字段+验证器（批量保存）：

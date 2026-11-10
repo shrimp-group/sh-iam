@@ -255,7 +255,7 @@ iam_request_record ── 请求日志 (独立)
 - 条件装配: `@ConditionalOnProperty`, `@ConditionalOnMissingBean`
 - 事务: `@Transactional(rollbackFor = Exception.class)`
 - 分页: `PageQuery.page()` → `PageData<T>`，转换使用 `page.convert(Resp.class)`
-- ID 生成: `RedisIdGenerator.generateIdWithPrefix("user_")`
+- ID 生成: `RedisIdGenerator.generateBase32IdWithPrefix("user_")`
 
 ### 路由规范
 

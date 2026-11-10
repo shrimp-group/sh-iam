@@ -129,7 +129,7 @@ String requestId = redisLock.tryLockWithRetry("order:123", 30, TimeUnit.SECONDS,
 private RedisIdGenerator idGenerator;
 
 // 生成带前缀的ID（前缀不能为空）
-String orderId = idGenerator.generateIdWithPrefix("ORD");  // ORD1a2b3c
+String orderId = idGenerator.generateBase32IdWithPrefix("ORD");  // ORD1a2b3c
 
 // 生成指定业务类型的ID
 String userId = idGenerator.generateIdWithType("user");     // 1a2b3c

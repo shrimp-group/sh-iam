@@ -258,6 +258,6 @@ CREATE TABLE mdm_change_log (
 | getLogPage 返回 items 为空 | 确认 `TableInfoService` 能查到对应表的列信息，且实体类字段名与数据库列名匹配（驼峰转下划线）                                                                            |
 | 表名推导不正确                | `AuditCompareUtil` 基于实体类简单名称转蛇形，如 `MdmXxx` → `mdm_xxx`。若实际表名不符，需确认实体类命名                                                             |
 | modify 时 id 不一致报错      | `from.getId()` 必须等于 `to.getId()`，且 froms 和 tos 列表长度必须一致                                                                             |
-| 批次号为空                  | 不传 batchNo 时会自动通过 `RedisIdGenerator.generateIdWithPrefix("audit_")` 生成                                                              |
+| 批次号为空                  | 不传 batchNo 时会自动通过 `RedisIdGenerator.generateBase32IdWithPrefix("audit_")` 生成                                                              |
 | dataFrom/dataTo 存储格式   | 以 JSON 字符串存储，通过 `AuditCompareUtil.getDataValueJson()` 将实体所有 getter 返回值序列化                                                           |
 | REST 接口返回 JSON 而非对象    | `/change/log/page` 和 `/change/log/info` 会将 dataFrom/dataTo JSON 解析为 `dataFromEntity`/`dataToEntity` Map 对象                          |

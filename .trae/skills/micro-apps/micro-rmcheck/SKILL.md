@@ -159,7 +159,7 @@ public Integer customRemove(RmCheckRule rmCheckRule) {
 
 - 重复校验：`tableName` + `columnName` 组合唯一
 - 表存在校验：通过 `TableInfoService.getTables()` 验证表名在数据库中存在
-- 自动生成 `ruleCode`：`RedisIdGenerator.generateIdWithPrefix("rm_rule_")`
+- 自动生成 `ruleCode`：`RedisIdGenerator.generateBase32IdWithPrefix("rm_rule_")`
 
 ### 4.4 新增检查项
 
@@ -321,4 +321,4 @@ CREATE TABLE rm_check_rule_item (
 | 新增规则报"表不存在"           | `TableInfoService.getTables()` 验证表名在当前数据库中存在，检查表名拼写和数据库连接                                                                             |
 | 新增检查项报"字段不存在"         | `TableInfoService.getColumnInfos4Options()` 验证字段存在，检查 checkTableName 和 checkColumnName 拼写                                             |
 | 删除规则时自身被校验拦截          | `customRemove()` 会调用 `rmCheckApi.check(RmCheckRule.class, rule)` 自检，如果其他规则项引用了 rm_check_rule 表则无法删除                                   |
-| 规则编码如何生成              | 通过 `RedisIdGenerator.generateIdWithPrefix("rm_rule_")` 生成，创建后不可修改（update 时 setRuleCode(null)）                                         |
+| 规则编码如何生成              | 通过 `RedisIdGenerator.generateBase32IdWithPrefix("rm_rule_")` 生成，创建后不可修改（update 时 setRuleCode(null)）                                         |

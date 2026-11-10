@@ -201,7 +201,7 @@ public PointsIssueResp issuePoints(PointsIssueReq req) {
 }
 ```
 
-- 流水号前缀 `PI`，由 `RedisIdGenerator.generateIdWithPrefix` 生成
+- 流水号前缀 `PI`，由 `RedisIdGenerator.generateBase32IdWithPrefix` 生成
 - 管理员手动发放的完整工作流见 §4.8
 
 ### 4.2 积分试算（只读）
@@ -402,7 +402,7 @@ public R<PointsIssueResp> adminIssue(@Valid @RequestBody PointsIssueReq req) {
 - 幂等检测：`bizType=ADMIN_ISSUE`，与 `ISSUANCE` 区分（避免业务方与管理员同时发放互相冲突）
 - 租户编码取管理员登录态（`PrincipalContext.getTenantCode`），不允许跨租户发放
 - `createBy` 由框架 `MyBatisUpdateInterceptor` 自动填充管理员账号
-- 流水号前缀 `PI`，由 `RedisIdGenerator.generateIdWithPrefix` 生成
+- 流水号前缀 `PI`，由 `RedisIdGenerator.generateBase32IdWithPrefix` 生成
 - 不在 REST 层获取用户锁，由 `PointsIssueService` 内部 `PointsLockHelper.executeWithUserLock` 统一管理
 
 ### 4.9 管理端查询

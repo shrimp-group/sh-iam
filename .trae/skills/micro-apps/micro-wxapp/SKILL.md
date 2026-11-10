@@ -149,7 +149,7 @@ if (user == null) {
     user = new WxappUser();
     user.setAppId(vo.getAppId());
     user.setOpenId(openid);
-    user.setUserCode(redisIdGenerator.generateIdWithPrefix("wxapp_"));
+    user.setUserCode(redisIdGenerator.generateBase32IdWithPrefix("wxapp_"));
     wxappUserMapper.insert(user);
 }
 return wxappLoginService.login(user);
