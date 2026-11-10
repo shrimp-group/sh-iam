@@ -74,7 +74,7 @@ public class IamApiFieldService extends BaseService<IamApiField, IamApiFieldMapp
         }
 
         // 生成 fieldCode
-        entity.setFieldCode(redisIdGenerator.generateIdWithPrefix("field_"));
+        entity.setFieldCode(redisIdGenerator.generateBase32IdWithPrefix("field_"));
         mapper.insert(entity);
         log.info("API字段权限创建成功, fieldCode={}", entity.getFieldCode());
         publishAppChanged(entity.getAppCode());

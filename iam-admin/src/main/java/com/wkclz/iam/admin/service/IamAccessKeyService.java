@@ -20,7 +20,7 @@ import java.security.SecureRandom;
  * @author shrimp
  * @table iam_access_key (AK 密钥) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_access_key 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamAccessKeyService extends BaseService<IamAccessKey, IamAccessKeyMapper> {
 
@@ -41,7 +41,7 @@ public class IamAccessKeyService extends BaseService<IamAccessKey, IamAccessKeyM
 
 
     public IamAccessKey create(IamAccessKey entity) {
-        String appId = redisIdGenerator.generateIdWithPrefix(APPID_PREFIX);
+        String appId = redisIdGenerator.generateBase32IdWithPrefix(APPID_PREFIX);
         String ak = AK_PREFIX + generateRandomString(AK_LENGTH);
         String sk = generateRandomString(SK_LENGTH);
 

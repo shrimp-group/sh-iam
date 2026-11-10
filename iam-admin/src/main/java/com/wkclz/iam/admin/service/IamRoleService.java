@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  * @author shrimp
  * @table iam_role (角色) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_role 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
@@ -79,14 +80,16 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
     }
 
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRole create(IamRole entity) {
         duplicateCheck(entity);
-        entity.setRoleCode(redisIdGenerator.generateIdWithPrefix("role_"));
+        entity.setRoleCode(redisIdGenerator.generateBase32IdWithPrefix("role_"));
         mapper.insert(entity);
         publishAppChanged(entity.getAppCode());
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRole update(IamRole entity) {
         duplicateCheck(entity);
         IamRole oldEntity = selectById(entity.getId());
@@ -99,10 +102,12 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         return oldEntity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRole save(IamRole entity) {
         return entity.getId() == null ? create(entity) : update(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRole remove(IamRole entity) {
         IamRole oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
@@ -138,7 +143,7 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
         if (StringUtils.isBlank(entity.getRoleCode())) {
             return;
         }
-        
+
         // 唯一条件不为空，请设置唯一条件
         IamRole param = new IamRole();
         // 唯一条件：roleCode + appCode

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.util.Collections;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
  * @author shrimp
  * @table iam_role_menu (角色-菜单关系) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_role_menu 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapper> {
 
@@ -41,6 +42,7 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRoleMenu create(IamRoleMenu entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
@@ -48,6 +50,7 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRoleMenu update(IamRoleMenu entity) {
         duplicateCheck(entity);
         Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
@@ -62,10 +65,12 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
         return oldEntity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRoleMenu save(IamRoleMenu entity) {
         return entity.getId() == null ? create(entity) : update(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamRoleMenu remove(IamRoleMenu entity) {
         Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
         IamRoleMenu oldEntity = selectById(entity.getId());
@@ -129,6 +134,7 @@ public class IamRoleMenuService extends BaseService<IamRoleMenu, IamRoleMenuMapp
      * @param roleCode  角色编码
      * @param menuCodes 需要绑定的菜单编码列表
      */
+    @Transactional(rollbackFor = Exception.class)
     public void saveRoleMenus(String roleCode, List<String> menuCodes) {
         log.info("批量保存角色-菜单绑定, roleCode={}, menuCodes={}", roleCode, menuCodes);
 

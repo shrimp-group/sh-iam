@@ -108,7 +108,7 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
 
         // 用户入库
         if (StringUtils.isBlank(dto.getUserCode())) {
-            dto.setUserCode(redisIdGenerator.generateIdWithPrefix("user_"));
+            dto.setUserCode(redisIdGenerator.generateBase32IdWithPrefix("user_"));
         }
         IamUser user = BeanUtil.cp(dto, IamUser.class);
         insert(user);

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ import java.util.List;
  * @author shrimp
  * @table iam_app (应用) 单表服务类，代码重新生成不覆盖. 只建议完成单表的逻辑，或主表为 iam_app 的逻辑. 其他逻辑放 custom 中
  */
- 
+
 @Service
 public class IamAppService extends BaseService<IamApp, IamAppMapper> {
 
@@ -36,12 +37,14 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
         return PageQuery.page(entity, mapper::getAppList);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApp create(IamApp entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApp update(IamApp entity) {
         duplicateCheck(entity);
         IamApp oldEntity = selectById(entity.getId());
@@ -54,10 +57,12 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
         return oldEntity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApp save(IamApp entity) {
         return entity.getId() == null ? create(entity) : update(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApp remove(IamApp entity) {
         IamApp oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
@@ -91,7 +96,7 @@ public class IamAppService extends BaseService<IamApp, IamAppMapper> {
         if (StringUtils.isBlank(entity.getAppCode())) {
             return;
         }
-        
+
         // 唯一条件不为空，请设置唯一条件
         IamApp param = new IamApp();
         // 唯一条件

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
@@ -50,6 +51,7 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
     /**
      * 绑定用户与角色（含有效期）
      */
+    @Transactional(rollbackFor = Exception.class)
     public IamUserRole bind(UserRoleBindReq req) {
         log.info("绑定用户角色, userCode={}, roleCode={}, startTime={}, endTime={}",
                 req.getUserCode(), req.getRoleCode(), req.getStartTime(), req.getEndTime());
@@ -79,6 +81,7 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
     /**
      * 解绑用户与角色
      */
+    @Transactional(rollbackFor = Exception.class)
     public IamUserRole unbind(Long id) {
         log.info("解绑用户角色, id={}", id);
         Assert.notNull(id, "请求错误！参数[id]不能为空");
@@ -108,6 +111,7 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
     /**
      * 批量绑定用户到角色
      */
+    @Transactional(rollbackFor = Exception.class)
     public void batchBind(RoleUserBindReq req) {
         log.info("批量绑定用户到角色, roleCode={}, userCodes={}", req.getRoleCode(), req.getUserCodes());
 
@@ -139,6 +143,7 @@ public class IamUserRoleService extends BaseService<IamUserRole, IamUserRoleMapp
     /**
      * 批量解绑
      */
+    @Transactional(rollbackFor = Exception.class)
     public void batchUnbind(List<Long> ids) {
         log.info("批量解绑用户角色, ids={}", ids);
         if (ids == null || ids.isEmpty()) {

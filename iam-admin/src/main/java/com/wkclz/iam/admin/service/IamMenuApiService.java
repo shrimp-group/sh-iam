@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.util.List;
@@ -49,6 +50,7 @@ public class IamMenuApiService extends BaseService<IamMenuApi, IamMenuApiMapper>
         return mapper.getBoundApis(menuCode);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamMenuApi create(IamMenuApi entity) {
         duplicateCheck(entity);
         mapper.insert(entity);
@@ -57,6 +59,7 @@ public class IamMenuApiService extends BaseService<IamMenuApi, IamMenuApiMapper>
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamMenuApi remove(IamMenuApi entity) {
         Assert.notNull(entity.getId(), "请求错误！参数[id]不能为空");
         IamMenuApi oldEntity = selectById(entity.getId());

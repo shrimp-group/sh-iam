@@ -452,14 +452,16 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
     }
 
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApi create(IamApi entity) {
         duplicateCheck(entity);
-        entity.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
+        entity.setApiCode(redisIdGenerator.generateBase32IdWithPrefix("api_"));
         mapper.insert(entity);
         publishAppChanged(entity.getAppCode());
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApi update(IamApi entity) {
         duplicateCheck(entity);
         IamApi oldEntity = selectById(entity.getId());
@@ -472,10 +474,12 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
         return oldEntity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApi save(IamApi entity) {
         return entity.getId() == null ? create(entity) : update(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamApi remove(IamApi entity) {
         IamApi oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
@@ -730,7 +734,7 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
             entity.setWriteFlag(item.getWriteFlag() == null ? 0 : item.getWriteFlag());
             entity.setSort(item.getSort() == null ? 99 : item.getSort());
             entity.setRemark(item.getRemark());
-            entity.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
+            entity.setApiCode(redisIdGenerator.generateBase32IdWithPrefix("api_"));
             inserts.add(entity);
         }
 

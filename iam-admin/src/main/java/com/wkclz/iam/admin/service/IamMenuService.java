@@ -353,6 +353,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamMenu create(IamMenu entity) {
         // 一级路由路径校验：必须以 / 开头
         validateRoutePath(entity);
@@ -366,13 +367,14 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
             }
         }
         duplicateCheck(entity);
-        entity.setMenuCode(redisIdGenerator.generateIdWithPrefix("menu_"));
+        entity.setMenuCode(redisIdGenerator.generateBase32IdWithPrefix("menu_"));
         mapper.insert(entity);
         log.info("菜单创建成功, menuCode={}, menuType={}", entity.getMenuCode(), entity.getMenuType());
         publishAppChanged(entity.getAppCode());
         return entity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamMenu update(IamMenu entity) {
         // 一级路由路径校验：必须以 / 开头
         validateRoutePath(entity);
@@ -387,10 +389,12 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         return oldEntity;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamMenu save(IamMenu entity) {
         return entity.getId() == null ? create(entity) : update(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public IamMenu remove(IamMenu entity) {
         IamMenu oldEntity = selectById(entity.getId());
         if (oldEntity == null) {

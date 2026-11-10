@@ -30,10 +30,18 @@ class AuthCacheManagerTest {
         List<AppAuthResource.ApiControlEntry> controls = List.of();
         String controlsAppCode = null;
 
+        /**
+         * 固定 loadTime（>=0 时生效），用于验证版本校验重载；-1 表示使用当前时间
+         */
+        volatile long fixedLoadTime = -1;
+
         @Override
         public AppAuthResource loadAppResource(String appCode) {
             appLoads.incrementAndGet();
             AppAuthResource resource = AppAuthResource.empty(appCode);
+            if (fixedLoadTime >= 0) {
+                resource.setLoadTime(fixedLoadTime);
+            }
             if (appCode.equals(controlsAppCode)) {
                 resource.getRequestControls().addAll(controls);
             }
@@ -162,6 +170,44 @@ class AuthCacheManagerTest {
         assertEquals(2, facade.appLoads.get());
         // 同 key 旧时间戳指令：忽略，缓存未再次失效
         manager.applyCommand(cmd(AuthChangeType.APP_STATIC, "appA", 100));
+        manager.getAppResource("appA");
+        assertEquals(2, facade.appLoads.get());
+    }
+
+    @Test
+    void sameTimestampCommandStillApplied() {
+        manager.getAppResource("appA");
+        manager.applyCommand(cmd(AuthChangeType.APP_STATIC, "appA", 200));
+        manager.getAppResource("appA");
+        assertEquals(2, facade.appLoads.get());
+        // 同毫秒指令不忽略（逐出幂等，去重仅降噪）：仍触发失效与重载
+        manager.applyCommand(cmd(AuthChangeType.APP_STATIC, "appA", 200));
+        manager.getAppResource("appA");
+        assertEquals(3, facade.appLoads.get());
+    }
+
+    @Test
+    void versionCheckForcesReloadWhenSnapshotStale() {
+        facade.fixedLoadTime = 50;
+        manager.getAppResource("appB");
+        assertEquals(1, facade.appLoads.get());
+        manager.applyCommand(cmd(AuthChangeType.APP_STATIC, "appB", 100));
+        // 快照 loadTime(50) 旧于指令时间戳(100)：版本校验触发强制重载
+        manager.getAppResource("appB");
+        assertEquals(3, facade.appLoads.get());
+        // 待校验版本已消费：后续读取命中缓存，不循环重载
+        manager.getAppResource("appB");
+        assertEquals(3, facade.appLoads.get());
+    }
+
+    @Test
+    void versionCheckSkipsWhenSnapshotFresh() {
+        manager.getAppResource("appA");
+        assertEquals(1, facade.appLoads.get());
+        manager.applyCommand(cmd(AuthChangeType.APP_STATIC, "appA", 100));
+        // 指令失效后重载快照 loadTime(当前时间) 新于指令时间戳：仅一次加载，无额外重载
+        manager.getAppResource("appA");
+        assertEquals(2, facade.appLoads.get());
         manager.getAppResource("appA");
         assertEquals(2, facade.appLoads.get());
     }

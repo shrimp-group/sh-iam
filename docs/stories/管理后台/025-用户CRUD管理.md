@@ -32,7 +32,7 @@
 ## 技术实现要点
 
 - Service 继承 `BaseService<IamUser, IamUserMapper>`
-- ID 生成：`RedisIdGenerator.generateIdWithPrefix("user_")`
+- ID 生成：`RedisIdGenerator.generateBase32IdWithPrefix("user_")`
 - 密码加密：`PasswordHelper.generatePasswordWithSalt()`
 - 逻辑删除：通过 BaseEntity 的 deleted 字段
 - 乐观锁：通过 version 字段

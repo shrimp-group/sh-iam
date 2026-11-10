@@ -61,12 +61,12 @@ public class RestfulScan implements ApplicationRunner {
         for (Map.Entry<String, RestInfo> entry : mappingMap.entrySet()) {
             String key = entry.getKey();
             RestInfo restInfo = entry.getValue();
-            
+
             if (iamApiMap.containsKey(key)) {
                 // API 已存在，检查是否需要更新
                 IamApi existingApi = iamApiMap.get(key);
                 boolean needUpdate = false;
-                
+
                 // 对比属性，检查是否需要更新
                 if (!Objects.equals(existingApi.getApiName(), restInfo.getDesc())) {
                     existingApi.setApiName(restInfo.getDesc());
@@ -76,7 +76,7 @@ public class RestfulScan implements ApplicationRunner {
                     existingApi.setModule(restInfo.getModule());
                     needUpdate = true;
                 }
-                
+
                 if (needUpdate) {
                     updates.add(existingApi);
                 }
@@ -108,7 +108,7 @@ public class RestfulScan implements ApplicationRunner {
             log.info("✅ 待插入 " + inserts.size() + " 个API");
             String values = inserts.stream().map(t -> "('" + t.getModule() + "','" + t.getAppCode() + "','" + t.getApiCode() + "','" + t.getApiMethod() + "','" + t.getApiUri() + "','" + t.getApiName() + "','" + t.getWriteFlag() + "')\r\n").toList().toString();
             for (IamApi insert : inserts) {
-                insert.setApiCode(redisIdGenerator.generateIdWithPrefix("api_"));
+                insert.setApiCode(redisIdGenerator.generateBase32IdWithPrefix("api_"));
                 if (apiScanInsert == 1) {
                     iamApiService.insert(insert);
                 }
@@ -119,14 +119,14 @@ public class RestfulScan implements ApplicationRunner {
                 log.info("待清单：\r\nDINSERT INTO iam_api (module,app_code,api_code,api_method,api_uri,api_name,write_flag) VALUES\r\n" + values);
             }
         }
-        
+
         if (!updates.isEmpty()) {
             for (IamApi update : updates) {
                 iamApiService.updateById(update);
             }
             log.info("✅ 更新了 " + updates.size() + " 个API");
         }
-        
+
         if (!deletes.isEmpty()) {
             log.info("✅ 待删除 " + deletes.size() + " 个API");
             for (IamApi delete : deletes) {

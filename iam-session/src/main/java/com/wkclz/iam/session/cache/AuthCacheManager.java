@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * <table border="1">
  *   <tr><th>层</th><th>类型</th><th>键</th><th>加载</th><th>失效</th></tr>
  *   <tr><td>L1</td><td>APP_STATIC</td><td>appCode</td><td>首次计算按需（facade.loadAppResource，一次加载一个应用全量）</td>
- *       <td>APP_STATIC 指令精确清理 + 容量 LRU；本地形态无 TTL，远程形态 expireAfterWrite TTL 硬界（跨 Redis 静态陈旧性兜底）</td></tr>
+ *       <td>APP_STATIC 指令精确清理（含版本校验重载，兜底 invalidate/加载竞态）+ 容量 LRU；本地形态无 TTL，远程形态 expireAfterWrite TTL 硬界（跨 Redis 静态陈旧性兜底）</td></tr>
  *   <tr><td>L2</td><td>USER_ROLE</td><td>userCode</td><td>首次触发该用户权限计算（facade.loadUserRoleCodes）</td>
  *       <td>USER 指令 / 会话终结（evictUser reason=SESSION_END）+ 空闲 TTL（expireAfterAccess）+ 容量 LRU</td></tr>
  *   <tr><td>L3</td><td>USER_COMPUTED</td><td>appCode→userCode→urlKey</td><td>首次判断该 URL 按需单点计算</td>
@@ -79,6 +79,13 @@ public class AuthCacheManager {
      */
     private final ConcurrentHashMap<String, Long> lastAppliedTs = new ConcurrentHashMap<>();
 
+    /**
+     * L1 待校验版本表：appCode → 最近 APP_STATIC 指令时间戳。
+     * 指令应用后记录，getAppResource 命中时校验快照 loadTime，旧于指令时间戳则强制重载——
+     * 兜底 Guava invalidate 与并发 get 加载竞态（加载中的旧快照可能在 invalidate 后被重新装入）。
+     */
+    private final ConcurrentHashMap<String, Long> pendingL1Reload = new ConcurrentHashMap<>();
+
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Autowired
@@ -122,18 +129,34 @@ public class AuthCacheManager {
     }
 
     /**
-     * 获取应用静态资源（L1，未命中经 facade 按需加载一次）。
+     * 获取应用静态资源（L1，未命中经 facade 按需加载一次；存在待校验版本时校验快照新旧并强制重载）。
+     *
+     * <p>版本校验为单次触发（命中即移除），防跨实例时钟偏移导致循环重载；
+     * 校验失败至强制重载完成之间的极小窗口内可能返回一次旧快照。</p>
      *
      * @param appCode 应用编码
      * @return 应用静态资源
      */
     public AppAuthResource getAppResource(String appCode) {
         try {
-            return staticCache.get(appCode, () -> {
-                AppAuthResource resource = facade.loadAppResource(appCode);
+            AppAuthResource resource = staticCache.get(appCode, () -> {
+                AppAuthResource loaded = facade.loadAppResource(appCode);
                 logState("APP_STATIC", appCode, "NOT_LOADED→LOADED", "ON_DEMAND");
-                return resource;
+                return loaded;
             });
+            Long pendingTs = pendingL1Reload.get(appCode);
+            if (pendingTs != null) {
+                pendingL1Reload.remove(appCode, pendingTs);
+                if (resource.getLoadTime() < pendingTs) {
+                    staticCache.invalidate(appCode);
+                    resource = staticCache.get(appCode, () -> {
+                        AppAuthResource loaded = facade.loadAppResource(appCode);
+                        logState("APP_STATIC", appCode, "STALE→RELOADED", "VERSION_CHECK");
+                        return loaded;
+                    });
+                }
+            }
+            return resource;
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             throw new RuntimeException("加载应用静态资源缓存失败: appCode=" + appCode + ", error=" + cause.getMessage(), cause);
@@ -191,7 +214,7 @@ public class AuthCacheManager {
         }
         String key = cmd.getType() + ":" + cmd.getTargetKey();
         Long last = lastAppliedTs.get(key);
-        if (last != null && cmd.getTimestamp() <= last) {
+        if (last != null && cmd.getTimestamp() < last) {
             log.info("[auth-cache] 指令忽略 IGNORED_STALE: key={}, cmdTs={}, lastTs={}", key, cmd.getTimestamp(), last);
             return;
         }
@@ -200,10 +223,13 @@ public class AuthCacheManager {
             case APP_STATIC -> {
                 staticCache.invalidate(cmd.getTargetKey());
                 computedCache.evictApp(cmd.getTargetKey());
+                // 版本校验记录：确保后续读取的快照不旧于本指令（兜底 invalidate 与并发加载竞态）
+                pendingL1Reload.put(cmd.getTargetKey(), cmd.getTimestamp());
                 logState("APP_STATIC", cmd.getTargetKey(), "LOADED→EVICTED", "CHANGE_CMD");
                 // 合并部署：打平资源受任何应用的资源变更影响，无法精确反推受影响键 → 联动全清（独立部署时 GLOBAL 不存在，幂等空操作）
                 staticCache.invalidate(GLOBAL_KEY);
                 computedCache.evictApp(GLOBAL_KEY);
+                pendingL1Reload.put(GLOBAL_KEY, cmd.getTimestamp());
             }
             case USER -> evictUser(cmd.getTargetKey(), "CHANGE_CMD");
         }
