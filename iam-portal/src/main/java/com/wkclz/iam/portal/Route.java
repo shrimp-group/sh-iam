@@ -38,6 +38,9 @@ public interface Route {
     String USER_LOGIN_RECORDS = "/user/login-records";
     String USER_OPERATE_RECORDS = "/user/operate-records";
 
+    // 用户选择
+    String USER_OPTIONS = "/user/options";
+
     // 门户模块
     String PORTAL_INDEX_DATA = "/portal/index-data";
     String PORTAL_NOTICES = "/portal/notices";

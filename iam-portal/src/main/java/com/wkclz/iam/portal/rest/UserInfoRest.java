@@ -1,13 +1,17 @@
 package com.wkclz.iam.portal.rest;
 
+import com.wkclz.core.base.PageData;
 import com.wkclz.core.base.R;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.core.identity.UserIdentity;
 import com.wkclz.iam.portal.Route;
 import com.wkclz.iam.portal.bean.req.ChangePasswordReq;
+import com.wkclz.iam.portal.bean.req.UserSelectReq;
+import com.wkclz.iam.portal.bean.resp.UserSelectResp;
 import com.wkclz.iam.portal.entity.VueRouterMenu;
 import com.wkclz.iam.portal.service.PasswordLoginService;
 import com.wkclz.iam.portal.service.SsoResourceService;
+import com.wkclz.iam.portal.service.SsoUserService;
 import com.wkclz.iam.session.bean.auth.AuthMenu;
 import com.wkclz.iam.session.service.AuthPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,9 +35,11 @@ import java.util.List;
 public class UserInfoRest {
 
     @Autowired
-    private PasswordLoginService passwordLoginService;
+    private SsoUserService ssoUserService;
     @Autowired
     private SsoResourceService ssoResourceService;
+    @Autowired
+    private PasswordLoginService passwordLoginService;
     @Autowired
     private AuthPermissionService authPermissionService;
 
@@ -78,6 +84,12 @@ public class UserInfoRest {
     public R<Void> changePassword(@Valid @RequestBody ChangePasswordReq changePasswordReq) {
         passwordLoginService.changePassword(changePasswordReq);
         return R.ok();
+    }
+
+    @GetMapping(Route.USER_OPTIONS)
+    @Operation(summary = "用户选择分页查询", description = "仅启用用户；用户名/姓名模糊、性别精确；按用户名升序")
+    public R<PageData<UserSelectResp>> userOptions(@Valid UserSelectReq req) {
+        return R.ok(ssoUserService.getUserSelectPage(req));
     }
 
 

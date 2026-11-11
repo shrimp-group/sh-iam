@@ -136,15 +136,16 @@ iam-session 通过 Spring Boot 3.x 自动配置机制注册：
 
 ### TokenService — JWT 令牌服务
 
-`com.wkclz.iam.session.service.TokenService`（`@Service`）。HS256 签名，claims 仅含 `sub(userCode) / username / nickname / iat / exp`。
+`com.wkclz.iam.session.service.TokenService`（`@Service`）。HS256 签名，claims 仅含
+`sub(userCode) / username / nickname / gender / iat / exp`（gender 为 null 时不写入）。
 
-| 方法                                                                | 返回值          | 说明                                                                         |
-|-------------------------------------------------------------------|--------------|----------------------------------------------------------------------------|
-| `generateToken(String userCode, String username, String nickname)` | `String`     | 生成 JWT，iat 偏移 -60s（容错时钟偏差），exp = now + ttl*1000                             |
-| `verifyToken(String token)`                                       | `TokenInfo`  | 校验签名与过期，失败抛 `IllegalArgumentException`（含中文错误原因）                            |
-| `refreshToken(String oldToken)`                                   | `String`     | 基于旧 Token 签发新 Token（新 iat/exp）                                              |
-| `parseClaimsBestEffort(String token)`                             | `TokenInfo` / `null` | 尽力解析：过期 Token 仍尝试从 `ExpiredJwtException.getClaims()` 提取身份；完全无法解析返回 null       |
-| `resolve(HttpServletRequest request)`（static）                     | `String` / `null` | 从请求头提取 Token：`Authorization: Bearer xxx` 或 `token` 头，未找到返回 null             |
+| 方法                                                                               | 返回值               | 说明                                                                                            |
+|------------------------------------------------------------------------------------|----------------------|-------------------------------------------------------------------------------------------------|
+| `generateToken(String userCode, String username, String nickname, Integer gender)` | `String`             | 生成 JWT，iat 偏移 -60s（容错时钟偏差），exp = now + ttl*1000                                   |
+| `verifyToken(String token)`                                                        | `TokenInfo`          | 校验签名与过期，失败抛 `IllegalArgumentException`（含中文错误原因）                             |
+| `refreshToken(String oldToken)`                                                    | `String`             | 基于旧 Token 签发新 Token（新 iat/exp）                                                         |
+| `parseClaimsBestEffort(String token)`                                              | `TokenInfo` / `null` | 尽力解析：过期 Token 仍尝试从 `ExpiredJwtException.getClaims()` 提取身份；完全无法解析返回 null |
+| `resolve(HttpServletRequest request)`（static）                                    | `String` / `null`    | 从请求头提取 Token：`Authorization: Bearer xxx` 或 `token` 头，未找到返回 null                  |
 
 > `parseClaimsBestEffort` 用于白名单接口或会话失效时，尽最大可能获取用户身份信息（如审计日志）。
 
@@ -201,13 +202,14 @@ iam-session 依赖 sh-core 提供的请求级身份上下文，这是接入项�
 
 `com.wkclz.core.identity.UserIdentity`（`@Data`，`implements Serializable`）。最精简的标识信息集，仅回答"当前请求是谁"。
 
-| 字段          | 类型                   | 说明                          |
-|-------------|----------------------|-----------------------------|
-| userCode    | String               | 用户唯一编码（如 `user_xxx`）         |
-| username    | String               | 用户名（登录名）                     |
-| nickname    | String               | 用户昵称（显示名）                    |
-| avatar      | String               | 头像地址                        |
-| attributes  | `Map<String,Object>` | 扩展属性（默认空 Map，如小程序 openid 等） |
+| 字段       | 类型                 | 说明                                       |
+|------------|----------------------|--------------------------------------------|
+| userCode   | String               | 用户唯一编码（如 `user_xxx`）              |
+| username   | String               | 用户名（登录名）                           |
+| nickname   | String               | 用户昵称（显示名）                         |
+| avatar     | String               | 头像地址                                   |
+| gender     | Integer              | 性别：0-未知，1-男，2-女                   |
+| attributes | `Map<String,Object>` | 扩展属性（默认空 Map，如小程序 openid 等） |
 
 便捷方法：`addAttribute(String key, Object value)` — 添加单个扩展属性。
 
