@@ -30,6 +30,9 @@ public class LoginResp implements Serializable {
     @Schema(description = "头像")
     private String avatar;
 
+    @Schema(description = "性别：0-未知，1-男，2-女")
+    private Integer gender;
+
     @Schema(description = "登录状态码 (0=成功)")
     private Integer loginStatus;
 

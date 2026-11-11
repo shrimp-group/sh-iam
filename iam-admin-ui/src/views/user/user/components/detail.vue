@@ -6,6 +6,9 @@
           <el-descriptions-item label="用户编码">{{ form?.userCode }}</el-descriptions-item>
           <el-descriptions-item label="用户名">{{ form?.username }}</el-descriptions-item>
           <el-descriptions-item label="姓名">{{ form?.nickname }}</el-descriptions-item>
+          <el-descriptions-item label="性别">
+            <dict-tag :options="GENDER" :value="form?.gender" />
+          </el-descriptions-item>
           <el-descriptions-item label="邮箱">{{ form?.email }}</el-descriptions-item>
           <el-descriptions-item label="手机号">{{ form?.phone }}</el-descriptions-item>
           <el-descriptions-item label="启用状态">
@@ -40,7 +43,7 @@ import UserMenuSource from "./user-menu-source";
 
 defineExpose({ init });
 const { proxy } = getCurrentInstance();
-const { BOOLEAN } = proxy.useDict("BOOLEAN");
+const { BOOLEAN, GENDER } = proxy.useDict("BOOLEAN", "GENDER");
 
 const open = ref(false);
 const activeTab = ref("basic");

@@ -131,6 +131,7 @@ public class SessionAuthFilter extends OncePerRequestFilter {
                 userIdentity.setUserCode(tokenInfo.getUserCode());
                 userIdentity.setUsername(tokenInfo.getUsername());
                 userIdentity.setNickname(tokenInfo.getNickname());
+                userIdentity.setGender(tokenInfo.getGender());
                 IdentityContext.set(userIdentity, token);
                 log.debug("Identity set from token claims (best-effort): userCode={}", tokenInfo.getUserCode());
             }

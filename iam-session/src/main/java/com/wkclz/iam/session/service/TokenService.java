@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * JWT 令牌生成、验证与刷新服务。
  *
- * <p>HS256 签名，claims 仅含 userCode / username / nickname / jti（最小信息集），
+ * <p>HS256 签名，claims 仅含 userCode / username / nickname / gender / jti（最小信息集），
  * TTL 可配置，默认 24h。</p>
  */
 @Service
@@ -48,16 +48,17 @@ public class TokenService {
 
     /**
      * 生成 Token。
-     * <p>claims 仅含 sub(userCode)、username、nickname、jti、iat、exp。
+     * <p>claims 仅含 sub(userCode)、username、nickname、gender、jti、iat、exp
      * jti 为随机数，保证同一秒内多次签发的 Token 各不相同，
      * 避免 sessionId = MD5(token) 碰撞导致会话覆盖。</p>
      */
-    public String generateToken(String userCode, String username, String nickname) {
+    public String generateToken(String userCode, String username, String nickname, Integer gender) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
             .subject(userCode)
             .claim("username", username)
             .claim("nickname", nickname)
+            .claim("gender", gender == null ? 0 : gender)
             .id(UUID.randomUUID().toString())
             .issuedAt(new Date(now - 60_000))
             .expiration(new Date(now + iamSessionConfig.getTtl() * 1000))
@@ -84,7 +85,7 @@ public class TokenService {
     /**
      * 验证 Token，解析出 TokenInfo。
      *
-     * @return TokenInfo（含 userCode/username/nickname）
+     * @return TokenInfo（含 userCode/username/nickname/gender）
      * @throws IllegalArgumentException 签名错误、过期、格式异常时抛出，message 含错误原因
      */
     public TokenInfo verifyToken(String token) {
@@ -93,6 +94,7 @@ public class TokenService {
         tokenInfo.setUserCode(claims.getSubject());
         tokenInfo.setUsername(claims.get("username", String.class));
         tokenInfo.setNickname(claims.get("nickname", String.class));
+        tokenInfo.setGender(claims.get("gender", Integer.class));
         tokenInfo.setIssuedAt(claims.getIssuedAt().getTime());
         tokenInfo.setExpireAt(claims.getExpiration().getTime());
         return tokenInfo;
@@ -106,7 +108,7 @@ public class TokenService {
      */
     public String refreshToken(String oldToken) {
         TokenInfo info = verifyToken(oldToken);
-        return generateToken(info.getUserCode(), info.getUsername(), info.getNickname());
+        return generateToken(info.getUserCode(), info.getUsername(), info.getNickname(), info.getGender());
     }
 
     /**
@@ -135,6 +137,7 @@ public class TokenService {
                     tokenInfo.setUserCode(claims.getSubject());
                     tokenInfo.setUsername(claims.get("username", String.class));
                     tokenInfo.setNickname(claims.get("nickname", String.class));
+                    tokenInfo.setGender(claims.get("gender", Integer.class));
                     tokenInfo.setIssuedAt(claims.getIssuedAt() != null ? claims.getIssuedAt().getTime() : null);
                     tokenInfo.setExpireAt(claims.getExpiration() != null ? claims.getExpiration().getTime() : null);
                     return tokenInfo;

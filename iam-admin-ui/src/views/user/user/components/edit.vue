@@ -36,6 +36,12 @@
             </el-radio-group>
             <form-tip html="是：正常使用；否：此用户不可再使用；"/>
           </el-form-item>
+          <el-form-item label="性别" prop="gender">
+            <el-radio-group v-model="form.gender">
+              <el-radio-button v-for="item in GENDER" :key="item.value" :label="item.label" :value="item.value" />
+            </el-radio-group>
+            <form-tip text="用户的性别，默认未知"/>
+          </el-form-item>
           <el-form-item label="密码" prop="password">
             <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
             <form-tip text="用户初始密码，长度8-20个字符"/>
@@ -79,6 +85,12 @@
             </el-radio-group>
             <form-tip html="是：正常使用；否：此用户不可再使用；"/>
           </el-form-item>
+          <el-form-item label="性别" prop="gender">
+            <el-radio-group v-model="form.gender">
+              <el-radio-button v-for="item in GENDER" :key="item.value" :label="item.label" :value="item.value" />
+            </el-radio-group>
+            <form-tip text="用户的性别，默认未知"/>
+          </el-form-item>
         </el-col>
       </el-row>
     </el-form>
@@ -98,7 +110,7 @@ import {userInfo, userCreate, userUpdate} from "@/api/user/user";
 defineExpose({init});
 const emit = defineEmits(["change"]);
 const { proxy } = getCurrentInstance();
-const { BOOLEAN } = proxy.useDict("BOOLEAN");
+const { BOOLEAN, GENDER } = proxy.useDict("BOOLEAN", "GENDER");
 const open = ref(false);
 const title = ref("");
 const form = ref({});
@@ -150,6 +162,7 @@ function init(row) {
     open.value = true;
     title.value = "添加";
     form.value.userStatus = 1;
+    form.value.gender = 0;
   } else {
     userInfo({id: row.id}).then(res => {
       form.value = res.data;

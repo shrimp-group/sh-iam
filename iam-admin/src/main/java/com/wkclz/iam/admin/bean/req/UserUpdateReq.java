@@ -31,6 +31,9 @@ public class UserUpdateReq extends UpdateReq {
     @Schema(description = "头像")
     private String avatar;
 
+    @Schema(description = "性别：0-未知，1-男，2-女")
+    private Integer gender;
+
     @Schema(description = "状态：1-启用，2-禁用，3-锁定")
     private Integer userStatus;
 

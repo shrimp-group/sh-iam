@@ -55,6 +55,12 @@ public class IamUser extends BaseEntity {
     private String avatar;
 
     /**
+     * 性别：0-未知，1-男，2-女
+     */
+    @Schema(description = "性别：0-未知，1-男，2-女")
+    private Integer gender;
+
+    /**
      * 状态：1-启用，2-禁用，3-锁定
      */
     @Schema(description = "状态：1-启用，2-禁用，3-锁定")
@@ -71,6 +77,7 @@ public class IamUser extends BaseEntity {
         target.setEmail(source.getEmail());
         target.setPhone(source.getPhone());
         target.setAvatar(source.getAvatar());
+        target.setGender(source.getGender());
         target.setUserStatus(source.getUserStatus());
         target.setSort(source.getSort());
         target.setCreateTime(source.getCreateTime());
@@ -92,6 +99,9 @@ public class IamUser extends BaseEntity {
         if (source.getEmail() != null) { target.setEmail(source.getEmail()); }
         if (source.getPhone() != null) { target.setPhone(source.getPhone()); }
         if (source.getAvatar() != null) { target.setAvatar(source.getAvatar()); }
+        if (source.getGender() != null) {
+            target.setGender(source.getGender());
+        }
         if (source.getUserStatus() != null) { target.setUserStatus(source.getUserStatus()); }
         if (source.getSort() != null) { target.setSort(source.getSort()); }
         if (source.getCreateTime() != null) { target.setCreateTime(source.getCreateTime()); }
