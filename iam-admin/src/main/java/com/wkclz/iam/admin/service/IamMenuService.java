@@ -355,6 +355,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamMenu create(IamMenu entity) {
+        log.info("创建菜单, entity={}", entity);
         // 一级路由路径校验：必须以 / 开头
         validateRoutePath(entity);
         // FIELDS 类型校验：parentCode 必须指向 MENU 类型
@@ -366,8 +367,10 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
                 throw ValidationException.of("FIELDS 类型菜单的父级必须是 MENU 类型");
             }
         }
+        if (StringUtils.isBlank(entity.getMenuCode())) {
+            entity.setMenuCode(redisIdGenerator.generateBase32IdWithPrefix("menu_"));
+        }
         duplicateCheck(entity);
-        entity.setMenuCode(redisIdGenerator.generateBase32IdWithPrefix("menu_"));
         mapper.insert(entity);
         log.info("菜单创建成功, menuCode={}, menuType={}", entity.getMenuCode(), entity.getMenuType());
         publishAppChanged(entity.getAppCode());
@@ -376,6 +379,7 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamMenu update(IamMenu entity) {
+        log.info("更新菜单, entity={}", entity);
         // 一级路由路径校验：必须以 / 开头
         validateRoutePath(entity);
         duplicateCheck(entity);
@@ -383,6 +387,8 @@ public class IamMenuService extends BaseService<IamMenu, IamMenuMapper> {
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 编码不可维护
+        entity.setMenuCode(null);
         IamMenu.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
         publishAppChanged(oldEntity.getAppCode());

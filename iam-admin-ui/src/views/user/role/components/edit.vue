@@ -34,6 +34,10 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <el-form-item label="角色编码" prop="roleCode">
+        <el-input v-model="form.roleCode" placeholder="不填自动生成" :disabled="!!form.id" />
+        <form-tip text="角色编码，创建时可指定，不填自动生成；创建后不可修改"/>
+      </el-form-item>
       <el-form-item label="角色名称" prop="roleName">
         <el-input v-model="form.roleName" placeholder="请输入角色名称" />
       </el-form-item>
@@ -71,6 +75,9 @@ const rules = ref({
   ],
   parentCode: [
     { required: true, message: "父角色不能为空", trigger: "blur" }
+  ],
+  roleCode: [
+    { max: 50, message: "角色编码长度不能超过 50 个字符", trigger: "blur" }
   ],
   roleName: [
     { required: true, message: "角色名称不能为空", trigger: "blur" },

@@ -6,6 +6,10 @@
         <el-form ref="editRef" :model="form" :rules="rules" label-width="80px">
           <el-row :gutter="20">
             <el-col :span="12">
+              <el-form-item label="接口编码" prop="apiCode">
+                <el-input v-model="form.apiCode" placeholder="不填自动生成" :disabled="!!form.id" />
+                <form-tip text="接口编码，创建时可指定，不填自动生成；创建后不可修改"/>
+              </el-form-item>
               <el-form-item label="模块" prop="module">
                 <el-input v-model="form.module" placeholder="请输入模块" />
                 <form-tip text="API所属的模块，用于分类管理"/>
@@ -152,7 +156,6 @@ const rules = ref({
     { min: 2, max: 20, message: "应用编码长度应在 2-20 个字符之间", trigger: "blur" }
   ],
   apiCode: [
-    { required: true, message: "路由映射编码不能为空", trigger: "blur" },
     { min: 2, max: 50, message: "路由映射编码长度应在 2-50 个字符之间", trigger: "blur" }
   ],
   apiMethod: [

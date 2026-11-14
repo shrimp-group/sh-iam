@@ -27,6 +27,10 @@
               </el-form-item>
             </el-col>
           </el-row>
+          <el-form-item label="菜单编码" prop="menuCode">
+            <el-input v-model="form.menuCode" placeholder="不填自动生成" :disabled="!!form.id" />
+            <form-tip text="菜单编码，创建时可指定，不填自动生成；创建后不可修改"/>
+          </el-form-item>
           <el-form-item label="排序" prop="sort">
             <el-input-number v-model="form.sort" placeholder="请输入排序" />
             <form-tip text="数值越小越靠前"/>
@@ -163,6 +167,9 @@ const rules = ref({
   ],
   menuType: [
     { required: true, message: "菜单类型不能为空", trigger: "blur" },
+  ],
+  menuCode: [
+    { max: 50, message: "菜单编码长度不能超过 50 个字符", trigger: "blur" }
   ],
   buttonCode: [
     { required: true, message: "按钮编码不能为空", trigger: "blur" },

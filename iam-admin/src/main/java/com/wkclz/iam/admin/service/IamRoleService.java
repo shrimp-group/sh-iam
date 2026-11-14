@@ -82,8 +82,11 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamRole create(IamRole entity) {
+        log.info("创建角色, entity={}", entity);
+        if (StringUtils.isBlank(entity.getRoleCode())) {
+            entity.setRoleCode(redisIdGenerator.generateBase32IdWithPrefix("role_"));
+        }
         duplicateCheck(entity);
-        entity.setRoleCode(redisIdGenerator.generateBase32IdWithPrefix("role_"));
         mapper.insert(entity);
         publishAppChanged(entity.getAppCode());
         return entity;
@@ -91,11 +94,14 @@ public class IamRoleService extends BaseService<IamRole, IamRoleMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamRole update(IamRole entity) {
+        log.info("更新角色, entity={}", entity);
         duplicateCheck(entity);
         IamRole oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 编码不可维护
+        entity.setRoleCode(null);
         IamRole.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
         publishAppChanged(oldEntity.getAppCode());

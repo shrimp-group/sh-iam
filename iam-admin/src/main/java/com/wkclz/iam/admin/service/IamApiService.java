@@ -454,8 +454,11 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamApi create(IamApi entity) {
+        log.info("创建API, entity={}", entity);
+        if (StringUtils.isBlank(entity.getApiCode())) {
+            entity.setApiCode(redisIdGenerator.generateBase32IdWithPrefix("api_"));
+        }
         duplicateCheck(entity);
-        entity.setApiCode(redisIdGenerator.generateBase32IdWithPrefix("api_"));
         mapper.insert(entity);
         publishAppChanged(entity.getAppCode());
         return entity;
@@ -463,11 +466,14 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamApi update(IamApi entity) {
+        log.info("更新API, entity={}", entity);
         duplicateCheck(entity);
         IamApi oldEntity = selectById(entity.getId());
         if (oldEntity == null) {
             throw ValidationException.of(ResultCode.RECORD_NOT_EXIST);
         }
+        // 编码不可维护
+        entity.setApiCode(null);
         IamApi.copyIfNotNull(entity, oldEntity);
         updateByIdSelective(oldEntity);
         publishAppChanged(oldEntity.getAppCode());
@@ -877,6 +883,17 @@ public class IamApiService extends BaseService<IamApi, IamApiMapper> {
     }
 
     private void duplicateCheck(IamApi entity) {
+        // 唯一条件：apiCode（人工指定时校验，自动生成编码由生成器保证唯一）
+        if (StringUtils.isNotBlank(entity.getApiCode())) {
+            IamApi codeParam = new IamApi();
+            codeParam.setApiCode(entity.getApiCode());
+            codeParam = selectOneByEntity(codeParam);
+            if (codeParam != null && !codeParam.getId().equals(entity.getId())) {
+                // 查到有值，为新增或 id 不一样场景，为数据重复
+                throw UserException.of(ResultCode.RECORD_DUPLICATE);
+            }
+        }
+
         // 唯一条件为空，直接通过
         if (StringUtils.isBlank(entity.getApiUri()) || StringUtils.isBlank(entity.getApiMethod())) {
             return;
