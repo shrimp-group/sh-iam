@@ -82,6 +82,7 @@ public class DefaultCredentialChecker implements CredentialChecker {
         userIdentity.setUsername(dto.getUsername());
         userIdentity.setNickname(dto.getNickname());
         userIdentity.setAvatar(dto.getAvatar());
+        userIdentity.setGender(dto.getGender());
 
         // 7. 密码过期检查
         LocalDateTime lastChangedTime = dto.getLastChangedTime();

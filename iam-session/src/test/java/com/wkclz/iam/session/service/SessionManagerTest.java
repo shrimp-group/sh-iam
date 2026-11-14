@@ -146,7 +146,7 @@ class SessionManagerTest {
             // 设置 threshold < redisTtl，触发快速路径判断
             config.setRenewalThreshold(1800L);
             UserIdentity user = createUser("user_fast", "fastpath", "快速路径");
-            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname(), user.getGender());
 
             String sessionId = Md5Tool.md5(token);
             Session stored = buildSession(sessionId, "user_fast", System.currentTimeMillis() + REDIS_TTL * 1000, System.currentTimeMillis());
@@ -168,7 +168,7 @@ class SessionManagerTest {
         @DisplayName("Session 不存在时返回 null")
         void shouldReturnNullWhenSessionNotFound() {
             UserIdentity user = createUser("user_001", "admin", "管理员");
-            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname(), user.getGender());
 
             when(sessionStore.get(anyString())).thenReturn(null);
 
@@ -181,7 +181,7 @@ class SessionManagerTest {
         @DisplayName("Redis 已过期时返回 null + 发布过期事件 + 删除 Session")
         void shouldReturnNullWhenRedisExpired() {
             UserIdentity user = createUser("user_002", "user2", "用户2");
-            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname(), user.getGender());
 
             long now = System.currentTimeMillis();
             Session expired = buildSession(Md5Tool.md5(token), "user_002", now - 1000, now - 3600_000);
@@ -199,7 +199,7 @@ class SessionManagerTest {
         @DisplayName("剩余 TTL < 阈值时触发续期")
         void shouldRenewWhenBelowThreshold() {
             UserIdentity user = createUser("user_003", "user3", "用户3");
-            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname(), user.getGender());
 
             long now = System.currentTimeMillis();
             // Redis 剩余 10 分钟（< 1h 阈值）
@@ -223,7 +223,7 @@ class SessionManagerTest {
         @DisplayName("距上次续期 < interval 时不重复续期")
         void shouldNotRenewWithinInterval() {
             UserIdentity user = createUser("user_004", "user4", "用户4");
-            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname(), user.getGender());
 
             long now = System.currentTimeMillis();
             // Redis 剩余 10 分钟（< 1h 阈值）
@@ -244,7 +244,7 @@ class SessionManagerTest {
         @DisplayName("有效 Session 正常返回")
         void shouldReturnValidSession() {
             UserIdentity user = createUser("user_005", "user5", "用户5");
-            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname());
+            String token = tokenService.generateToken(user.getUserCode(), user.getUsername(), user.getNickname(), user.getGender());
 
             long now = System.currentTimeMillis();
             // Redis 剩余 2 小时（> 1h 阈值，不触发续期）

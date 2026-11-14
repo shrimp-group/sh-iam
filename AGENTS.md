@@ -52,45 +52,45 @@ iam-portal-starter → iam-portal → iam-session → sh-core
 
 ### iam-session (`com.wkclz.iam.session`) — 会话管理层（新增）
 
-| 包          | 类                                | 说明                                                                                                                        |
-|-------------|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| `bean`      | `Session`                         | 会话领域模型（8 字段，不含 clientIp/userAgent）                                                                             |
-| `bean`      | `SessionCreateResult`             | 会话创建结果（token + session）                                                                                             |
-| `bean`      | `TokenInfo`                       | Token 解析结果（userCode/username/nickname）                                                                                |
-| `bean`      | `RequestRecordData`               | 请求日志数据载体（RequestRecordFilter 与 SPI 之间传递）                                                                     |
-| `bean`      | `ApiRequestControl`               | API 请求控制配置模型（enable/mutex/rateLimit，含 parse 静态方法，管理端 Req/Resp 共用）                                     |
-| `bean.auth` | `AppAuthResource`                 | 应用静态资源快照（roleCodes/menuMap/roleMenuMap/apiMap/menuApiMap/requestControls/apiFields，按键索引）                     |
-| `bean.auth` | `AuthMenu/AuthApi/AuthApiField`   | 权限资源 lite 模型（AuthMenu 含 children 组树字段）                                                                         |
-| `bean.auth` | `PermissionChangeCommand`         | 权限变更指令（type/targetKey/timestamp，时间戳去重）                                                                        |
-| `enums`     | `AuthType`                        | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）                                                                   |
-| `enums`     | `DestroyReason`                   | 会话销毁原因枚举（6 个值）                                                                                                  |
-| `enums`     | `AuthResourceType/AuthChangeType` | 权限缓存资源类型 / 权限变更类型（APP_STATIC/USER）                                                                          |
-| `service`   | `SessionManager`                  | 会话管理器（@Component，createSession + Lua 并发控制）                                                                      |
-| `service`   | `SessionStore`                    | 会话持久化（@Component，Redis Hash+ZSet）                                                                                   |
-| `service`   | `TokenService`                    | JWT 令牌服务（@Service，HS256 签名，含 parseClaimsBestEffort 过期 token 尽力解析）                                          |
-| `service`   | `RequestControlResolver`          | API 请求控制配置解析（enable 校验 + 默认值回落，@Component）                                                                |
-| `service`   | `SlidingWindowRateLimiter`        | Redis ZSet 滑动窗口限流（Lua 原子操作，fail-open）                                                                          |
-| `service`   | `AuthPermissionService`           | 权限计算服务（低频菜单树计算 + 高频按 URL 接口权限判断 L3 缓存 + isManagedApi，fail-open）                                  |
-| `cache`     | `AuthCacheManager`                | 权限缓存管理器（L1 应用静态 + L2 用户角色 + 指令时间戳去重 + matchRequestControl，状态映射表见类文档）                      |
-| `cache`     | `AuthComputedCache`               | L3 按 URL 计算结果缓存（三层嵌套 Cache，URL 级 TTL + 用户级 idle，true/false 均缓存）                                       |
-| `event`     | `PermissionChangeEvent`           | 权限变更领域事件（appChanged/userChanged 静态工厂）                                                                         |
-| `event`     | `PermissionChangePublisher`       | 事件发布器（@TransactionalEventListener AFTER_COMMIT，Redis Pub/Sub + 变更日志 Hash 双写）                                  |
-| `event`     | `PermissionChangeSubscriber`      | 订阅器（MessageListener，@PostConstruct 订阅 / @PreDestroy 移除，委托 applyCommand 去重清理）                               |
-| `event`     | `AuthCacheSessionCleaner`         | 会话终结钩子（SessionEvent 监听，剩余会话为 0 时 evictUser(SESSION_END)）                                                   |
-| `filter`    | `SessionAuthFilter`               | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断（含 DB 白名单 write_flag=1 免登录放行），不做 clear）                               |
-| `filter`    | `RequestRecordFilter`             | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）                                   |
+| 包          | 类                                | 说明                                                                                                                                                                        |
+|-------------|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bean`      | `Session`                         | 会话领域模型（8 字段，不含 clientIp/userAgent）                                                                                                                             |
+| `bean`      | `SessionCreateResult`             | 会话创建结果（token + session）                                                                                                                                             |
+| `bean`      | `TokenInfo`                       | Token 解析结果（userCode/username/nickname/gender）                                                                                                                         |
+| `bean`      | `RequestRecordData`               | 请求日志数据载体（RequestRecordFilter 与 SPI 之间传递）                                                                                                                     |
+| `bean`      | `ApiRequestControl`               | API 请求控制配置模型（enable/mutex/rateLimit，含 parse 静态方法，管理端 Req/Resp 共用）                                                                                     |
+| `bean.auth` | `AppAuthResource`                 | 应用静态资源快照（roleCodes/menuMap/roleMenuMap/apiMap/menuApiMap/requestControls/apiFields，按键索引）                                                                     |
+| `bean.auth` | `AuthMenu/AuthApi/AuthApiField`   | 权限资源 lite 模型（AuthMenu 含 children 组树字段）                                                                                                                         |
+| `bean.auth` | `PermissionChangeCommand`         | 权限变更指令（type/targetKey/timestamp，时间戳去重）                                                                                                                        |
+| `enums`     | `AuthType`                        | 认证方式枚举（PASSWORD/WECHAT_MINI/WECHAT_MP/LDAP/OAUTH）                                                                                                                   |
+| `enums`     | `DestroyReason`                   | 会话销毁原因枚举（6 个值）                                                                                                                                                  |
+| `enums`     | `AuthResourceType/AuthChangeType` | 权限缓存资源类型 / 权限变更类型（APP_STATIC/USER）                                                                                                                          |
+| `service`   | `SessionManager`                  | 会话管理器（@Component，createSession + Lua 并发控制）                                                                                                                      |
+| `service`   | `SessionStore`                    | 会话持久化（@Component，Redis Hash+ZSet）                                                                                                                                   |
+| `service`   | `TokenService`                    | JWT 令牌服务（@Service，HS256 签名，含 parseClaimsBestEffort 过期 token 尽力解析）                                                                                          |
+| `service`   | `RequestControlResolver`          | API 请求控制配置解析（enable 校验 + 默认值回落，@Component）                                                                                                                |
+| `service`   | `SlidingWindowRateLimiter`        | Redis ZSet 滑动窗口限流（Lua 原子操作，fail-open）                                                                                                                          |
+| `service`   | `AuthPermissionService`           | 权限计算服务（低频菜单树计算 + 高频按 URL 接口权限判断 L3 缓存 + isManagedApi，fail-open）                                                                                  |
+| `cache`     | `AuthCacheManager`                | 权限缓存管理器（L1 应用静态 + L2 用户角色 + 指令时间戳去重 + matchRequestControl，状态映射表见类文档）                                                                      |
+| `cache`     | `AuthComputedCache`               | L3 按 URL 计算结果缓存（三层嵌套 Cache，URL 级 TTL + 用户级 idle，true/false 均缓存）                                                                                       |
+| `event`     | `PermissionChangeEvent`           | 权限变更领域事件（appChanged/userChanged 静态工厂）                                                                                                                         |
+| `event`     | `PermissionChangePublisher`       | 事件发布器（@TransactionalEventListener AFTER_COMMIT，Redis Pub/Sub + 变更日志 Hash 双写）                                                                                  |
+| `event`     | `PermissionChangeSubscriber`      | 订阅器（MessageListener，@PostConstruct 订阅 / @PreDestroy 移除，委托 applyCommand 去重清理）                                                                               |
+| `event`     | `AuthCacheSessionCleaner`         | 会话终结钩子（SessionEvent 监听，剩余会话为 0 时 evictUser(SESSION_END)）                                                                                                   |
+| `filter`    | `SessionAuthFilter`               | 会话认证过滤器（无条件设置 appCode/tenantCode → best-effort 身份提取 → 准入判断（含 DB 白名单 write_flag=1 免登录放行），不做 clear）                                       |
+| `filter`    | `RequestRecordFilter`             | 请求日志采集过滤器（请求/响应信息采集 → 脱敏 → IdentityContext.clear() → SPI 异步持久化）                                                                                   |
 | `filter`    | `AuthPermissionFilter`            | 接口权限判断过滤器（@Order -3：本地白名单 ∪ DB 白名单（iam_api.write_flag=1）/无身份放行，ownerKey 分流=独立部署 app-code / 合并部署 __GLOBAL__，全量纳管校验，无权限 403） |
-| `filter`    | `TokenResolver`                   | Token 提取 SPI（Authorization: Bearer → token）                                                                             |
-| `filter`    | `WhiteListMatcher`                | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;；会话白名单；接口白名单见 AuthPermissionService.isApiWhiteListed，来源 iam_api.write_flag）                                                                    |
-| `filter`    | `RequestControlFilter`            | 请求控制过滤器（配置来源 = AuthCacheManager.matchRequestControl，用户级互斥 RedisLock + 滑动窗口限流，拒绝 429）            |
-| `spi`       | `RequestRecordHandler`            | 请求日志持久化 SPI（iam-portal 提供实现）                                                                                   |
-| `spi`       | `NoOpRequestRecordHandler`        | RequestRecordHandler 空实现（默认，静默跳过）                                                                               |
-| `spi`       | `AuthResourceFacade`              | 权限资源供给 SPI（loadAppResource + loadUserRoleCodes，iam-portal 提供 @Primary 实现）                                      |
-| `spi`       | `NoOpAuthResourceFacade`          | AuthResourceFacade 空实现（始终注册兜底，返回空资源）                                                                       |
-| `remote`    | `RemoteAuthResourceFacade`        | AuthResourceFacade 远程实现（@ConditionalOnProperty server-url + @Primary，auth-token 头 + hutool GET + R 解包，fail-fast） |
-| `remote`    | `AuthChangePoller`                | 权限变更轮询器（跨 Redis 主通道，@ConditionalOnProperty server-url + poll-interval-seconds>0，自持单线程调度，异常吞并）    |
-| `config`    | `IamSessionConfig`                | iam-session 全局配置（secret-key / ttl / maxConcurrent / 请求控制默认值 / iam.auth.* 9 项）                                 |
-| 根包        | `IamSessionAutoConfig`            | 自动配置（@AutoConfiguration + @ComponentScan）                                                                             |
+| `filter`    | `TokenResolver`                   | Token 提取 SPI（Authorization: Bearer → token）                                                                                                                             |
+| `filter`    | `WhiteListMatcher`                | 白名单路径匹配 SPI（默认 /&#42;&#42;/public/&#42;&#42;；会话白名单；接口白名单见 AuthPermissionService.isApiWhiteListed，来源 iam_api.write_flag）                          |
+| `filter`    | `RequestControlFilter`            | 请求控制过滤器（配置来源 = AuthCacheManager.matchRequestControl，用户级互斥 RedisLock + 滑动窗口限流，拒绝 429）                                                            |
+| `spi`       | `RequestRecordHandler`            | 请求日志持久化 SPI（iam-portal 提供实现）                                                                                                                                   |
+| `spi`       | `NoOpRequestRecordHandler`        | RequestRecordHandler 空实现（默认，静默跳过）                                                                                                                               |
+| `spi`       | `AuthResourceFacade`              | 权限资源供给 SPI（loadAppResource + loadUserRoleCodes，iam-portal 提供 @Primary 实现）                                                                                      |
+| `spi`       | `NoOpAuthResourceFacade`          | AuthResourceFacade 空实现（始终注册兜底，返回空资源）                                                                                                                       |
+| `remote`    | `RemoteAuthResourceFacade`        | AuthResourceFacade 远程实现（@ConditionalOnProperty server-url + @Primary，auth-token 头 + hutool GET + R 解包，fail-fast）                                                 |
+| `remote`    | `AuthChangePoller`                | 权限变更轮询器（跨 Redis 主通道，@ConditionalOnProperty server-url + poll-interval-seconds>0，自持单线程调度，异常吞并）                                                    |
+| `config`    | `IamSessionConfig`                | iam-session 全局配置（secret-key / ttl / maxConcurrent / 请求控制默认值 / iam.auth.* 9 项）                                                                                 |
+| 根包        | `IamSessionAutoConfig`            | 自动配置（@AutoConfiguration + @ComponentScan）                                                                                                                             |
 
 > 依赖 sh-core（UserIdentity）、sh-redis（StringRedisTemplate）、sh-web。不依赖 iam-common，请求控制模型自持。认证方式无关，仅管理会话生命周期与请求控制。
 >

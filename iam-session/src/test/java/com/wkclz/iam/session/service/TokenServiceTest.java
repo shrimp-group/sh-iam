@@ -31,14 +31,15 @@ class TokenServiceTest {
     class AcceptanceCriteria {
 
         @Test
-        @DisplayName("生成 Token 的 claims 仅含 userCode/username/nickname/iat/exp，不含权限信息")
+        @DisplayName("生成 Token 的 claims 仅含 userCode/username/nickname/gender/iat/exp，不含权限信息")
         void claimsShouldBeMinimal() {
-            String token = tokenService.generateToken("user_001", "admin", "管理员");
+            String token = tokenService.generateToken("user_001", "admin", "管理员", 1);
             TokenInfo info = tokenService.verifyToken(token);
 
             assertEquals("user_001", info.getUserCode());
             assertEquals("admin", info.getUsername());
             assertEquals("管理员", info.getNickname());
+            assertEquals(1, info.getGender());
         }
 
         @Test
@@ -51,7 +52,7 @@ class TokenServiceTest {
                 setTtl(1L); // 1 秒过期
             }});
 
-            String token = shortService.generateToken("u1", "u", "n");
+            String token = shortService.generateToken("u1", "u", "n", null);
             Thread.sleep(1500); // 等待过期
 
             assertThrows(IllegalArgumentException.class,
@@ -62,7 +63,7 @@ class TokenServiceTest {
         @Test
         @DisplayName("被篡改的 Token 验证失败")
         void tamperedTokenShouldFail() {
-            String token = tokenService.generateToken("user_001", "admin", "管理员");
+            String token = tokenService.generateToken("user_001", "admin", "管理员", null);
             String tampered = token + "x";
 
             assertThrows(IllegalArgumentException.class,
@@ -78,7 +79,7 @@ class TokenServiceTest {
         @Test
         @DisplayName("生成 Token 不为空")
         void shouldGenerateNonEmptyToken() {
-            String token = tokenService.generateToken("u1", "test", "测试");
+            String token = tokenService.generateToken("u1", "test", "测试", null);
             assertNotNull(token);
             assertFalse(token.isEmpty());
             assertEquals(3, token.split("\\.").length);
@@ -92,7 +93,7 @@ class TokenServiceTest {
         @Test
         @DisplayName("正确 Token 可解析出 userCode/username/nickname")
         void shouldVerifyValidToken() {
-            String token = tokenService.generateToken("user_abc", "zhangsan", "张三");
+            String token = tokenService.generateToken("user_abc", "zhangsan", "张三", null);
             TokenInfo info = tokenService.verifyToken(token);
 
             assertEquals("user_abc", info.getUserCode());
@@ -115,7 +116,7 @@ class TokenServiceTest {
         @Test
         @DisplayName("刷新产生新 Token，解析出原始信息")
         void shouldRefreshToken() {
-            String oldToken = tokenService.generateToken("u1", "test", "测试");
+            String oldToken = tokenService.generateToken("u1", "test", "测试", null);
             String newToken = tokenService.refreshToken(oldToken);
 
             assertNotNull(newToken);
@@ -125,6 +126,32 @@ class TokenServiceTest {
             assertEquals("u1", refreshedInfo.getUserCode());
             assertEquals("test", refreshedInfo.getUsername());
             assertEquals("测试", refreshedInfo.getNickname());
+        }
+    }
+
+    @Nested
+    @DisplayName("性别")
+    class Gender {
+
+        @Test
+        @DisplayName("gender 写入 claim 后 verifyToken 可解析出相同值，刷新后透传")
+        void genderShouldRoundTripAndRefresh() {
+            String token = tokenService.generateToken("u1", "test", "测试", 2);
+            TokenInfo info = tokenService.verifyToken(token);
+            assertEquals(2, info.getGender());
+
+            String newToken = tokenService.refreshToken(token);
+            assertEquals(2, tokenService.verifyToken(newToken).getGender());
+        }
+
+        @Test
+        @DisplayName("gender 为 null 时签发/解析不报错，解析结果为 null")
+        void nullGenderShouldNotFail() {
+            String token = tokenService.generateToken("u1", "test", "测试", null);
+            TokenInfo info = tokenService.verifyToken(token);
+
+            assertNotNull(token);
+            assertNull(info.getGender());
         }
     }
 
@@ -142,7 +169,7 @@ class TokenServiceTest {
             }});
 
             assertThrows(IllegalArgumentException.class,
-                () -> service.generateToken("u1", "u", "n"));
+                () -> service.generateToken("u1", "u", "n", null));
         }
 
         @Test
@@ -155,7 +182,7 @@ class TokenServiceTest {
             }});
 
             assertThrows(IllegalArgumentException.class,
-                () -> service.generateToken("u1", "u", "n"));
+                () -> service.generateToken("u1", "u", "n", null));
         }
     }
 

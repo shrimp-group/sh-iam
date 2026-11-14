@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wkclz.iam.portal.mapper.SsoUserMapper">
+
+    <!-- 用户选择分页查询，仅启用用户，用户名/姓名模糊、性别精确，按用户名升序 -->
+    <select id="getUserSelectPage" parameterType="com.wkclz.iam.portal.bean.req.UserSelectReq"
+            resultType="com.wkclz.iam.portal.bean.resp.UserSelectResp">
+        SELECT
+        username,
+        nickname,
+        gender
+        FROM
+        iam_user
+        WHERE
+        deleted = 0
+        AND user_status = 1
+        <if test="username != null and username != ''">AND username LIKE CONCAT('%', #{username}, '%')</if>
+        <if test="nickname != null and nickname != ''">AND nickname LIKE CONCAT('%', #{nickname}, '%')</if>
+        <if test="gender != null">AND gender = #{gender}</if>
+        ORDER BY
+        username ASC
+    </select>
+
+</mapper>

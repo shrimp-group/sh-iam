@@ -12,6 +12,7 @@
             email,
             phone,
             avatar,
+        gender,
             user_status,
             create_time,
             create_by,
@@ -28,6 +29,7 @@
             <if test="nickname != null">AND nickname LIKE CONCAT('%', #{nickname}, '%')</if>
             <if test="email != null">AND email LIKE CONCAT('%', #{email}, '%')</if>
             <if test="phone != null">AND phone LIKE CONCAT('%', #{phone}, '%')</if>
+        <if test="gender != null">AND gender = #{gender}</if>
             <if test="userStatus != null">AND user_status = #{userStatus}</if>
         ORDER BY
             id DESC

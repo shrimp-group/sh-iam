@@ -22,6 +22,7 @@ public class IamUserAuthDto extends IamUserAuth {
     private String nickname;
     private String phone;
     private String avatar;
+    private Integer gender;
     private String password;
     private String salt;
     private Integer userStatus;

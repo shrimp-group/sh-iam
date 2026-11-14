@@ -142,6 +142,7 @@ public class PasswordLoginService {
         resp.setUsername(userIdentity.getUsername());
         resp.setNickname(userIdentity.getNickname());
         resp.setAvatar(userIdentity.getAvatar());
+        resp.setGender(userIdentity.getGender());
         return resp;
     }
 

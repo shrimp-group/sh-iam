@@ -72,7 +72,7 @@ public class SessionManager {
      */
     public SessionCreateResult createSession(UserIdentity userIdentity, AuthType authType) {
         // 1. 生成 Token
-        String token = tokenService.generateToken(userIdentity.getUserCode(), userIdentity.getUsername(), userIdentity.getNickname());
+        String token = tokenService.generateToken(userIdentity.getUserCode(), userIdentity.getUsername(), userIdentity.getNickname(), userIdentity.getGender());
 
         // 2. sessionId = MD5(token)
         String sessionId = Md5Tool.md5(token);

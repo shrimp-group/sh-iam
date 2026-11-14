@@ -13,6 +13,7 @@
             u.nickname,
             u.phone,
             u.avatar,
+        u.gender,
             u.user_status,
             uap.password,
             uap.salt,

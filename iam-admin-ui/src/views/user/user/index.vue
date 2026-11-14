@@ -36,6 +36,9 @@
       <el-table-column label="用户编码" prop="userCode" min-width="120"/>
       <el-table-column label="用户名" prop="username" min-width="120"/>
       <el-table-column label="姓名" prop="nickname" min-width="120"/>
+      <el-table-column label="性别" prop="gender" width="70">
+        <template #default="{row}"><dict-tag :options="GENDER" :value="row.gender" /></template>
+      </el-table-column>
       <el-table-column label="邮箱" prop="email" min-width="120"/>
       <el-table-column label="手机号" prop="phone" min-width="120"/>
       <el-table-column label="启用状态" prop="userStatus" width="130">
@@ -83,7 +86,7 @@ import Detail from "./components/detail"
 import ResetPassword from "./components/reset-password"
 
 const { proxy } = getCurrentInstance();
-const { BOOLEAN } = proxy.useDict("BOOLEAN");
+const { BOOLEAN, GENDER } = proxy.useDict("BOOLEAN", "GENDER");
 const dataList = ref([]);
 const loading = ref(false);
 const total = ref(0);
