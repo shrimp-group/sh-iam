@@ -10,11 +10,6 @@ export default defineConfig(({command}) => {
     // dev 固定 '/'（dev 不支持相对 base）；build 相对化：hash 路由下文档路径恒定，产物可部署任意子目录（前缀转发形态前提，对齐 portal-demo）
     base: command === 'build' ? './' : '/',
     plugins: [...createUiCorePreset({isBuild: command === 'build'})],
-    // ui-core dist 中 Logo.vue 的 import "/favicon.svg" 为 public 资产语义（由消费方 public 目录提供），
-    // 预构建 esbuild 无法按根路径解析，保持 external 后由 dev 静态服务命中
-    optimizeDeps: {
-      esbuildOptions: {external: ['/favicon.svg']}
-    },
     resolve: {
       alias: {
         // 业务视图相对引用保持现状
