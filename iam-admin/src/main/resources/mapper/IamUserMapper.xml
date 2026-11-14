@@ -24,7 +24,7 @@
             iam_user
         WHERE
             deleted = 0
-            <if test="userCode != null">AND user_code = #{userCode}</if>
+            <if test="userCode != null">AND user_code LIKE CONCAT('%', #{userCode}, '%')</if>
             <if test="username != null">AND username LIKE CONCAT('%', #{username}, '%')</if>
             <if test="nickname != null">AND nickname LIKE CONCAT('%', #{nickname}, '%')</if>
             <if test="email != null">AND email LIKE CONCAT('%', #{email}, '%')</if>

@@ -13,6 +13,9 @@ import lombok.EqualsAndHashCode;
 @Schema(description = "用户分页查询请求")
 public class UserPageReq extends PageReq {
 
+    @Schema(description = "用户编码，模糊搜索")
+    private String userCode;
+
     @Schema(description = "应用编码")
     private String appCode;
 
