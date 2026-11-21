@@ -64,7 +64,8 @@
         FROM
         iam_menu im1
         WHERE
-        app_code = #{appCode}
+        im1.deleted = 0
+        AND app_code = #{appCode}
         ORDER BY
         sort,
         id

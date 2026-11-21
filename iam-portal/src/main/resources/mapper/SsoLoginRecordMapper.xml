@@ -41,7 +41,8 @@
         FROM
         iam_login_record
         WHERE
-            auth_type = #{authType}
+        deleted = 0
+        AND auth_type = #{authType}
             AND auth_identifier = #{authIdentifier}
             AND create_time > DATE_SUB( NOW(), INTERVAL 1 HOUR )
         ORDER BY

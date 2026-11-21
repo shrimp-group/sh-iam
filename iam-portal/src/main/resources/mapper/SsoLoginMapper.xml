@@ -40,7 +40,8 @@
             login_count = login_count + 1,
             version = version + 1
         WHERE
-            id = #{id}
+        deleted = 0
+        AND id = #{id}
     </update>
 
     <select id="batchGetNicknamesByUserCodes" resultType="com.wkclz.iam.common.entity.IamUser">
