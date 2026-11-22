@@ -4,6 +4,10 @@ export const ssoLogin = (data) => {
     return request({url: '/iam-portal/public/sso/login', method: 'post', data})
 }
 
+export const resetPassword = (data) => {
+    return request({url: '/iam-portal/public/sso/reset-password', method: 'post', data})
+}
+
 export const userInfo = () => {
   return request({url: '/iam-portal/user/info', method: 'get'})
 }

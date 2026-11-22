@@ -3,6 +3,7 @@ package com.wkclz.iam.portal.service;
 import com.wkclz.core.exception.UserException;
 import com.wkclz.core.identity.IdentityContext;
 import com.wkclz.core.identity.UserIdentity;
+import com.wkclz.iam.common.dto.IamUserAuthDto;
 import com.wkclz.iam.common.entity.IamLoginRecord;
 import com.wkclz.iam.common.entity.IamUserAuth;
 import com.wkclz.iam.common.entity.IamUserAuthPassword;
@@ -14,6 +15,7 @@ import com.wkclz.iam.session.enums.DestroyReason;
 import com.wkclz.iam.session.enums.LoginStatus;
 import com.wkclz.iam.session.service.SessionManager;
 import com.wkclz.iam.portal.bean.req.ChangePasswordReq;
+import com.wkclz.iam.portal.bean.req.ExpiredPasswordChangeReq;
 import com.wkclz.iam.portal.bean.req.LoginReq;
 import com.wkclz.iam.portal.config.IamPortalConfig;
 import com.wkclz.iam.portal.event.LoginEvent;
@@ -25,6 +27,7 @@ import com.wkclz.iam.portal.spi.CredentialChecker;
 import com.wkclz.iam.portal.spi.PasswordEncoder;
 import com.wkclz.tool.tools.Md5Tool;
 import com.wkclz.tool.tools.RsaTool;
+import com.wkclz.tool.utils.CheckPwdUtil;
 import com.wkclz.web.helper.IpHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
@@ -203,6 +206,73 @@ public class PasswordLoginService {
             throw UserException.of("旧密码错误");
         }
 
+        doUpdatePassword(userCode, newPassword, currentPwd);
+    }
+
+    /**
+     * 密码过期自助修改 — 免登录态公开接口，靠用户名 + 旧密码 + 图片验证码建立身份信任。
+     *
+     * <p>流程：RSA 解密 → 验证码校验（一次性消费）→ 定位用户 → 旧密码校验 →
+     * 新密码强度与相同性检查 → doUpdatePassword（历史密码检查 → 改密 → 会话失效 → 事件）。</p>
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void changeExpiredPassword(ExpiredPasswordChangeReq req) {
+        log.info("密码过期自助修改，username={}", req.getUsername());
+
+        // RSA 解密
+        String oldPassword = req.getOldPassword();
+        String newPassword = req.getNewPassword();
+        String privateKey = iamPortalConfig.getPrivateKey();
+        if (StringUtils.isNotBlank(privateKey)) {
+            if (oldPassword.length() > 32) {
+                oldPassword = RsaTool.decryptByPrivateKey(oldPassword, privateKey);
+            }
+            if (newPassword.length() > 32) {
+                newPassword = RsaTool.decryptByPrivateKey(newPassword, privateKey);
+            }
+        }
+
+        // 验证码校验（必填，Redis get-and-delete 一次性消费）
+        if (!captchaService.verify(req.getCaptchaId(), req.getCaptchaCode())) {
+            throw UserException.of("验证码错误或已失效");
+        }
+
+        // 定位用户（防用户名枚举，与登录口径一致）
+        IamUserAuthDto dto = ssoLoginMapper.getUserAuth4PasswordByUsername(req.getUsername());
+        if (dto == null) {
+            throw UserException.of("用户名或旧密码错误");
+        }
+
+        // 旧密码校验
+        if (!passwordEncoder.matches(oldPassword, dto.getSalt(), dto.getPassword())) {
+            throw UserException.of("用户名或旧密码错误");
+        }
+
+        // 新密码强度：CheckPwdUtil 评分，60 以上通过
+        if (CheckPwdUtil.checkPwdTopLevel(newPassword) < 60) {
+            throw UserException.of(CheckPwdUtil.PWD_IS_WEAK_WARN);
+        }
+
+        // 新密码不能与旧密码相同
+        if (oldPassword.equals(newPassword)) {
+            throw UserException.of("新密码不能与旧密码相同");
+        }
+
+        // 乐观锁需要 version，DTO 不含，按 userCode 精确查询
+        IamUserAuthPassword currentPwd = ssoLoginMapper.getPasswordByUserCode(dto.getUserCode());
+        if (currentPwd == null) {
+            throw UserException.of("用户密码记录不存在");
+        }
+
+        doUpdatePassword(dto.getUserCode(), newPassword, currentPwd);
+    }
+
+    // ========== 内部方法 ==========
+
+    /**
+     * 改密公共收尾：历史密码检查 → 编码并更新密码（乐观锁）→ 记录变更历史 → 全会话失效 → 发布 PasswordChangedEvent。
+     */
+    private void doUpdatePassword(String userCode, String newPassword, IamUserAuthPassword currentPwd) {
         // 历史密码检查（可配置，默认 5）
         int historySize = iamPortalConfig.getPasswordHistorySize() != null ? iamPortalConfig.getPasswordHistorySize() : 5;
         List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, historySize);
@@ -239,8 +309,6 @@ public class PasswordLoginService {
         // 发布事件
         eventPublisher.publishEvent(new PasswordChangedEvent(userCode));
     }
-
-    // ========== 内部方法 ==========
 
     /**
      * 构建认证失败的响应，并发布 LoginFailedEvent（审计用真实状态 auditStatus，响应用对外状态 respStatus）。

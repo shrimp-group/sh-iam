@@ -2,6 +2,7 @@ package com.wkclz.iam.portal.rest;
 
 import com.wkclz.core.base.R;
 import com.wkclz.iam.portal.Route;
+import com.wkclz.iam.portal.bean.req.ExpiredPasswordChangeReq;
 import com.wkclz.iam.portal.bean.req.LoginReq;
 import com.wkclz.iam.portal.bean.resp.SsoAppInfoResp;
 import com.wkclz.iam.session.bean.resp.LoginResp;
@@ -32,6 +33,13 @@ public class LoginRest {
     public R<LoginResp> publicSsoLogin(HttpServletRequest request, @Valid @RequestBody LoginReq loginReq) {
         LoginResp response = passwordLoginService.login(request, loginReq);
         return R.ok(response);
+    }
+
+    @PostMapping(Route.PUBLIC_SSO_RESET_PASSWORD)
+    @Operation(summary = "密码过期自助修改")
+    public R<Void> publicSsoResetPassword(@Valid @RequestBody ExpiredPasswordChangeReq req) {
+        passwordLoginService.changeExpiredPassword(req);
+        return R.ok();
     }
 
     @GetMapping(Route.PUBLIC_SSO_LOGOUT)

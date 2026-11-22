@@ -1,11 +1,12 @@
 <!-- CAS 登录页（应用功能：自 @sh/ui-core LoginView 0.0.8 迁回归属门户）：
      登录态经包内 user store 写父域 Cookie；成功后按 redirect 回跳（子系统整页跳，站内路由跳）；
-     验证码默认不展示，仅登录失败（后端正常响应 loginStatus≠0）时拉取； -->
+     验证码默认不展示，仅登录失败（后端正常响应 loginStatus≠0）时拉取；
+     密码过期（loginStatus=48）在提示区给改密入口，切改密模式自助修改；改密模式验证码恒显，失败/异常即刷新； -->
 <template>
   <div class="login" :style="loginBgp ? { backgroundImage: 'url(' + loginBgp + ')' } : undefined">
     <!-- 左侧装饰：动画小人（纯装饰，随鼠标/输入状态/密码可见性互动，小屏隐藏） -->
-    <EyeBuddies :is-typing="isTyping" :show-password="passwordVisible" :password-length="(loginForm.password || '').length" />
-    <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
+    <EyeBuddies :is-typing="isTyping" :show-password="passwordVisible" :password-length="(mode === 'change' ? (changeForm.newPassword || '') : (loginForm.password || '')).length" />
+    <el-form v-if="mode === 'login'" ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{ title }}</h3>
       <el-form-item prop="username">
         <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" :prefix-icon="User" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleLogin" />
@@ -31,10 +32,65 @@
         </el-button>
         <div style="color: orange;">
             {{loginMessage || '&nbsp;'}}
+            <a v-if="expiredTip" class="link-type" @click="toChangePassword">修改密码</a>
         </div>
         <el-divider />
         <div style="float: right;">
           <a class="link-type" :href="'/#/register'">立即注册</a>
+        </div>
+      </el-form-item>
+    </el-form>
+    <!-- 改密模式：密码过期自助修改，验证码恒显 -->
+    <el-form v-else ref="changePwdRef" :model="changeForm" :rules="changePwdRules" class="login-form">
+      <h3 class="title">修改密码</h3>
+      <el-form-item>
+        <el-input v-model="loginForm.username" type="text" size="large" auto-complete="off" placeholder="账号" :prefix-icon="User" disabled />
+      </el-form-item>
+      <el-form-item prop="oldPassword">
+        <el-input v-model="changeForm.oldPassword" :type="passwordVisible ? 'text' : 'password'" size="large" auto-complete="off" placeholder="旧密码" :prefix-icon="Lock" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleChangePassword">
+          <template #suffix>
+            <el-icon class="pwd-toggle" @click="passwordVisible = !passwordVisible">
+              <View v-if="passwordVisible" />
+              <Hide v-else />
+            </el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="newPassword">
+        <el-input v-model="changeForm.newPassword" :type="passwordVisible ? 'text' : 'password'" size="large" auto-complete="off" placeholder="新密码" :prefix-icon="Lock" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleChangePassword">
+          <template #suffix>
+            <el-icon class="pwd-toggle" @click="passwordVisible = !passwordVisible">
+              <View v-if="passwordVisible" />
+              <Hide v-else />
+            </el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="confirmPassword">
+        <el-input v-model="changeForm.confirmPassword" :type="passwordVisible ? 'text' : 'password'" size="large" auto-complete="off" placeholder="确认新密码" :prefix-icon="Lock" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleChangePassword">
+          <template #suffix>
+            <el-icon class="pwd-toggle" @click="passwordVisible = !passwordVisible">
+              <View v-if="passwordVisible" />
+              <Hide v-else />
+            </el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="loginForm.captchaCode" size="large" auto-complete="off" placeholder="验证码" style="width: 63%" :prefix-icon="Key" @focus="isTyping = true" @blur="isTyping = false" @keyup.enter="handleChangePassword" />
+        <div class="login-code"><img :src="codeUrl" @click="getCode" class="login-code-img"/></div>
+      </el-form-item>
+      <el-form-item style="width:100%;">
+        <el-button :loading="changeLoading" size="large" type="primary" style="width:100%;" @click.prevent="handleChangePassword">
+          <span v-if="changeLoading">提交中...</span>
+          <span v-else>确认修改</span>
+        </el-button>
+        <div style="color: orange;">
+            {{loginMessage || '&nbsp;'}}
+        </div>
+        <el-divider />
+        <div style="float: right;">
+          <a class="link-type" @click="backToLogin">返回登录</a>
         </div>
       </el-form-item>
     </el-form>
@@ -51,7 +107,7 @@ import { getToken, setToken } from '@sh/ui-core/utils/auth'
 import { encrypt } from '@sh/ui-core/utils/jsencrypt'
 import { safeTarget } from '@sh/ui-core/utils/safe-target'
 import { runtimeEnv, envSuffix } from '../../env.js'
-import { captchaChart, ssoLogin, ssoAppInfo } from '@/api/sso'
+import { captchaChart, ssoLogin, ssoAppInfo, resetPassword } from '@/api/sso'
 import EyeBuddies from '@/components/eye-buddies.vue'
 
 const title = ref(runtimeEnv.title)
@@ -69,6 +125,10 @@ const loginForm = ref({
 })
 
 const loginMessage = ref(null)
+// 页面模式：login 登录 / change 密码过期自助改密；48 过期提示链接显隐
+const mode = ref('login')
+const expiredTip = ref(false)
+const changeLoading = ref(false)
 
 // 动画小人联动状态：账号框聚焦中 / 密码明文可见
 const isTyping = ref(false)
@@ -77,6 +137,33 @@ const passwordVisible = ref(false)
 const loginRules = {
   username: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
   password: [{ required: true, trigger: "blur", message: "请输入您的密码" }],
+}
+
+// 改密表单与校验：规则沿用后台管理用户重置密码的既有规则
+const changeForm = ref({
+  oldPassword: undefined,
+  newPassword: undefined,
+  confirmPassword: undefined
+})
+
+const equalToPassword = (rule, value, callback) => {
+  if (changeForm.value.newPassword !== value) {
+    callback(new Error("两次输入的密码不一致"));
+  } else {
+    callback();
+  }
+};
+
+const changePwdRules = {
+  oldPassword: [{ required: true, trigger: "blur", message: "旧密码不能为空" }],
+  newPassword: [
+    { required: true, trigger: "blur", message: "新密码不能为空" },
+    { min: 8, max: 20, message: "密码长度应在 8-20 个字符之间", trigger: "blur" }
+  ],
+  confirmPassword: [
+    { required: true, trigger: "blur", message: "确认密码不能为空" },
+    { validator: equalToPassword, trigger: "blur" }
+  ]
 }
 
 const codeUrl = ref("")
@@ -140,6 +227,14 @@ function handleLogin() {
           setToken(res.data.token)
         }
         loginMessage.value = res.data?.loginMessage
+        if (res.data?.loginStatus === 48) {
+          // 密码过期：固定提示文案并给改密入口，不自动切表单
+          loginMessage.value = '密码已过期，请修改密码后登录'
+          expiredTip.value = true
+          getCode()
+          return;
+        }
+        expiredTip.value = false
         if (res.data?.loginStatus !== 0) {
           // 登录失败（后端正常响应）：拉取验证码并展示
           getCode()
@@ -150,9 +245,53 @@ function handleLogin() {
           leaveTo(safeTarget(redirect))
         }, 600)
       }).catch(() => {
-        // 接口异常不展示验证码
+        // 接口异常：验证码 Redis 一次性消费，同步刷新
+        getCode()
       }).finally(() => {
         loading.value = false
+      })
+    }
+  })
+}
+
+// 进入改密模式：清空旧验证码输入并刷新（改密模式验证码恒显）
+function toChangePassword() {
+  mode.value = 'change'
+  loginForm.value.captchaCode = undefined
+  getCode()
+}
+
+// 返回登录：清空改密字段
+function backToLogin() {
+  mode.value = 'login'
+  changeForm.value = { oldPassword: undefined, newPassword: undefined, confirmPassword: undefined }
+}
+
+function handleChangePassword() {
+  proxy.$refs.changePwdRef.validate(valid => {
+    if (valid) {
+      changeLoading.value = true
+      // 新旧密码均 RSA 加密提交；验证码 Redis 一次性消费
+      resetPassword({
+        username: loginForm.value.username.trim(),
+        oldPassword: encrypt(changeForm.value.oldPassword),
+        newPassword: encrypt(changeForm.value.newPassword),
+        captchaId: loginForm.value.captchaId,
+        captchaCode: loginForm.value.captchaCode
+      }).then(() => {
+        // 改密成功：回登录模式，保留用户名，清空改密字段与验证码，不主动拉验证码
+        mode.value = 'login'
+        expiredTip.value = false
+        loginMessage.value = '密码修改成功，请使用新密码登录'
+        changeForm.value = { oldPassword: undefined, newPassword: undefined, confirmPassword: undefined }
+        loginForm.value.captchaCode = undefined
+        loginForm.value.captchaId = undefined
+      }).catch((err) => {
+        // 业务失败/异常：拦截器已弹出错误详情，提示区同步展示并刷新验证码
+        loginMessage.value = err?.message || '密码修改失败，请重试'
+        getCode()
+      }).finally(() => {
+        changeLoading.value = false
       })
     }
   })
