@@ -10,6 +10,7 @@ import com.wkclz.iam.common.entity.IamUserPasswordHis;
 import com.wkclz.iam.common.event.AdminSecurityEvent;
 import com.wkclz.iam.portal.spi.PasswordEncoder;
 import com.wkclz.mybatis.service.BaseService;
+import com.wkclz.tool.utils.CheckPwdUtil;
 import com.wkclz.tool.utils.SecretUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,6 +99,11 @@ public class IamUserAuthPasswordService extends BaseService<IamUserAuthPassword,
     public void resetPassword(String userCode, String newPassword) {
         Assert.notNull(userCode, "用户编码不能为空");
         Assert.notNull(newPassword, "新密码不能为空");
+
+        // 新密码强度：CheckPwdUtil 评分，60 以上通过
+        if (CheckPwdUtil.checkPwdTopLevel(newPassword) < 60) {
+            throw UserException.of(CheckPwdUtil.PWD_IS_WEAK_WARN);
+        }
 
         IamUserAuthPassword currentPwd = mapper.selectByUserCode(userCode);
         if (currentPwd == null) {

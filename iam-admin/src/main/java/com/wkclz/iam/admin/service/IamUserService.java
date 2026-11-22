@@ -20,6 +20,7 @@ import com.wkclz.mybatis.helper.PageQuery;
 import com.wkclz.mybatis.service.BaseService;
 import com.wkclz.redis.helper.RedisIdGenerator;
 import com.wkclz.tool.utils.BeanUtil;
+import com.wkclz.tool.utils.CheckPwdUtil;
 import com.wkclz.tool.utils.SecretUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -97,6 +98,11 @@ public class IamUserService extends BaseService<IamUser, IamUserMapper> {
 
     @Transactional(rollbackFor = Exception.class)
     public IamUserDto customCreate(IamUserDto dto) {
+        // 初始密码强度：CheckPwdUtil 评分，60 以上通过
+        if (CheckPwdUtil.checkPwdTopLevel(dto.getPassword()) < 60) {
+            throw UserException.of(CheckPwdUtil.PWD_IS_WEAK_WARN);
+        }
+
         // 用户重复判断
         IamUser param = new IamUser();
         param.setUsername(dto.getUsername());

@@ -212,8 +212,8 @@ public class PasswordLoginService {
     /**
      * 密码过期自助修改 — 免登录态公开接口，靠用户名 + 旧密码 + 图片验证码建立身份信任。
      *
-     * <p>流程：RSA 解密 → 验证码校验（一次性消费）→ 定位用户 → 旧密码校验 →
-     * 新密码强度与相同性检查 → doUpdatePassword（历史密码检查 → 改密 → 会话失效 → 事件）。</p>
+     * <p>流程：RSA 解密 → 验证码校验（一次性消费）→ 定位用户 → 旧密码校验 → 新旧密码相同检查 →
+     * doUpdatePassword（强度校验 → 历史密码检查 → 改密 → 会话失效 → 事件）。</p>
      */
     @Transactional(rollbackFor = Exception.class)
     public void changeExpiredPassword(ExpiredPasswordChangeReq req) {
@@ -248,11 +248,6 @@ public class PasswordLoginService {
             throw UserException.of("用户名或旧密码错误");
         }
 
-        // 新密码强度：CheckPwdUtil 评分，60 以上通过
-        if (CheckPwdUtil.checkPwdTopLevel(newPassword) < 60) {
-            throw UserException.of(CheckPwdUtil.PWD_IS_WEAK_WARN);
-        }
-
         // 新密码不能与旧密码相同
         if (oldPassword.equals(newPassword)) {
             throw UserException.of("新密码不能与旧密码相同");
@@ -270,9 +265,14 @@ public class PasswordLoginService {
     // ========== 内部方法 ==========
 
     /**
-     * 改密公共收尾：历史密码检查 → 编码并更新密码（乐观锁）→ 记录变更历史 → 全会话失效 → 发布 PasswordChangedEvent。
+     * 改密公共收尾：新密码强度校验 → 历史密码检查 → 编码并更新密码（乐观锁）→ 记录变更历史 → 全会话失效 → 发布 PasswordChangedEvent。
      */
     private void doUpdatePassword(String userCode, String newPassword, IamUserAuthPassword currentPwd) {
+        // 新密码强度：CheckPwdUtil 评分，60 以上通过
+        if (CheckPwdUtil.checkPwdTopLevel(newPassword) < 60) {
+            throw UserException.of(CheckPwdUtil.PWD_IS_WEAK_WARN);
+        }
+
         // 历史密码检查（可配置，默认 5）
         int historySize = iamPortalConfig.getPasswordHistorySize() != null ? iamPortalConfig.getPasswordHistorySize() : 5;
         List<IamUserPasswordHis> historyList = ssoLoginMapper.getPasswordHisByUserCode(userCode, historySize);
